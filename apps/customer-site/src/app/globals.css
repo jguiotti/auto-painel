@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import "@autopainel/shared/globals.css";
+
+@source "../../../../packages/shared/src/**/*.tsx";
+@source "../**/*.{ts,tsx}";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --dealer-primary: #18181b;
+  --dealer-accent: #0d9488;
+  --dealer-bg: #fafafa;
+  --dealer-fg: #171717;
+  --dealer-surface: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--dealer-surface);
+  --color-card-foreground: var(--dealer-fg);
+  --color-popover: var(--dealer-surface);
+  --color-popover-foreground: var(--dealer-fg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--dealer-primary);
+  --color-primary-foreground: #fafafa;
+  --color-secondary: oklch(0.96 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.96 0 0);
+  --color-muted-foreground: oklch(0.45 0 0);
+  --color-accent: oklch(0.96 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.9 0 0);
+  --color-input: oklch(0.9 0 0);
+  --color-ring: oklch(0.55 0 0);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

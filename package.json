@@ -1,0 +1,26 @@
+{
+  "name": "auto-painel",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:all": "turbo run dev --filter=@autopainel/marketing-site --filter=@autopainel/admin-master --filter=@autopainel/dealership-panel --filter=@autopainel/customer-site",
+    "dev:marketing-site": "turbo run dev --filter=@autopainel/marketing-site",
+    "dev:admin-master": "turbo run dev --filter=@autopainel/admin-master",
+    "dev:dealership-panel": "turbo run dev --filter=@autopainel/dealership-panel",
+    "dev:customer-site": "turbo run dev --filter=@autopainel/customer-site",
+    "lint": "turbo run lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

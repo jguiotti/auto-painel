@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@autopainel/shared/ui",
+    "utils": "@autopainel/shared/lib/utils",
+    "ui": "@autopainel/shared/ui",
+    "lib": "@autopainel/shared/lib",
+    "hooks": "@autopainel/shared/lib/hooks"
+  }
+}

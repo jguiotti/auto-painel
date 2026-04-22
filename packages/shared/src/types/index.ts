@@ -1,0 +1,22 @@
+/**
+ * Cross-app TypeScript definitions. Migrate domain types here gradually.
+ */
+export type BrandSlug = string;
+
+/** Matches public.dealerships.status check constraint. */
+export type DealershipStatus =
+  | "active"
+  | "suspended"
+  | "pending_setup"
+  | "churned";
+
+/** Row shape for marketing-site inserts into public.saas_prospects (server-side). */
+export interface SaasProspectInsert {
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  company_name?: string | null;
+  message?: string | null;
+  source?: string;
+  metadata?: Record<string, unknown>;
+}

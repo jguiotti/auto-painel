@@ -1,0 +1,47 @@
+---
+description: Code in English; app routes and user-facing UI in Portuguese (AutoPainel).
+alwaysApply: true
+---
+
+# Naming, Language, and Routes (CRITICAL)
+
+Follow these three layers in every change. Do not mix languages in the wrong layer.
+
+## 1. Source code — English only
+
+Write **only in English** in source files:
+
+- Identifiers: variables, functions, methods, classes, types, interfaces, enums/constants names
+- File and directory names (e.g. `create-supabase-server-client.ts`, `stock-page.tsx`)
+- React component names in PascalCase in English (e.g. `DashboardLayout`, not `PainelLayout` — the **route** can still be `/painel`)
+- Comments and JSDoc/TSDoc
+- Commit messages and internal technical docs in the repo (unless the team standard says otherwise)
+
+Do not use Portuguese (or other languages) for code identifiers or comments.
+
+## 2. Routes (URLs) — Portuguese only
+
+Path segments visible in the browser must be **Portuguese**, lowercase, kebab-case when multi-word:
+
+- Examples: `/painel`, `/estoque`, `/contato`, `/veiculo`, `/veiculo/[slug]`
+- Redirects, `href`, `redirect()`, middleware matchers, and sitemap routes must use these Portuguese paths
+
+English path segments (e.g. `/dashboard`, `/inventory`) are not allowed unless an explicit exception is documented.
+
+## 3. User-facing interface — Portuguese only
+
+All copy the end user sees must be **Portuguese**:
+
+- Visible text, labels, placeholders, buttons, headings, empty states, errors shown in UI
+- `aria-label`, `title`, and similar when intended for users
+- Validation messages and toasts intended for the user
+
+English is allowed in developer-only logs and non-user-facing telemetry, not in UI strings.
+
+## Quick check
+
+| Layer            | Language   |
+|------------------|------------|
+| Code & comments  | English    |
+| URL paths        | Portuguese |
+| UI copy          | Portuguese |

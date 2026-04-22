@@ -1,0 +1,9 @@
+/**
+ * Optional shared design tokens. Apps should @import "tailwindcss" first, then
+ * add @source for this package, and may @import this file for extra variables.
+ */
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+}
