@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@autopainel/shared/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@autopainel/shared/ui";
 
-import { verifyAdminSessionToken } from "@/lib/auth/admin-session";
-import { COOKIE_NAME } from "@/lib/auth/cookie-name";
+import { fetchProfileRowForUserId } from "@/lib/auth/fetch-profile-for-admin";
+import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { LoginForm } from "./login-form";
 
@@ -17,10 +24,23 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
-  const token = (await cookies()).get(COOKIE_NAME)?.value;
-  if (verifyAdminSessionToken(token)) {
-    redirect("/dashboard");
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const sp = await searchParams;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { profile } = await fetchProfileRowForUserId(user.id);
+
+    if (isPlatformOperatorProfile(profile)) {
+      redirect("/painel/dashboard");
+    }
   }
 
   return (
@@ -29,10 +49,17 @@ export default async function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">AutoPainel Admin</CardTitle>
           <CardDescription>
-            Área restrita à equipe central. Informe a senha mestra.
+            Área restrita à equipe central. Entre com o e-mail e a senha da conta
+            cadastrada como super administradora.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {sp.error === "forbidden" ? (
+            <p className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Acesso negado. Apenas contas com perfil de super administradora
+              (sem concessionária vinculada) podem usar este painel.
+            </p>
+          ) : null}
           <LoginForm />
           <p className="mt-6 text-center text-xs text-muted-foreground">
             <Button variant="link" className="h-auto p-0 text-xs" asChild>

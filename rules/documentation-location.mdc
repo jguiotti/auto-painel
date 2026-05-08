@@ -1,0 +1,11 @@
+---
+description: Centralize technical docs under packages/shared/docs
+alwaysApply: true
+---
+
+# Documentation location
+
+- **Do not** scatter new markdown documentation across `apps/*` unless strictly necessary for that app’s deploy or legal requirements.
+- **Exception — internal product docs:** living PRD/business rules and technical traceability belong in **`apps/admin-master/content/internal-docs/`** (`regras-de-negocio.md`, `documentacao-tecnica.md`), with optional mirror in Supabase `platform_internal_documents` (see `squad-agent-workflow.mdc` and **`internal-docs-living.mdc`**). Do not duplicate the same PRD in multiple app folders.
+- Add or update cross-cutting docs under **`packages/shared/docs/`** (design system, shadcn workflow, Supabase typing, blueprints such as dynamic plans/modules PRD, etc.).
+- Link from the root **`AGENTS.md`** or a single repo README when needed; keep app folders focused on code.

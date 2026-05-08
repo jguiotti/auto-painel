@@ -42,15 +42,22 @@ export interface VehicleFormDefaultValues {
   description: string;
   status: "available" | "sold";
   images: string[];
+  dealership_unit_id?: string;
 }
 
 interface VehicleFormProps {
   mode: "create" | "edit";
   vehicleId?: string;
   defaultValues?: VehicleFormDefaultValues;
+  units: { id: string; name: string }[];
 }
 
-export function VehicleForm({ mode, vehicleId, defaultValues }: VehicleFormProps) {
+export function VehicleForm({
+  mode,
+  vehicleId,
+  defaultValues,
+  units,
+}: VehicleFormProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,6 +153,28 @@ export function VehicleForm({ mode, vehicleId, defaultValues }: VehicleFormProps
                 className="font-mono text-sm"
                 disabled={isSubmitting}
               />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="dealership_unit_id">Unidade (estoque)</Label>
+              <select
+                id="dealership_unit_id"
+                name="dealership_unit_id"
+                required
+                disabled={isSubmitting}
+                defaultValue={
+                  defaultValues?.dealership_unit_id ?? units[0]?.id ?? ""
+                }
+                className={selectClassName}
+              >
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                O veículo aparece na mesma vitrine; apenas o painel separa estoque por filial.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="manufacturing_year">Ano fabricação</Label>

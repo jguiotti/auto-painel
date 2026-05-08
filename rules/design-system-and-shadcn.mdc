@@ -1,0 +1,27 @@
+---
+description: Design system, Tailwind source of truth, shadcn only in packages/shared
+alwaysApply: true
+---
+
+# Design system and shadcn (AutoPainel)
+
+## Tailwind
+
+- **`packages/shared/tailwind.config.js`** is the canonical config file for tooling (shadcn CLI, IDEs). Theme semantics live in **`packages/shared/src/styles/globals.css`** (`@theme inline`).
+- Every app entry CSS must: `@import "tailwindcss"`, then `@config` pointing at that shared `tailwind.config.js`, then `@import "@autopainel/shared/globals.css"`, then app-specific `@source` and overrides.
+- Do **not** duplicate full design tokens in each app unless the product needs a distinct theme (e.g. marketing). Prefer overriding only what changes.
+
+## shadcn/ui
+
+- **Install and add components only under `packages/shared`** (`components.json` is already there). Use `npm run ui:add -- <component>` from `packages/shared`, or `npx shadcn@latest add` with `-c packages/shared` from the repo root.
+- **Never** run `shadcn init` inside individual apps; apps consume UI via `@autopainel/shared/ui`.
+- When using the shadcn MCP in Cursor: resolve registries and examples, then add files under `packages/shared/src/ui` and export from `src/ui/index.ts`.
+
+## Reuse (DRY)
+
+- **Buttons, inputs, cards, dialogs, tables, layout primitives**: import from `@autopainel/shared/ui`.
+- **Supabase clients and env helpers**: import from `@autopainel/shared/lib/supabase`.
+- **Shared utilities** (e.g. `cn`): `@autopainel/shared/lib/utils`.
+- Before adding a new primitive in an app, check if it belongs in `packages/shared` for reuse across `admin-master`, `dealership-panel`, `customer-site`, and `marketing-site`.
+
+See **`packages/shared/docs/DESIGN_SYSTEM.md`** and **`packages/shared/docs/SHADCN.md`**.

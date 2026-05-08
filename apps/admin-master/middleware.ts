@@ -1,20 +1,11 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
-import { COOKIE_NAME } from "@/lib/auth/cookie-name";
+import { updateAdminSession } from "@/lib/supabase/middleware";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get(COOKIE_NAME)?.value;
-  if (!token || token.length < 10) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-  return NextResponse.next();
+export async function middleware(request: NextRequest) {
+  return updateAdminSession(request);
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/concessionarias/:path*",
-    "/financeiro/:path*",
-  ],
+  matcher: ["/painel/:path*"],
 };

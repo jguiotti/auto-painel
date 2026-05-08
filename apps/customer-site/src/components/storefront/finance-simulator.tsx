@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { calculatePriceInstallment } from "@autopainel/shared/lib/finance/calculate-price-installment";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -13,72 +15,105 @@ import { Input } from "@autopainel/shared/ui";
 import { Label } from "@autopainel/shared/ui";
 
 import { formatBrl } from "@/lib/format/format-brl";
-import {
-  calculateFinanceInstallment,
-  calculateTotalFinancedAmount,
-} from "@/lib/finance/calculate-finance-installment";
 import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
+
+const FINANCE_TERMS = [24, 36, 48, 60] as const;
 
 interface FinanceSimulatorProps {
   vehiclePrice: number;
-  onSnapshotChange?: (snapshot: FinanceSimulationSnapshot) => void;
+  monthlyRatePercent: number;
+  onSnapshotChange?: (snapshot: FinanceSimulationSnapshot | null) => void;
 }
 
 export function FinanceSimulator({
   vehiclePrice,
+  monthlyRatePercent,
   onSnapshotChange,
 }: FinanceSimulatorProps) {
   const [downPayment, setDownPayment] = useState(() =>
     Math.min(5000, Math.round(vehiclePrice * 0.1)),
   );
-  const [annualRatePercent, setAnnualRatePercent] = useState(11.99);
-  const [termMonths, setTermMonths] = useState(48);
+  const [termMonths, setTermMonths] = useState<(typeof FINANCE_TERMS)[number]>(48);
+  const [hasCalculated, setHasCalculated] = useState(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const maxDown = useMemo(
-    () => Math.max(0, Math.floor(vehiclePrice * 0.5)),
+    () => Math.max(0, Math.floor(vehiclePrice)),
     [vehiclePrice],
   );
   const effectiveDown = Math.min(downPayment, maxDown, vehiclePrice);
   const financedAmount = Math.max(0, vehiclePrice - effectiveDown);
 
-  const installment = useMemo(
+  const simulationResult = useMemo(
     () =>
-      calculateFinanceInstallment(
+      calculatePriceInstallment({
         financedAmount,
-        annualRatePercent,
+        monthlyInterestRatePercent: monthlyRatePercent,
         termMonths,
-      ),
-    [financedAmount, annualRatePercent, termMonths],
-  );
-
-  const totalPayable = useMemo(
-    () => calculateTotalFinancedAmount(installment, termMonths),
-    [installment, termMonths],
+      }),
+    [financedAmount, monthlyRatePercent, termMonths],
   );
 
   useEffect(() => {
     if (!onSnapshotChange) {
       return;
     }
+    if (!hasCalculated || financedAmount <= 0) {
+      return;
+    }
+
     onSnapshotChange({
       vehiclePrice,
       downPayment: effectiveDown,
       financedAmount,
-      annualRatePercent,
+      monthlyRatePercent,
       termMonths,
-      estimatedInstallment: installment,
-      estimatedTotalPayable: totalPayable,
+      estimatedInstallment: simulationResult.installmentAmount,
+      estimatedTotalPayable: simulationResult.totalPayable,
+      estimatedTotalInterest: simulationResult.totalInterest,
     });
   }, [
+    hasCalculated,
     vehiclePrice,
     effectiveDown,
     financedAmount,
-    annualRatePercent,
+    monthlyRatePercent,
     termMonths,
-    installment,
-    totalPayable,
+    simulationResult.installmentAmount,
+    simulationResult.totalPayable,
+    simulationResult.totalInterest,
     onSnapshotChange,
   ]);
+
+  function resetCalculationState() {
+    setHasCalculated(false);
+    setValidationMessage(null);
+    onSnapshotChange?.(null);
+  }
+
+  function handleDownPaymentChange(value: number) {
+    resetCalculationState();
+    setDownPayment(value);
+  }
+
+  function handleTermMonthsChange(value: (typeof FINANCE_TERMS)[number]) {
+    resetCalculationState();
+    setTermMonths(value);
+  }
+
+  function handleCalculateClick() {
+    if (financedAmount <= 0) {
+      setValidationMessage(
+        "A entrada deve ser menor que o valor do veículo para gerar uma simulação.",
+      );
+      setHasCalculated(false);
+      onSnapshotChange?.(null);
+      return;
+    }
+
+    setValidationMessage(null);
+    setHasCalculated(true);
+  }
 
   return (
     <Card aria-labelledby="finance-simulator-title">
@@ -90,8 +125,7 @@ export function FinanceSimulator({
           Simulação de financiamento
         </CardTitle>
         <CardDescription>
-          Valores estimados para planejamento. A taxa efetiva depende da análise
-          de crédito e da instituição financeira.
+          Informe entrada e parcelas para calcular uma estimativa em Tabela Price.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -104,7 +138,7 @@ export function FinanceSimulator({
             max={maxDown}
             step={500}
             value={effectiveDown}
-            onChange={(e) => setDownPayment(Number(e.target.value))}
+            onChange={(e) => handleDownPaymentChange(Number(e.target.value))}
             className="mt-2 w-full accent-[var(--dealer-accent)]"
           />
           <p className="mt-1 text-sm tabular-nums text-[var(--dealer-fg)]/80">
@@ -113,16 +147,8 @@ export function FinanceSimulator({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="annual-rate">Taxa a.a. estimada (%)</Label>
-          <Input
-            id="annual-rate"
-            type="number"
-            inputMode="decimal"
-            step={0.01}
-            min={0}
-            value={annualRatePercent}
-            onChange={(e) => setAnnualRatePercent(Number(e.target.value))}
-          />
+          <Label>Taxa mensal aplicada</Label>
+          <Input value={`${monthlyRatePercent.toFixed(2)}% a.m.`} readOnly />
         </div>
 
         <div className="space-y-2">
@@ -130,10 +156,14 @@ export function FinanceSimulator({
           <select
             id="term-months"
             value={termMonths}
-            onChange={(e) => setTermMonths(Number(e.target.value))}
+            onChange={(e) =>
+              handleTermMonthsChange(
+                Number(e.target.value) as (typeof FINANCE_TERMS)[number],
+              )
+            }
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {[12, 24, 36, 48, 60, 72].map((m) => (
+            {FINANCE_TERMS.map((m) => (
               <option key={m} value={m}>
                 {m}x
               </option>
@@ -141,15 +171,36 @@ export function FinanceSimulator({
           </select>
         </div>
 
-        <div className="rounded-lg bg-[var(--dealer-bg)] p-4 dark:bg-black/20">
-          <p className="text-sm text-[var(--dealer-fg)]/70">Parcela estimada</p>
-          <p className="text-2xl font-bold tabular-nums text-[var(--dealer-accent)]">
-            {formatBrl(installment)}
-          </p>
-          <p className="mt-2 text-xs text-[var(--dealer-fg)]/60">
-            Total aproximado no período: {formatBrl(totalPayable)}
-          </p>
-        </div>
+        <Button
+          type="button"
+          className="bg-[var(--dealer-primary)] text-white hover:opacity-95"
+          onClick={handleCalculateClick}
+        >
+          Calcular parcela
+        </Button>
+
+        {validationMessage ? (
+          <p className="text-sm text-red-600 dark:text-red-400">{validationMessage}</p>
+        ) : null}
+
+        {hasCalculated ? (
+          <div className="rounded-lg bg-[var(--dealer-bg)] p-4 dark:bg-black/20">
+            <p className="text-sm text-[var(--dealer-fg)]/70">Parcela estimada</p>
+            <p className="text-2xl font-bold tabular-nums text-[var(--dealer-accent)]">
+              {formatBrl(simulationResult.installmentAmount)}
+            </p>
+            <p className="mt-2 text-xs text-[var(--dealer-fg)]/60">
+              Total aproximado no período: {formatBrl(simulationResult.totalPayable)}
+            </p>
+            <p className="mt-1 text-xs text-[var(--dealer-fg)]/60">
+              Juros totais estimados: {formatBrl(simulationResult.totalInterest)}
+            </p>
+            <p className="mt-3 text-xs text-[var(--dealer-fg)]/70">
+              Estimativa para referência. Sujeita a análise de crédito e condições da
+              instituição financeira.
+            </p>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

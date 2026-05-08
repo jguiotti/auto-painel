@@ -26,10 +26,12 @@ export interface VehicleInventoryRow {
   status: string;
   public_slug: string;
   images: string[] | null;
+  unit_name?: string | null;
 }
 
 interface VehicleInventoryTableProps {
   vehicles: VehicleInventoryRow[];
+  isQrGeneratorEnabled?: boolean;
 }
 
 const statusLabel: Record<string, string> = {
@@ -37,7 +39,10 @@ const statusLabel: Record<string, string> = {
   sold: "Vendido",
 };
 
-export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) {
+export function VehicleInventoryTable({
+  vehicles,
+  isQrGeneratorEnabled = false,
+}: VehicleInventoryTableProps) {
   if (vehicles.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
@@ -54,6 +59,7 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
             <TableRow>
               <TableHead>Foto</TableHead>
               <TableHead>Veículo</TableHead>
+              <TableHead>Unidade</TableHead>
               <TableHead>Anos</TableHead>
               <TableHead>Km</TableHead>
               <TableHead>Preço</TableHead>
@@ -89,6 +95,9 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                       {v.public_slug}
                     </div>
                   </TableCell>
+                  <TableCell className="max-w-[140px] truncate text-sm text-muted-foreground">
+                    {v.unit_name ?? "—"}
+                  </TableCell>
                   <TableCell>
                     {v.manufacturing_year} / {v.model_year}
                   </TableCell>
@@ -109,6 +118,11 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                       <Button variant="link" className="h-auto p-0" asChild>
                         <Link href={`/painel/estoque/${v.id}/editar`}>Editar</Link>
                       </Button>
+                      {isQrGeneratorEnabled && v.status === "available" ? (
+                        <Button variant="link" className="h-auto p-0" asChild>
+                          <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR Code</Link>
+                        </Button>
+                      ) : null}
                       <DeleteVehicleButton vehicleId={v.id} />
                     </div>
                   </TableCell>
@@ -149,6 +163,9 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                   <p className="mt-1 font-mono text-xs text-muted-foreground">
                     {v.public_slug}
                   </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Unidade: {v.unit_name ?? "—"}
+                  </p>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
@@ -160,6 +177,11 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                     Vitrine
                   </Link>
                 </Button>
+                {isQrGeneratorEnabled && v.status === "available" ? (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR</Link>
+                  </Button>
+                ) : null}
                 <DeleteVehicleButton vehicleId={v.id} />
               </div>
             </li>

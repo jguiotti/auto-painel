@@ -7,12 +7,15 @@ import { LeadRealtimeNotifier } from "@/components/dashboard/LeadRealtimeNotifie
 interface DashboardShellProps {
   dealershipName: string;
   dealershipId: string;
+  /** `profiles.role` for the signed-in user (owner | seller). */
+  viewerRole: string;
   children: React.ReactNode;
 }
 
 export function DashboardShell({
   dealershipName,
   dealershipId,
+  viewerRole,
   children,
 }: DashboardShellProps) {
   return (
@@ -54,6 +57,12 @@ export function DashboardShell({
             >
               Contatos
             </Link>
+            <Link
+              href="/painel/integracoes"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Integrações
+            </Link>
             <form action={signOutAction} className="inline">
               <button
                 type="submit"
@@ -66,7 +75,10 @@ export function DashboardShell({
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">{children}</div>
-      <LeadRealtimeNotifier dealershipId={dealershipId} />
+      <LeadRealtimeNotifier
+        dealershipId={dealershipId}
+        alertOnVitrineLeads={viewerRole === "owner"}
+      />
     </div>
   );
 }

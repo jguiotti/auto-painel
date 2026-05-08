@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { VehicleEngagementSection } from "@/components/storefront/vehicle-engagement-section";
 import { formatBrl } from "@/lib/format/format-brl";
+import { getPlatformFinanceMonthlyRatePercent } from "@/lib/finance/get-platform-finance-rate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getResolvedDealershipId } from "@/lib/tenant/get-dealership-id";
 
@@ -83,6 +84,20 @@ export default async function VehicleDetailPage({ params }: VehicleDetailPagePro
 
   const images = vehicle.images?.filter(Boolean) ?? [];
   const priceNum = Number(vehicle.price);
+  const monthlyRatePercent = await getPlatformFinanceMonthlyRatePercent();
+
+  void supabase
+    .from("vehicle_view_events")
+    .insert({
+      dealership_id: dealershipId,
+      vehicle_id: vehicle.id,
+      source: "customer_site",
+    })
+    .then(({ error: viewEventError }) => {
+      if (viewEventError) {
+        console.error("vehicle_view_events insert failed", viewEventError.message);
+      }
+    });
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
@@ -141,7 +156,11 @@ export default async function VehicleDetailPage({ params }: VehicleDetailPagePro
       </div>
 
       <div className="mt-12">
-        <VehicleEngagementSection vehicleId={vehicle.id} vehiclePrice={priceNum} />
+        <VehicleEngagementSection
+          vehicleId={vehicle.id}
+          vehiclePrice={priceNum}
+          monthlyRatePercent={monthlyRatePercent}
+        />
       </div>
     </article>
   );

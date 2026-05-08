@@ -17,7 +17,18 @@ export function LoginForm() {
         </p>
       ) : null}
       <div className="space-y-2">
-        <Label htmlFor="password">Senha mestra</Label>
+        <Label htmlFor="email">E-mail</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          disabled={pending}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Senha</Label>
         <Input
           id="password"
           name="password"

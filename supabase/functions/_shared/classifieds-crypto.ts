@@ -1,0 +1,31 @@
+const encoder = new TextEncoder();
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  return btoa(binary);
+}
+
+async function getAesKey(secret: string): Promise<CryptoKey> {
+  const secretBytes = encoder.encode(secret);
+  const digest = await crypto.subtle.digest("SHA-256", secretBytes);
+  return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+export async function encryptSecretValue(
+  plaintext: string,
+  secret: string,
+): Promise<string> {
+  const key = await getAesKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipherBuffer = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoder.encode(plaintext),
+  );
+
+  const cipherBytes = new Uint8Array(cipherBuffer);
+  return `${toBase64(iv)}.${toBase64(cipherBytes)}`;
+}

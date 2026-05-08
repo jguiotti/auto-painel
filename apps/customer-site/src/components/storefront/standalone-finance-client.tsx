@@ -8,7 +8,13 @@ import { Label } from "@autopainel/shared/ui";
 
 import { FinanceSimulator } from "@/components/storefront/finance-simulator";
 
-export function StandaloneFinanceClient() {
+interface StandaloneFinanceClientProps {
+  monthlyRatePercent: number;
+}
+
+export function StandaloneFinanceClient({
+  monthlyRatePercent,
+}: StandaloneFinanceClientProps) {
   const [vehiclePrice, setVehiclePrice] = useState(85_000);
 
   return (
@@ -36,7 +42,10 @@ export function StandaloneFinanceClient() {
           </p>
         </CardContent>
       </Card>
-      <FinanceSimulator vehiclePrice={Math.max(1, vehiclePrice)} />
+      <FinanceSimulator
+        vehiclePrice={Math.max(1, vehiclePrice)}
+        monthlyRatePercent={monthlyRatePercent}
+      />
     </div>
   );
 }

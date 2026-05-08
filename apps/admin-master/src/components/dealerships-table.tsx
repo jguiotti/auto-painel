@@ -1,6 +1,7 @@
 "use client";
 
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -28,8 +29,6 @@ import {
 import { deleteDealershipAction } from "@/actions/dealerships";
 import type { DealershipAdminRow } from "@/types/dealership-admin";
 
-import { DealershipDialog } from "./dealership-dialog";
-
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
 function swatch(theme: Record<string, unknown>) {
@@ -44,27 +43,19 @@ function swatch(theme: Record<string, unknown>) {
   );
 }
 
+function formatDomain(row: DealershipAdminRow) {
+  if (row.custom_domain && row.custom_domain.trim().length > 0) {
+    return row.custom_domain.trim();
+  }
+  return row.slug;
+}
+
 export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
   const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
-  const [selected, setSelected] = useState<DealershipAdminRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DealershipAdminRow | null>(
     null,
   );
   const [pending, startTransition] = useTransition();
-
-  function openCreate() {
-    setSelected(null);
-    setDialogMode("create");
-    setDialogOpen(true);
-  }
-
-  function openEdit(row: DealershipAdminRow) {
-    setSelected(row);
-    setDialogMode("edit");
-    setDialogOpen(true);
-  }
 
   function confirmDelete() {
     if (!deleteTarget) {
@@ -90,9 +81,11 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
             à vitrine multitenant.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="size-4" aria-hidden />
-          Nova concessionária
+        <Button asChild className="gap-2">
+          <Link href="/painel/concessionarias/nova">
+            <Plus className="size-4" aria-hidden />
+            Nova concessionária
+          </Link>
         </Button>
       </div>
 
@@ -101,6 +94,7 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Domínio</TableHead>
               <TableHead>Subdomínio</TableHead>
               <TableHead>Cor</TableHead>
               <TableHead>Status</TableHead>
@@ -111,7 +105,7 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   Nenhuma concessionária cadastrada.
                 </TableCell>
               </TableRow>
@@ -119,6 +113,9 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
               rows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-sm">
+                    {formatDomain(row)}
+                  </TableCell>
                   <TableCell>
                     <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
                       {row.slug}
@@ -136,9 +133,11 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(row)}>
-                          <Pencil className="mr-2 size-4" />
-                          Editar
+                        <DropdownMenuItem asChild>
+                          <Link href={`/painel/concessionarias/${row.id}/editar`}>
+                            <Pencil className="mr-2 size-4" />
+                            Editar
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
@@ -156,13 +155,6 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
           </TableBody>
         </Table>
       </div>
-
-      <DealershipDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        mode={dialogMode}
-        dealership={selected}
-      />
 
       <AlertDialog
         open={deleteTarget !== null}

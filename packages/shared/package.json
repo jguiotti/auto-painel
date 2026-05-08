@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "ui:add": "npx shadcn@latest add"
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
@@ -21,6 +22,36 @@
       "types": "./src/lib/utils.ts",
       "import": "./src/lib/utils.ts",
       "default": "./src/lib/utils.ts"
+    },
+    "./lib/theme/branding": {
+      "types": "./src/lib/theme/branding.ts",
+      "import": "./src/lib/theme/branding.ts",
+      "default": "./src/lib/theme/branding.ts"
+    },
+    "./lib/theme/google-fonts-stylesheet-url": {
+      "types": "./src/lib/theme/google-fonts-stylesheet-url.ts",
+      "import": "./src/lib/theme/google-fonts-stylesheet-url.ts",
+      "default": "./src/lib/theme/google-fonts-stylesheet-url.ts"
+    },
+    "./lib/viacep": {
+      "types": "./src/lib/viacep.ts",
+      "import": "./src/lib/viacep.ts",
+      "default": "./src/lib/viacep.ts"
+    },
+    "./lib/dealership-features": {
+      "types": "./src/lib/dealership-features.ts",
+      "import": "./src/lib/dealership-features.ts",
+      "default": "./src/lib/dealership-features.ts"
+    },
+    "./lib/dealership-public-url": {
+      "types": "./src/lib/dealership-public-url.ts",
+      "import": "./src/lib/dealership-public-url.ts",
+      "default": "./src/lib/dealership-public-url.ts"
+    },
+    "./lib/finance/calculate-price-installment": {
+      "types": "./src/lib/finance/calculate-price-installment.ts",
+      "import": "./src/lib/finance/calculate-price-installment.ts",
+      "default": "./src/lib/finance/calculate-price-installment.ts"
     },
     "./lib/supabase": {
       "types": "./src/lib/supabase/index.ts",
@@ -36,7 +67,8 @@
       "types": "./src/types/index.ts",
       "import": "./src/types/index.ts",
       "default": "./src/types/index.ts"
-    }
+    },
+    "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -57,11 +89,14 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",
     "server-only": "^0.0.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.8.3"
   }
 }

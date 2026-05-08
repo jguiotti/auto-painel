@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
+
 import {
   Card,
   CardDescription,
@@ -24,9 +26,28 @@ export interface PublicVehicleCardModel {
 
 interface VehicleListingGridProps {
   vehicles: PublicVehicleCardModel[];
+  layoutId?: StorefrontLayoutTemplateId;
 }
 
-export function VehicleListingGrid({ vehicles }: VehicleListingGridProps) {
+function listingGridClass(layoutId: StorefrontLayoutTemplateId): string {
+  switch (layoutId) {
+    case 2:
+      return "grid gap-8 sm:grid-cols-2";
+    case 3:
+      return "grid gap-8 sm:grid-cols-2 lg:grid-cols-4";
+    default:
+      return "grid gap-5 sm:grid-cols-2 lg:grid-cols-3";
+  }
+}
+
+export function VehicleListingGrid({
+  vehicles,
+  layoutId = 1,
+}: VehicleListingGridProps) {
+  const thumbSizes =
+    layoutId === 3
+      ? "(max-width: 768px) 100vw, 25vw"
+      : "(max-width: 768px) 100vw, 33vw";
   if (vehicles.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-black/10 bg-[var(--dealer-surface)] py-16 text-center text-[var(--dealer-fg)]/70 dark:border-white/15">
@@ -37,7 +58,7 @@ export function VehicleListingGrid({ vehicles }: VehicleListingGridProps) {
   }
 
   return (
-    <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className={listingGridClass(layoutId)}>
       {vehicles.map((v) => {
         const thumb = v.images?.[0] ?? null;
         return (
@@ -51,7 +72,7 @@ export function VehicleListingGrid({ vehicles }: VehicleListingGridProps) {
                       alt={`${v.brand} ${v.model}`}
                       fill
                       className="object-cover transition group-hover:scale-[1.02]"
-                      sizes="(max-width: 768px) 100vw, 33vw"
+                      sizes={thumbSizes}
                     />
                   ) : (
                     <span className="flex h-full items-center justify-center text-sm text-zinc-400">

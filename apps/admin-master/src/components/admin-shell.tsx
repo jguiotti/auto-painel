@@ -1,6 +1,15 @@
 "use client";
 
-import { Building2, LayoutDashboard, LogOut, Wallet } from "lucide-react";
+import {
+  BookOpen,
+  Building2,
+  Layers,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  Users,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,15 +23,23 @@ const linkBase =
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const nav = [
-    { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
-    { href: "/concessionarias", label: "Concessionárias", icon: Building2 },
-    { href: "/financeiro", label: "Financeiro", icon: Wallet },
+    { href: "/painel/dashboard", label: "Painel", icon: LayoutDashboard },
+    { href: "/painel/concessionarias", label: "Concessionárias", icon: Building2 },
+    { href: "/painel/planos", label: "Planos", icon: Layers },
+    { href: "/painel/modulos", label: "Módulos", icon: Package },
+    { href: "/painel/usuarios", label: "Usuários", icon: Users },
+    { href: "/painel/financeiro", label: "Financeiro", icon: Wallet },
+    {
+      href: "/painel/documentacao",
+      label: "Documentação interna",
+      icon: BookOpen,
+    },
   ];
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <aside className="hidden w-56 shrink-0 border-r border-border bg-card md:flex md:flex-col">
-        <div className="flex h-16 items-center border-b border-border px-4">
+    <div className="bg-muted/30">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden h-screen w-56 flex-col overflow-y-auto border-r border-border bg-card md:flex">
+        <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
           <span className="text-sm font-bold tracking-tight">AutoPainel</span>
           <span className="ml-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
             Admin
@@ -47,7 +64,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-border p-3">
+        <div className="shrink-0 border-t border-border p-3">
           <form action={logoutAction}>
             <Button
               type="submit"
@@ -61,7 +78,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </form>
         </div>
       </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen flex-1 flex-col md:pl-56">
         <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:hidden">
           <span className="text-sm font-semibold">AutoPainel Admin</span>
           <form action={logoutAction}>

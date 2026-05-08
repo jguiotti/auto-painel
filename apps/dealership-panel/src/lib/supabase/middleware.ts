@@ -47,10 +47,16 @@ export async function handleAuthAndTenant(request: NextRequest) {
   await supabase.auth.getUser();
 
   if (pathRequiresDealershipResolution(pathname)) {
+    const resolutionMode =
+      pathname.startsWith("/painel") || pathname.startsWith("/login")
+        ? "dashboard"
+        : "public";
+
     const dealershipId = await resolveDealershipIdFromHost({
       hostHeader: request.headers.get("host"),
       platformRootDomain: process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? null,
       developmentTenantSlug: process.env.DEVELOPMENT_TENANT_SLUG ?? null,
+      resolutionMode,
     });
 
     if (!dealershipId) {

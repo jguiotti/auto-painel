@@ -1,0 +1,153 @@
+import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import { NextResponse, type NextRequest } from "next/server";
+
+import {
+  getClassifiedsOAuthProviderConfig,
+  parseClassifiedsProvider,
+} from "@/lib/classifieds/oauth-provider";
+import {
+  createOAuthState,
+  createPkceChallenge,
+  createPkceVerifier,
+} from "@/lib/classifieds/oauth-pkce";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
+
+export async function POST(request: NextRequest) {
+  const provider = parseClassifiedsProvider(
+    request.nextUrl.searchParams.get("provider"),
+  );
+  if (!provider) {
+    return NextResponse.json(
+      { error: "Fornecedor inválido." },
+      { status: 400 },
+    );
+  }
+
+  let providerConfig;
+  try {
+    providerConfig = getClassifiedsOAuthProviderConfig(provider);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Configuração OAuth2 ausente para o provedor.",
+      },
+      { status: 500 },
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
+  const dealershipIdFromCookie = await getDealershipIdFromCookies();
+  if (!dealershipIdFromCookie) {
+    return NextResponse.json(
+      { error: "Concessionária não resolvida para este domínio." },
+      { status: 403 },
+    );
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("dealership_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile || profile.dealership_id !== dealershipIdFromCookie) {
+    return NextResponse.json(
+      { error: "Perfil sem acesso à concessionária ativa." },
+      { status: 403 },
+    );
+  }
+
+  const featuresRes = await supabase.rpc(
+    "effective_feature_keys_for_active_dealership",
+    {
+      p_dealership_id: dealershipIdFromCookie,
+    },
+  );
+  const activeFeatures = Array.isArray(featuresRes.data)
+    ? featuresRes.data.filter((item): item is string => typeof item === "string")
+    : [];
+  if (!isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")) {
+    return NextResponse.json(
+      { error: "Módulo de integrações não habilitado no plano da loja." },
+      { status: 403 },
+    );
+  }
+
+  const state = createOAuthState();
+  const codeVerifier = createPkceVerifier();
+  const codeChallenge = createPkceChallenge(codeVerifier);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  const { error: sessionError } = await supabase
+    .from("dealership_classifieds_oauth_sessions")
+    .insert({
+      dealership_id: dealershipIdFromCookie,
+      provider,
+      created_by: user.id,
+      state,
+      code_verifier: codeVerifier,
+      redirect_origin: request.nextUrl.origin,
+      status: "pending",
+      expires_at: expiresAt,
+    });
+
+  if (sessionError) {
+    return NextResponse.json(
+      { error: `Falha ao iniciar sessão OAuth2: ${sessionError.message}` },
+      { status: 500 },
+    );
+  }
+
+  const { error: connectionError } = await supabase
+    .from("dealership_classifieds_connections")
+    .upsert(
+      {
+        dealership_id: dealershipIdFromCookie,
+        provider,
+        status: "connecting",
+        last_error: null,
+      },
+      { onConflict: "dealership_id,provider" },
+    );
+
+  if (connectionError) {
+    return NextResponse.json(
+      { error: `Falha ao preparar status de conexão: ${connectionError.message}` },
+      { status: 500 },
+    );
+  }
+
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: providerConfig.clientId,
+    redirect_uri: providerConfig.redirectUri,
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+  if (providerConfig.scope) {
+    params.set("scope", providerConfig.scope);
+  }
+
+  const authorizationUrl = `${providerConfig.authorizationUrl}${
+    providerConfig.authorizationUrl.includes("?") ? "&" : "?"
+  }${params.toString()}`;
+
+  return NextResponse.json({
+    provider,
+    authorizationUrl,
+    expiresAt,
+  });
+}

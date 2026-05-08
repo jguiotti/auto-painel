@@ -1,15 +1,24 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { verifyAdminSessionToken } from "@/lib/auth/admin-session";
-import { COOKIE_NAME } from "@/lib/auth/cookie-name";
+import { fetchProfileRowForUserId } from "@/lib/auth/fetch-profile-for-admin";
+import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const token = (await cookies()).get(COOKIE_NAME)?.value;
-  if (verifyAdminSessionToken(token)) {
-    redirect("/dashboard");
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { profile } = await fetchProfileRowForUserId(user.id);
+
+    if (isPlatformOperatorProfile(profile)) {
+      redirect("/painel/dashboard");
+    }
   }
+
   redirect("/login");
 }

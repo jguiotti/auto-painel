@@ -10,19 +10,45 @@ interface EditVehiclePageProps {
 
 export default async function EditVehiclePage({ params }: EditVehiclePageProps) {
   const { vehicleId } = await params;
-  const { supabase } = await requireDashboardSession();
+  const { supabase, dealershipId } = await requireDashboardSession();
 
-  const { data: vehicle, error } = await supabase
-    .from("vehicles")
-    .select(
-      "brand, model, public_slug, manufacturing_year, model_year, mileage, price, description, status, images",
-    )
-    .eq("id", vehicleId)
-    .single();
+  const [vehicleResult, unitsResult] = await Promise.all([
+    supabase
+      .from("vehicles")
+      .select(
+        "brand, model, public_slug, manufacturing_year, model_year, mileage, price, description, status, images, dealership_unit_id",
+      )
+      .eq("id", vehicleId)
+      .single(),
+    supabase
+      .from("dealership_units")
+      .select("id, name")
+      .eq("dealership_id", dealershipId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const { data: vehicle, error } = vehicleResult;
+  const { data: units, error: unitsError } = unitsResult;
 
   if (error || !vehicle) {
     notFound();
   }
+
+  if (unitsError || !units?.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <p className="text-sm text-red-600 dark:text-red-400">
+          Não foi possível carregar as unidades da loja.
+        </p>
+      </div>
+    );
+  }
+
+  const dealershipUnitId =
+    typeof vehicle.dealership_unit_id === "string"
+      ? vehicle.dealership_unit_id
+      : "";
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +63,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
       <VehicleForm
         mode="edit"
         vehicleId={vehicleId}
+        units={units}
         defaultValues={{
           brand: vehicle.brand,
           model: vehicle.model,
@@ -48,6 +75,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
           description: vehicle.description ?? "",
           status: vehicle.status as "available" | "sold",
           images: (vehicle.images as string[] | null) ?? [],
+          dealership_unit_id: dealershipUnitId,
         }}
       />
     </div>

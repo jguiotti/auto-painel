@@ -16,6 +16,11 @@ interface ResolveDealershipIdParams {
   hostHeader: string | null;
   platformRootDomain: string | null;
   developmentTenantSlug: string | null;
+  /**
+   * `public` storefront resolution enforces `dealerships.status = 'active'`.
+   * `dashboard` binds the host for `/painel` and `/login`, including inactive tenants.
+   */
+  resolutionMode?: "public" | "dashboard";
 }
 
 export async function resolveDealershipIdFromHost(
@@ -35,14 +40,26 @@ export async function resolveDealershipIdFromHost(
 
   const hostWithoutPort = normalizeHost(host);
 
+  const mode = params.resolutionMode ?? "public";
+
   if (
     params.developmentTenantSlug &&
     isLocalhostHost(hostWithoutPort)
   ) {
-    const { data, error } = await supabase.rpc(
-      "get_dealership_public_by_slug",
-      { p_slug: params.developmentTenantSlug },
-    );
+    if (mode === "dashboard") {
+      const { data: dashboardId, error: dashboardError } = await supabase.rpc(
+        "get_dealership_id_by_slug_for_dashboard",
+        { p_slug: params.developmentTenantSlug },
+      );
+      if (dashboardError) {
+        return null;
+      }
+      return typeof dashboardId === "string" ? dashboardId : null;
+    }
+
+    const { data, error } = await supabase.rpc("get_dealership_public_by_slug", {
+      p_slug: params.developmentTenantSlug,
+    });
 
     if (error) {
       return null;
@@ -52,7 +69,12 @@ export async function resolveDealershipIdFromHost(
     return row?.id ?? null;
   }
 
-  const { data, error } = await supabase.rpc("resolve_dealership_id_by_host", {
+  const hostRpc =
+    mode === "dashboard"
+      ? "resolve_dealership_id_by_host_for_dashboard"
+      : "resolve_dealership_id_by_host";
+
+  const { data, error } = await supabase.rpc(hostRpc, {
     p_host: host,
     p_platform_root_domain: params.platformRootDomain ?? "",
   });

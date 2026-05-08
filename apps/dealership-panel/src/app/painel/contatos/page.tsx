@@ -1,16 +1,25 @@
 import { LeadList, type LeadListItem } from "@/components/leads/LeadList";
+import type { LeadAssigneeOption } from "@/components/leads/lead-assignee-select";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 export default async function LeadsPage() {
-  const { supabase } = await requireDashboardSession();
+  const { supabase, profile } = await requireDashboardSession();
 
-  const { data: rows, error } = await supabase
-    .from("leads")
-    .select(
-      "id, client_name, phone, type, created_at, vehicles(id, brand, model, public_slug)",
-    )
-    .order("created_at", { ascending: false });
+  const [{ data: rows, error }, { data: assigneeRows }] = await Promise.all([
+    supabase
+      .from("leads")
+      .select(
+        "id, client_name, phone, type, created_at, assigned_user_id, vehicles(id, brand, model, public_slug)",
+      )
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("dealership_id", profile.dealership_id)
+      .in("role", ["owner", "seller"])
+      .order("role", { ascending: true }),
+  ]);
 
   if (error) {
     return (
@@ -19,6 +28,11 @@ export default async function LeadsPage() {
       </p>
     );
   }
+
+  const assignees: LeadAssigneeOption[] = (assigneeRows ?? []).map((r) => ({
+    id: r.id as string,
+    role: r.role as string,
+  }));
 
   const leads: LeadListItem[] = (rows ?? []).map((row) => {
     const v = row.vehicles as
@@ -32,6 +46,7 @@ export default async function LeadsPage() {
       phone: row.phone,
       type: row.type,
       created_at: row.created_at,
+      assigned_user_id: (row.assigned_user_id as string | null) ?? null,
       vehicles: vehicleData
         ? {
             id: vehicleData.id,
@@ -52,8 +67,19 @@ export default async function LeadsPage() {
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Interessados vindos da vitrine. Abra o WhatsApp com um clique.
         </p>
+        {profile.role === "owner" ? (
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-500 dark:text-zinc-400">
+            Atribua cada contato a um vendedor para que ele apareça no painel
+            dessa pessoa. Contatos sem responsável ficam visíveis apenas para o
+            gestor da loja.
+          </p>
+        ) : null}
       </div>
-      <LeadList leads={leads} />
+      <LeadList
+        leads={leads}
+        viewerRole={profile.role}
+        assignees={assignees}
+      />
     </div>
   );
 }

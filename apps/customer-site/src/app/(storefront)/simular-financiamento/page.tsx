@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StandaloneFinanceClient } from "@/components/storefront/standalone-finance-client";
+import { SimularFinanciamentoGate } from "@/app/(storefront)/simular-financiamento/simular-financiamento-gate";
 
 export const metadata: Metadata = {
   title: "Simular financiamento",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SimularFinanciamentoPage() {
-  return <StandaloneFinanceClient />;
+  return <SimularFinanciamentoGate />;
 }

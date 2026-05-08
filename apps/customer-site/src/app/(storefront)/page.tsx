@@ -1,10 +1,11 @@
 import { HomeHero } from "@/components/storefront/home-hero";
+import { HomeFeaturedBento } from "@/components/storefront/home-featured-bento";
 import type { VehicleFilterValues } from "@/components/storefront/vehicle-filters-form";
 import { VehicleFiltersForm } from "@/components/storefront/vehicle-filters-form";
 import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
 import { VehicleListingGrid } from "@/components/storefront/vehicle-listing-grid";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getResolvedDealershipId } from "@/lib/tenant/get-dealership-id";
+import { getDealershipPublicRecord } from "@/lib/tenant/get-dealership-public-record";
 
 interface HomePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -36,10 +37,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     return typeof v === "string" ? v : undefined;
   };
 
-  const dealershipId = await getResolvedDealershipId();
-  if (!dealershipId) {
+  const dealership = await getDealershipPublicRecord();
+  if (!dealership) {
     return null;
   }
+
+  const dealershipId = dealership.id;
 
   const supabase = await createSupabaseServerClient();
 
@@ -81,13 +84,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     maxYear: str("maxYear") ?? "",
   };
 
+  const layoutId = dealership.layout_id;
+
   return (
     <>
-      <HomeHero />
+      <HomeHero layoutId={layoutId} />
+      {layoutId === 3 ? <HomeFeaturedBento /> : null}
       <div id="estoque" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-10 sm:py-12">
         <VehicleFiltersForm defaults={filterDefaults} />
         <div className="mt-8">
-          <VehicleListingGrid vehicles={vehicles} />
+          <VehicleListingGrid vehicles={vehicles} layoutId={layoutId} />
         </div>
       </div>
     </>

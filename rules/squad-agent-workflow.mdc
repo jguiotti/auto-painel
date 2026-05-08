@@ -1,0 +1,52 @@
+---
+description: Mandatory squad workflow for every new AutoPainel feature (PM → UX → backend/architect → frontend → QA)
+alwaysApply: true
+---
+
+# Squad agent workflow (new functionality)
+
+Scope: **Any request that introduces or materially expands product behavior** (new flows, screens, APIs, schema, permissions, integrations). Not every typo fix or tiny refactor — use judgment; when in doubt, run the workflow.
+
+Do **not** skip phases or reorder them. Do **not** start substantial UI implementation before backend/API contracts and data access are defined.
+
+## Phase order (mandatory)
+
+1. **Product Manager (PM)** — Produce a PRD before technical design:
+   - Feature description and problem statement.
+   - Business rules (accurate, testable).
+   - Acceptance scenarios (Given/When/Then or equivalent).
+
+2. **UX/UI** — After the PRD:
+   - User journey for end users and operators (manager personas).
+   - Wireframe-level description or structured flow (states, empty/error/success).
+   - Whitelabel/responsive consistency with existing shells and `@autopainel/shared/ui`.
+
+3. **Architect + Backend (together, before frontend)** — API-first and data layer:
+   - External/API surfaces and boundaries first; align TypeScript contracts in `packages/shared` (types, RPC shapes) before building UI that depends on them.
+   - Database: migrations under `supabase/migrations/`, RLS, Edge Functions when applicable — follow `supabase-workflow.mdc`.
+   - Devs validate feasibility; produce **detailed execution prompts** (what to implement, files/areas, constraints) for coding passes if work spans multiple steps.
+
+4. **Frontend** — After contracts and backend access paths exist:
+   - Implement screens and interactions (Next.js), consuming shared types and shared UI.
+   - Obey `naming-and-language.mdc`: English identifiers/comments in source; Portuguese routes and user-visible copy only.
+
+5. **QA** — Before calling the feature done:
+   - End-to-end scenarios from acceptance criteria; negative paths and permission boundaries.
+   - Security-focused checks relevant to Supabase (RLS, tenant isolation, auth/session).
+
+6. **Sprint review** — Brief recap: what shipped, risks, follow-ups.
+
+## Internal documentation (when the squad produces it)
+
+- **Business rules / PRD excerpts**: primary storage is Postgres table `public.platform_internal_documents` (`doc_slug = business_rules`), edited via Admin «Salvar alterações» at `/painel/documentacao/regras-de-negocio`. Fallback file: `apps/admin-master/content/internal-docs/regras-de-negocio.md`. Operators only.
+- **Technical architecture/API notes**: same table (`doc_slug = technical`), page `/painel/documentacao/tecnica`. Fallback: `apps/admin-master/content/internal-docs/documentacao-tecnica.md`.
+- Hub: `/painel/documentacao`. Shell: **Documentação interna**. Apply migration `20260504103000_platform_internal_documents.sql` for DB-backed editing.
+- Cross-cutting shared references remain in `packages/shared/docs/` per `documentation-location.mdc`; link from internal pages when useful.
+- **Engineering obligation:** anyone landing product behavior in code **must** update the fallback markdown files (and the DB-backed docs when the team uses them) in the **same delivery**; see **`internal-docs-living.mdc`** for the checklist.
+
+## Engineering defaults
+
+- **API-first**: define interfaces and shared types before final UI polish that depends on payloads.
+- Respect existing monorepo rules: design system in `packages/shared`, migrations versioned, no unauthorized automatic `supabase db push` unless the user explicitly asks for that command.
+
+If the user asks only for code without context, **still open with the PM PRD** (can be concise) before implementing anything substantial.

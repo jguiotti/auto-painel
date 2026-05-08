@@ -4,6 +4,32 @@ import { createSupabaseAnonClient } from "@autopainel/shared/lib/supabase";
 
 import { getResolvedDealershipId } from "@/lib/tenant/get-dealership-id";
 
+function isValidSimulationSnapshot(
+  value: Record<string, unknown>,
+): value is {
+  vehiclePrice: number;
+  downPayment: number;
+  financedAmount: number;
+  monthlyRatePercent: number;
+  termMonths: number;
+  estimatedInstallment: number;
+  estimatedTotalPayable: number;
+  estimatedTotalInterest: number;
+} {
+  const parsedTerm = Number(value.termMonths);
+  return (
+    Number.isFinite(Number(value.vehiclePrice)) &&
+    Number.isFinite(Number(value.downPayment)) &&
+    Number.isFinite(Number(value.financedAmount)) &&
+    Number.isFinite(Number(value.monthlyRatePercent)) &&
+    Number.isFinite(parsedTerm) &&
+    [24, 36, 48, 60].includes(parsedTerm) &&
+    Number.isFinite(Number(value.estimatedInstallment)) &&
+    Number.isFinite(Number(value.estimatedTotalPayable)) &&
+    Number.isFinite(Number(value.estimatedTotalInterest))
+  );
+}
+
 export async function submitPublicLeadAction(formData: FormData) {
   let supabase;
   try {
@@ -50,6 +76,18 @@ export async function submitPublicLeadAction(formData: FormData) {
 
   if (vehicleError || !vehicleRows?.length) {
     return { error: "Veículo indisponível ou não encontrado." };
+  }
+
+  if (type === "simulation") {
+    if (!simulationRaw || !isValidSimulationSnapshot(simulationData)) {
+      return { error: "Simulação inválida. Refaça o cálculo antes de enviar." };
+    }
+
+    const vehiclePrice = Number(simulationData.vehiclePrice);
+    const downPayment = Number(simulationData.downPayment);
+    if (downPayment >= vehiclePrice) {
+      return { error: "A entrada deve ser menor que o valor do veículo." };
+    }
   }
 
   const { error: insertError } = await supabase.from("leads").insert({

@@ -1,8 +1,14 @@
 import Link from "next/link";
 
+import {
+  resolveDealershipBranding,
+  resolveDealershipLogoUrl,
+} from "@autopainel/shared/lib/theme/branding";
+
 import { PublicDealershipProvider } from "@/components/public/PublicDealershipProvider";
 import { buildWhatsAppUrl } from "@/lib/phone/build-whatsapp-url";
-import { parseDealershipTheme } from "@/types/dealership-theme";
+
+import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
 
 export interface DealershipPublicRecord {
   id: string;
@@ -10,8 +16,12 @@ export interface DealershipPublicRecord {
   slug: string;
   logo_url: string | null;
   theme_settings: unknown;
+  theme_config: unknown;
+  content_config: unknown;
+  enabled_features: string[] | null;
   whatsapp_number: string | null;
   contact_email: string | null;
+  layout_id: StorefrontLayoutTemplateId;
 }
 
 interface PublicSiteShellProps {
@@ -23,7 +33,14 @@ export function PublicSiteShell({
   dealership,
   children,
 }: PublicSiteShellProps) {
-  const theme = parseDealershipTheme(dealership?.theme_settings);
+  const theme = resolveDealershipBranding({
+    theme_settings: dealership?.theme_settings,
+    theme_config: dealership?.theme_config,
+  });
+  const logoSrc = resolveDealershipLogoUrl(
+    dealership?.theme_config,
+    dealership?.logo_url ?? null,
+  );
   const whatsappHref = dealership?.whatsapp_number
     ? buildWhatsAppUrl(dealership.whatsapp_number)
     : null;
@@ -45,11 +62,11 @@ export function PublicSiteShell({
         <header className="sticky top-0 z-30 border-b border-black/5 bg-[var(--dealer-surface)]/95 shadow-sm backdrop-blur dark:border-white/10">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
             <Link href="/" className="flex items-center gap-3">
-              {dealership?.logo_url ? (
+              {logoSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element -- whitelabel URLs may be any origin
                 <img
-                  src={dealership.logo_url}
-                  alt={dealership.name}
+                  src={logoSrc}
+                  alt={dealership?.name ?? "Loja"}
                   className="h-10 w-auto max-w-[160px] object-contain"
                 />
               ) : (

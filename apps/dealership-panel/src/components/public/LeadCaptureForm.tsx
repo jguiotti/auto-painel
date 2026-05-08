@@ -8,11 +8,14 @@ import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
 interface LeadCaptureFormProps {
   vehicleId: string;
   simulationSnapshot: FinanceSimulationSnapshot | null;
+  /** When false, hides “simulate financing” and only submits contact leads. */
+  allowFinancingLeadType?: boolean;
 }
 
 export function LeadCaptureForm({
   vehicleId,
   simulationSnapshot,
+  allowFinancingLeadType = true,
 }: LeadCaptureFormProps) {
   const [leadType, setLeadType] = useState<"contact" | "simulation">("contact");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -28,9 +31,13 @@ export function LeadCaptureForm({
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("vehicle_id", vehicleId);
-    formData.set("type", leadType);
+    const effectiveType =
+      allowFinancingLeadType && leadType === "simulation"
+        ? "simulation"
+        : "contact";
+    formData.set("type", effectiveType);
 
-    if (leadType === "simulation" && simulationSnapshot) {
+    if (effectiveType === "simulation" && simulationSnapshot) {
       formData.set("simulation_data", JSON.stringify(simulationSnapshot));
     } else {
       formData.set("simulation_data", "");
@@ -79,15 +86,17 @@ export function LeadCaptureForm({
             />
             Tenho interesse neste veículo
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="lead_type_ui"
-              checked={leadType === "simulation"}
-              onChange={() => setLeadType("simulation")}
-            />
-            Quero simular o financiamento
-          </label>
+          {allowFinancingLeadType ? (
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="lead_type_ui"
+                checked={leadType === "simulation"}
+                onChange={() => setLeadType("simulation")}
+              />
+              Quero simular o financiamento
+            </label>
+          ) : null}
         </fieldset>
 
         <div>

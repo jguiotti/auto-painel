@@ -81,10 +81,30 @@ export async function createVehicleAction(formData: FormData) {
     return { error: "Ano, quilometragem e preço devem ser números válidos." };
   }
 
+  const dealershipUnitId = String(
+    formData.get("dealership_unit_id") ?? "",
+  ).trim();
+
+  if (!dealershipUnitId) {
+    return { error: "Selecione a unidade do estoque." };
+  }
+
+  const { data: unitOk } = await supabase
+    .from("dealership_units")
+    .select("id")
+    .eq("id", dealershipUnitId)
+    .eq("dealership_id", dealershipId)
+    .maybeSingle();
+
+  if (!unitOk) {
+    return { error: "Unidade inválida para esta concessionária." };
+  }
+
   const { data: inserted, error: insertError } = await supabase
     .from("vehicles")
     .insert({
       dealership_id: dealershipId,
+      dealership_unit_id: dealershipUnitId,
       brand,
       model,
       manufacturing_year: manufacturingYear,
@@ -191,6 +211,25 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     return { error: "Ano, quilometragem e preço devem ser números válidos." };
   }
 
+  const dealershipUnitId = String(
+    formData.get("dealership_unit_id") ?? "",
+  ).trim();
+
+  if (!dealershipUnitId) {
+    return { error: "Selecione a unidade do estoque." };
+  }
+
+  const { data: unitOk } = await supabase
+    .from("dealership_units")
+    .select("id")
+    .eq("id", dealershipUnitId)
+    .eq("dealership_id", dealershipId)
+    .maybeSingle();
+
+  if (!unitOk) {
+    return { error: "Unidade inválida para esta concessionária." };
+  }
+
   const { error: updateError } = await supabase
     .from("vehicles")
     .update({
@@ -203,6 +242,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       description: description.length > 0 ? description : null,
       status,
       public_slug: publicSlug,
+      dealership_unit_id: dealershipUnitId,
       updated_at: new Date().toISOString(),
     })
     .eq("id", vehicleId);

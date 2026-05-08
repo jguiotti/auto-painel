@@ -47,6 +47,8 @@ export {
   SelectValue,
 } from "./select";
 export { Separator } from "./separator";
+export { Toaster } from "./sonner";
+export { toast } from "sonner";
 export {
   Table,
   TableBody,

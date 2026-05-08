@@ -16,7 +16,8 @@
     "dev:dealership-panel": "turbo run dev --filter=@autopainel/dealership-panel",
     "dev:customer-site": "turbo run dev --filter=@autopainel/customer-site",
     "lint": "turbo run lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "sync:env": "node scripts/sync-env-local.mjs"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

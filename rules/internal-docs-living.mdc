@@ -1,0 +1,29 @@
+---
+description: Manter documentação interna alinhada ao código sempre que o produto evolui (obrigatório)
+alwaysApply: true
+---
+
+# Documentação interna viva (obrigatório)
+
+Quando **implementares, alterares ou removeres** comportamento de produto (fluxos, permissões, módulos, integrações, contratos de dados), **atualiza a documentação no mesmo batch de trabalho** (mesmo PR ou commit seguinte imediato). Não deixes só “código entregue” sem rasto.
+
+## Onde escrever
+
+| Conteúdo | Onde (fonte de verdade no git) | Espelho operacional |
+| --- | --- | --- |
+| PRD, regras de negócio (BZ), critérios de aceite | `apps/admin-master/content/internal-docs/regras-de-negocio.md` | Postgres `platform_internal_documents` (`business_rules`), página `/painel/documentacao/regras-de-negocio` |
+| Contratos técnicos, ficheiros tocados, migrações, QA | `apps/admin-master/content/internal-docs/documentacao-tecnica.md` | Mesma tabela (`technical`), página `/painel/documentacao/tecnica` |
+| Design system, shadcn, tipos Supabase compartilhados | `packages/shared/docs/` | Conforme `documentation-location.mdc` |
+
+## Regras de execução
+
+1. **Sem PRD do PM** para uma funcionalidade nova: regista no MD o **bloqueio** (“aguardando PRD”), lista o que o PM deve fechar, e **não inventes** regras de negócio definitivas no lugar do produto.
+2. **Após o PM publicar o PRD**: copia ou resume no `regras-de-negocio.md` (fallback) e liga a secção técnica correspondente em `documentacao-tecnica.md` (implementação, rotas, RPCs, chaves de módulo).
+3. **Módulos da plataforma** (`saas_modules.key`, ex.: `finance_simulator`): qualquer mudança de escopo ou gating documenta **BZ + superfícies** (customer-site, dealership-panel, admin) e a função/RPC usada para chaves efetivas (`effective_feature_keys_for_active_dealership`, etc.).
+4. **Consistência**: se editares o fallack `.md`, assume que um operador pode **colar** o conteúdo no admin ou aplicar migração de sync — mantém linguagem e estrutura compatíveis com as secções já usadas (“Histórico vivo”, tabelas BZ/CA).
+
+## Quick check antes de encerrar uma tarefa
+
+- [ ] `regras-de-negocio.md` reflete novas regras ou aponta PRD/bloco pendente?
+- [ ] `documentacao-tecnica.md` lista migrações/paths/RPCs tocados?
+- [ ] `packages/shared/docs/` atualizado se houve contrato ou convenção compartilhada?

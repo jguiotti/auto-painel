@@ -6,14 +6,22 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface LeadRealtimeNotifierProps {
   dealershipId: string;
+  /**
+   * Vendedores só veem leads atribuídos; avisos globais de INSERT gerariam falsos positivos.
+   */
+  alertOnVitrineLeads?: boolean;
 }
 
 export function LeadRealtimeNotifier({
   dealershipId,
+  alertOnVitrineLeads = true,
 }: LeadRealtimeNotifierProps) {
   const [banner, setBanner] = useState<{ title: string } | null>(null);
 
   useEffect(() => {
+    if (!alertOnVitrineLeads) {
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
     const channel = supabase
       .channel(`dealership-${dealershipId}-leads`)
@@ -37,7 +45,7 @@ export function LeadRealtimeNotifier({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [dealershipId]);
+  }, [dealershipId, alertOnVitrineLeads]);
 
   useEffect(() => {
     if (!banner) {

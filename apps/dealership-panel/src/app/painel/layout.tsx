@@ -6,7 +6,7 @@ export default async function PainelLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { supabase, dealershipId } = await requireDashboardSession();
+  const { supabase, dealershipId, profile } = await requireDashboardSession();
 
   const { data: dealership } = await supabase
     .from("dealerships")
@@ -18,6 +18,7 @@ export default async function PainelLayout({
     <DashboardShell
       dealershipName={dealership?.name ?? "Painel"}
       dealershipId={dealershipId}
+      viewerRole={profile.role}
     >
       {children}
     </DashboardShell>

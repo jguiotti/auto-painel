@@ -3,7 +3,29 @@ import { VehicleForm } from "@/components/inventory/VehicleForm";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 export default async function NewVehiclePage() {
-  await requireDashboardSession();
+  const { supabase, dealershipId } = await requireDashboardSession();
+
+  const { data: units, error } = await supabase
+    .from("dealership_units")
+    .select("id, name")
+    .eq("dealership_id", dealershipId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !units?.length) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+            Novo veículo
+          </h1>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            Não foi possível carregar as unidades da loja. Aplique a migração das unidades no Supabase ou cadastre filiais no admin-master.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -12,11 +34,10 @@ export default async function NewVehiclePage() {
           Novo veículo
         </h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Preencha os dados e envie imagens (até o limite do bucket). O slug define a
-          URL pública em /veiculo/seu-slug.
+          Preencha os dados e envie imagens (até o limite do bucket). O slug define a URL pública em /veiculo/seu-slug.
         </p>
       </div>
-      <VehicleForm mode="create" />
+      <VehicleForm mode="create" units={units} />
     </div>
   );
 }

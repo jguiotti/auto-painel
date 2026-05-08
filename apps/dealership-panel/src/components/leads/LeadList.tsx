@@ -16,12 +16,18 @@ import {
   buildWhatsAppUrl,
 } from "@/lib/phone/build-whatsapp-url";
 
+import {
+  LeadAssigneeSelect,
+  type LeadAssigneeOption,
+} from "@/components/leads/lead-assignee-select";
+
 export interface LeadListItem {
   id: string;
   client_name: string;
   phone: string;
   type: string;
   created_at: string;
+  assigned_user_id: string | null;
   vehicles: {
     id: string;
     brand: string;
@@ -32,6 +38,8 @@ export interface LeadListItem {
 
 interface LeadListProps {
   leads: LeadListItem[];
+  viewerRole: string;
+  assignees: LeadAssigneeOption[];
 }
 
 const typeLabel: Record<string, string> = {
@@ -39,11 +47,21 @@ const typeLabel: Record<string, string> = {
   simulation: "Simulação",
 };
 
-export function LeadList({ leads }: LeadListProps) {
+export function LeadList({
+  leads,
+  viewerRole,
+  assignees,
+}: LeadListProps) {
+  const isOwner = viewerRole === "owner";
+
   if (leads.length === 0) {
+    const sellerHint =
+      viewerRole === "seller"
+        ? "Nenhum contato foi atribuído a você. Peça ao gestor da loja para designar responsáveis nos leads."
+        : "Ainda não há contatos recebidos pela vitrine.";
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
-        Ainda não há contatos recebidos pela vitrine.
+        {sellerHint}
       </p>
     );
   }
@@ -59,6 +77,7 @@ export function LeadList({ leads }: LeadListProps) {
               <TableHead>Telefone</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Veículo</TableHead>
+              {isOwner ? <TableHead>Responsável</TableHead> : null}
               <TableHead className="text-right">WhatsApp</TableHead>
             </TableRow>
           </TableHeader>
@@ -97,6 +116,15 @@ export function LeadList({ leads }: LeadListProps) {
                       "—"
                     )}
                   </TableCell>
+                  {isOwner ? (
+                    <TableCell>
+                      <LeadAssigneeSelect
+                        leadId={lead.id}
+                        value={lead.assigned_user_id}
+                        assignees={assignees}
+                      />
+                    </TableCell>
+                  ) : null}
                   <TableCell className="text-right">
                     <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" asChild>
                       <a href={wa} target="_blank" rel="noopener noreferrer">
@@ -156,6 +184,20 @@ export function LeadList({ leads }: LeadListProps) {
                     {vehicle.brand} {vehicle.model}
                   </Link>
                 </p>
+              ) : null}
+              {isOwner ? (
+                <div className="mt-3 border-t border-border pt-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Responsável
+                  </p>
+                  <div className="mt-2">
+                    <LeadAssigneeSelect
+                      leadId={lead.id}
+                      value={lead.assigned_user_id}
+                      assignees={assignees}
+                    />
+                  </div>
+                </div>
               ) : null}
             </li>
           );

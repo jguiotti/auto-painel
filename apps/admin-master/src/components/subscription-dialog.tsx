@@ -88,19 +88,21 @@ export function SubscriptionDialog({
             </p>
           ) : null}
           <div className="space-y-2">
-            <Label htmlFor="sub-plan">Plano</Label>
-            <select
+            <Label htmlFor="sub-plan">Etiqueta do plano (cobrança)</Label>
+            <Input
               id="sub-plan"
               name="subscription_plan"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              required
+              minLength={1}
+              maxLength={120}
+              placeholder="trial, enterprise ou nome personalizado"
               defaultValue={dealership.subscription_plan}
               disabled={pending}
-            >
-              <option value="trial">Trial</option>
-              <option value="starter">Starter</option>
-              <option value="business">Business</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
+            />
+            <p className="text-xs text-muted-foreground">
+              Texto livre para faturação e relatórios. Os módulos efetivos vêm do
+              plano dinâmico ligado à concessionária, quando existir.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="sub-status">Status da assinatura</Label>

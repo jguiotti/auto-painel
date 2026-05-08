@@ -19,13 +19,17 @@ import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
 interface LeadCaptureFormProps {
   vehicleId: string;
   simulationSnapshot: FinanceSimulationSnapshot | null;
+  requireSimulation?: boolean;
 }
 
 export function LeadCaptureForm({
   vehicleId,
   simulationSnapshot,
+  requireSimulation = false,
 }: LeadCaptureFormProps) {
-  const [leadType, setLeadType] = useState<"contact" | "simulation">("contact");
+  const [leadType, setLeadType] = useState<"contact" | "simulation">(
+    requireSimulation ? "simulation" : "contact",
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,10 +42,18 @@ export function LeadCaptureForm({
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.set("vehicle_id", vehicleId);
-    formData.set("type", leadType);
+    const effectiveType = requireSimulation ? "simulation" : leadType;
 
-    if (leadType === "simulation" && simulationSnapshot) {
+    if (effectiveType === "simulation" && !simulationSnapshot) {
+      setIsSubmitting(false);
+      setErrorMessage("Faça a simulação antes de enviar seus dados.");
+      return;
+    }
+
+    formData.set("vehicle_id", vehicleId);
+    formData.set("type", effectiveType);
+
+    if (effectiveType === "simulation" && simulationSnapshot) {
       formData.set("simulation_data", JSON.stringify(simulationSnapshot));
     } else {
       formData.set("simulation_data", "");
@@ -71,34 +83,42 @@ export function LeadCaptureForm({
           Fale com a loja
         </CardTitle>
         <CardDescription>
-          Deixe seus dados para retorno por telefone ou WhatsApp.
+          {requireSimulation
+            ? "Conclua a simulação e envie seus dados para receber retorno da loja."
+            : "Deixe seus dados para retorno por telefone ou WhatsApp."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input type="hidden" name="vehicle_id" value={vehicleId} />
 
-          <fieldset className="flex flex-wrap gap-4">
-            <legend className="sr-only">Tipo de interesse</legend>
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="lead_type_ui"
-                checked={leadType === "contact"}
-                onChange={() => setLeadType("contact")}
-              />
-              Tenho interesse neste veículo
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="lead_type_ui"
-                checked={leadType === "simulation"}
-                onChange={() => setLeadType("simulation")}
-              />
-              Quero simular o financiamento
-            </label>
-          </fieldset>
+          {requireSimulation ? (
+            <div className="rounded-md border border-[var(--dealer-primary)]/20 bg-[var(--dealer-bg)] p-3 text-sm text-[var(--dealer-fg)]/80">
+              Envio de lead qualificado por simulação.
+            </div>
+          ) : (
+            <fieldset className="flex flex-wrap gap-4">
+              <legend className="sr-only">Tipo de interesse</legend>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="lead_type_ui"
+                  checked={leadType === "contact"}
+                  onChange={() => setLeadType("contact")}
+                />
+                Tenho interesse neste veículo
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="lead_type_ui"
+                  checked={leadType === "simulation"}
+                  onChange={() => setLeadType("simulation")}
+                />
+                Quero simular o financiamento
+              </label>
+            </fieldset>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="lead-name">Nome</Label>
@@ -138,7 +158,11 @@ export function LeadCaptureForm({
             disabled={isSubmitting}
             className="bg-[var(--dealer-primary)] text-white hover:opacity-95"
           >
-            {isSubmitting ? "Enviando…" : "Enviar"}
+            {isSubmitting
+              ? "Enviando…"
+              : requireSimulation
+                ? "Enviar simulação"
+                : "Enviar"}
           </Button>
         </form>
       </CardContent>

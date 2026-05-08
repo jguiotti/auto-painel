@@ -1,6 +1,12 @@
 /**
  * Cross-app TypeScript definitions. Migrate domain types here gradually.
  */
+export * from "./supabase-rpc";
+export * from "./dealership-config";
+export * from "./dealership-storefront";
+export * from "./pricing-catalog";
+export * from "./finance-simulation";
+
 export type BrandSlug = string;
 
 /** Matches public.dealerships.status check constraint. */

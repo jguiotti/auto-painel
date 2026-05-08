@@ -1,8 +1,48 @@
 import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
+import {
+  parseStorefrontLayoutId,
+  type StorefrontLayoutTemplateId,
+} from "@autopainel/shared/types";
 
 import type { DealershipAdminRow } from "@/types/dealership-admin";
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+const UUID_LOOSE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function normalizeRow(raw: Record<string, unknown>): DealershipAdminRow {
+  const ef = raw.enabled_features;
+  const layoutSource =
+    raw.layout_id !== undefined && raw.layout_id !== null
+      ? raw.layout_id
+      : undefined;
+  const layout_id: StorefrontLayoutTemplateId =
+    parseStorefrontLayoutId(layoutSource);
+
+  const pid = raw.pricing_plan_id;
+  const pricing_plan_id =
+    typeof pid === "string" && UUID_LOOSE.test(pid) ? pid : null;
+
+  return {
+    ...(raw as unknown as DealershipAdminRow),
+    theme_settings: asRecord(raw.theme_settings),
+    theme_config: asRecord(raw.theme_config),
+    content_config: asRecord(raw.content_config),
+    enabled_features: Array.isArray(ef)
+      ? ef.filter((x): x is string => typeof x === "string")
+      : [],
+    pricing_plan_id,
+    layout_id,
+  };
+}
 
 export async function fetchDealerships(): Promise<DealershipAdminRow[]> {
   let supabase;
@@ -21,5 +61,7 @@ export async function fetchDealerships(): Promise<DealershipAdminRow[]> {
     return [];
   }
 
-  return (data ?? []) as DealershipAdminRow[];
+  return (data ?? []).map((row) =>
+    normalizeRow(row as Record<string, unknown>),
+  );
 }

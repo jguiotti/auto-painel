@@ -8,7 +8,6 @@ import { requireAdminSession } from "@/lib/auth/require-admin";
 
 import type { ActionResult } from "./dealerships";
 
-const PLANS = new Set(["trial", "starter", "business", "enterprise"]);
 const SUB_STATUSES = new Set([
   "trialing",
   "active",
@@ -34,8 +33,14 @@ export async function updateSubscriptionAction(
   ).trim();
   const billing_notes = String(formData.get("billing_notes") ?? "").trim();
 
-  if (!PLANS.has(subscription_plan) || !SUB_STATUSES.has(subscription_status)) {
-    return { error: "Plano ou status de assinatura inválido." };
+  if (subscription_plan.length < 1 || subscription_plan.length > 120) {
+    return {
+      error: "Informe a etiqueta do plano de cobrança (1 a 120 caracteres).",
+    };
+  }
+
+  if (!SUB_STATUSES.has(subscription_status)) {
+    return { error: "Status de assinatura inválido." };
   }
 
   let subscription_current_period_end: string | null = null;
@@ -63,8 +68,8 @@ export async function updateSubscriptionAction(
     return { error: error.message };
   }
 
-  revalidatePath("/financeiro");
-  revalidatePath("/dashboard");
-  revalidatePath("/concessionarias");
+  revalidatePath("/painel/financeiro");
+  revalidatePath("/painel/dashboard");
+  revalidatePath("/painel/concessionarias");
   return { success: true };
 }

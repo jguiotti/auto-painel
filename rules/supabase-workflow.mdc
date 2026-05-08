@@ -1,0 +1,21 @@
+---
+description: Supabase migrations, manual dashboard SQL, no automatic push
+alwaysApply: true
+---
+
+# Supabase workflow (AutoPainel)
+
+## Migrations
+
+- All schema changes belong in **`supabase/migrations/`** as timestamped SQL files (Supabase CLI convention). Keep migrations versioned in git.
+
+## Applying changes
+
+- **Do not** run `supabase db push`, link, or deploy database changes automatically on behalf of the user unless they explicitly ask for a CLI command in that session.
+- When a new function, table, policy, or migration is needed, **provide the SQL for the user to run manually** in the Supabase Dashboard (SQL editor) or via their own CLI workflow, and **also** add the same logic to `supabase/migrations/` so the repo stays the source of truth.
+
+## Types
+
+- After adding or changing database functions (especially RPCs used from TypeScript), update **`packages/shared/src/types`** (e.g. `supabase-rpc.ts` and related exports) so all apps share autocomplete and type safety.
+
+See **`packages/shared/docs/SUPABASE_TYPES.md`**.

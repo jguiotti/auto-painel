@@ -58,6 +58,20 @@ export async function requireDashboardSession(
     redirect("/erro/concessionaria");
   }
 
+  const { data: dealershipRow, error: dealershipError } = await supabase
+    .from("dealerships")
+    .select("status")
+    .eq("id", cookieDealershipId)
+    .single();
+
+  if (
+    dealershipError ||
+    !dealershipRow ||
+    dealershipRow.status !== "active"
+  ) {
+    redirect("/conta-inativa");
+  }
+
   return {
     supabase,
     user,
