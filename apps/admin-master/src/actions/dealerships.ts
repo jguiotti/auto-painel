@@ -87,6 +87,18 @@ function friendlyDealershipDbError(rawMessage: string): string {
   ) {
     return explainDealershipUniqueViolation(trimmed);
   }
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes("schema cache") ||
+    /could not find the .* column of ['"]dealerships['"]/i.test(trimmed)
+  ) {
+    return (
+      "A base de dados deste projeto não tem todas as colunas esperadas em «dealerships» " +
+      "(atualize o Postgres com as migrações em supabase/migrations/ ou execute `supabase db push`). " +
+      "Detalhe técnico: " +
+      trimmed
+    );
+  }
   return `Erro ao salvar: ${trimmed}`;
 }
 
@@ -641,7 +653,7 @@ export async function createDealershipAction(
     .insert({
       name,
       slug,
-      cnpj: cnpjDigits.length === 14 ? cnpjDigits : null,
+      ...(cnpjDigits.length === 14 ? { cnpj: cnpjDigits } : {}),
       custom_domain: domainNorm.length > 0 ? domainNorm : null,
       contact_email: emailNorm.length > 0 ? emailNorm : null,
       whatsapp_number: whatsappDigits.length > 0 ? whatsappDigits : null,

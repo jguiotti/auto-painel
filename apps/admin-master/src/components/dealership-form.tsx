@@ -518,6 +518,7 @@ export function DealershipForm({
 
           <div className="grid gap-6 sm:grid-cols-1">
             <GoogleFontFamilyCombobox
+              key={`gf-heading-${dealership?.id ?? "new"}-${defaults.google_font_heading}`}
               idPrefix={`gf-heading-${dealership?.id ?? "new"}`}
               formFieldName="google_font_heading"
               label="Fonte dos títulos da vitrine"
@@ -526,6 +527,7 @@ export function DealershipForm({
               disabled={pending}
             />
             <GoogleFontFamilyCombobox
+              key={`gf-body-${dealership?.id ?? "new"}-${defaults.google_font_body}`}
               idPrefix={`gf-body-${dealership?.id ?? "new"}`}
               formFieldName="google_font_body"
               label="Fonte dos textos corridos da vitrine"

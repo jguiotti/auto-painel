@@ -3,25 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createOAuthState } from "@/lib/classifieds/oauth-pkce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMetaOAuthStartParams } from "@/lib/integrations/resolve-meta-oauth-start";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
 
 const META_OAUTH_DIALOG_PATH = "/dialog/oauth";
-
-function resolveRedirectUri(): string {
-  const explicit = process.env.META_OAUTH_REDIRECT_URI?.trim();
-  if (explicit) {
-    return explicit;
-  }
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (!base) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL não configurado para montar redirect Meta.");
-  }
-  return `${base.replace(/\/$/, "")}/functions/v1/meta-oauth-callback`;
-}
-
-function resolveGraphVersion(): string {
-  return process.env.META_GRAPH_API_VERSION?.trim() || "21.0";
-}
 
 function resolveMetaScopes(): string {
   const configured = process.env.META_OAUTH_SCOPES?.trim();
@@ -38,29 +23,6 @@ function resolveMetaScopes(): string {
 }
 
 export async function POST(request: NextRequest) {
-  const metaClientId = process.env.META_APP_CLIENT_ID?.trim();
-  if (!metaClientId) {
-    return NextResponse.json(
-      { error: "Integração Meta não configurada no servidor." },
-      { status: 500 },
-    );
-  }
-
-  let redirectUri: string;
-  try {
-    redirectUri = resolveRedirectUri();
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível definir redirect OAuth Meta.",
-      },
-      { status: 500 },
-    );
-  }
-
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -107,6 +69,33 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let startParams;
+  try {
+    startParams = await resolveMetaOAuthStartParams({
+      dealershipId: dealershipIdFromCookie,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível preparar o URL de autorização Meta.",
+      },
+      { status: 500 },
+    );
+  }
+
+  if (!startParams) {
+    return NextResponse.json(
+      {
+        error:
+          "Configure o App ID (e App Secret) da sua aplicação Meta acima ou peça ajuda à equipa. Para desenvolvimento local, defina também META_APP_CLIENT_ID no servidor.",
+      },
+      { status: 503 },
+    );
+  }
+
   const state = createOAuthState();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
@@ -146,12 +135,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const graphVersion = resolveGraphVersion();
   const scopeParam = encodeURIComponent(resolveMetaScopes());
   const authorizationUrl =
-    `https://www.facebook.com/v${graphVersion}${META_OAUTH_DIALOG_PATH}` +
-    `?client_id=${encodeURIComponent(metaClientId)}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `https://www.facebook.com/v${startParams.graphVersion}${META_OAUTH_DIALOG_PATH}` +
+    `?client_id=${encodeURIComponent(startParams.metaAppId)}` +
+    `&redirect_uri=${encodeURIComponent(startParams.redirectUri)}` +
     `&state=${encodeURIComponent(state)}` +
     `&scope=${scopeParam}` +
     "&response_type=code";

@@ -1,6 +1,9 @@
-import { createClient } from "npm:@supabase/supabase-js@2.104.0";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.104.0";
 
-import { encryptSecretValue } from "../_shared/classifieds-crypto.ts";
+import {
+  decryptSecretValue,
+  encryptSecretValue,
+} from "../_shared/classifieds-crypto.ts";
 
 type ProviderKey = "olx" | "webmotors";
 
@@ -44,7 +47,13 @@ function requireEnvVar(name: string): string {
   return value;
 }
 
-function getProviderConfig(provider: ProviderKey): ProviderRuntimeConfig {
+interface OauthAppRow {
+  oauth_client_id: string;
+  oauth_client_secret_encrypted: string;
+  token_url_override: string | null;
+}
+
+function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig {
   const supabaseUrl = requireEnvVar("SUPABASE_URL");
   const defaultRedirectUri = `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
 
@@ -65,6 +74,49 @@ function getProviderConfig(provider: ProviderKey): ProviderRuntimeConfig {
     clientSecret: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_SECRET"),
     redirectUri:
       Deno.env.get("WEBMOTORS_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
+  };
+}
+
+async function resolveProviderRuntimeConfig(
+  admin: SupabaseClient,
+  provider: ProviderKey,
+  dealershipId: string,
+): Promise<ProviderRuntimeConfig> {
+  const envConfig = getProviderConfigFromEnv(provider);
+
+  const { data: appRow, error } = await admin
+    .from("dealership_classifieds_oauth_apps")
+    .select(
+      "oauth_client_id, oauth_client_secret_encrypted, token_url_override",
+    )
+    .eq("dealership_id", dealershipId)
+    .eq("provider", provider)
+    .maybeSingle();
+
+  if (error || !appRow?.oauth_client_id?.trim()) {
+    return envConfig;
+  }
+
+  const row = appRow as OauthAppRow;
+  const cryptoSecret = requireEnvVar("CLASSIFIEDS_TOKENS_CRYPTO_SECRET");
+  let clientSecretPlain: string;
+  try {
+    clientSecretPlain = await decryptSecretValue(
+      row.oauth_client_secret_encrypted,
+      cryptoSecret,
+    );
+  } catch {
+    throw new Error(
+      "Não foi possível descriptografar o segredo OAuth da concessionária. Confirme CLASSIFIEDS_TOKENS_CRYPTO_SECRET ou guarde as credenciais novamente.",
+    );
+  }
+
+  return {
+    provider,
+    tokenUrl: row.token_url_override?.trim() || envConfig.tokenUrl,
+    clientId: row.oauth_client_id.trim(),
+    clientSecret: clientSecretPlain.trim(),
+    redirectUri: envConfig.redirectUri,
   };
 }
 
@@ -172,12 +224,10 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  let providerConfig: ProviderRuntimeConfig;
   let tokenCryptoSecret: string;
   let supabaseUrl: string;
   let serviceRoleKey: string;
   try {
-    providerConfig = getProviderConfig(provider);
     tokenCryptoSecret = requireEnvVar("CLASSIFIEDS_TOKENS_CRYPTO_SECRET");
     supabaseUrl = requireEnvVar("SUPABASE_URL");
     serviceRoleKey = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
@@ -284,6 +334,21 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    let providerConfig: ProviderRuntimeConfig;
+    try {
+      providerConfig = await resolveProviderRuntimeConfig(
+        admin,
+        provider,
+        oauthSession.dealership_id,
+      );
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar a configuração OAuth desta concessionária.",
+      );
+    }
+
     const tokenPayload = await exchangeCodeForTokens(
       providerConfig,
       code,

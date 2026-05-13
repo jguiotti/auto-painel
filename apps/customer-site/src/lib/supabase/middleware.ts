@@ -1,3 +1,7 @@
+import {
+  buildBareLocalhostTenantRedirectUrl,
+  readDevelopmentTenantSlugFromEnv,
+} from "@autopainel/shared/lib/tenant/development-tenant-slug-env";
 import { type NextRequest, NextResponse } from "next/server";
 
 import {
@@ -16,10 +20,20 @@ export async function handleTenantFromHost(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const developmentTenantSlug = readDevelopmentTenantSlugFromEnv();
+  const tenantRedirect = buildBareLocalhostTenantRedirectUrl({
+    requestUrl: request.nextUrl,
+    hostHeader: request.headers.get("host"),
+    developmentTenantSlug,
+  });
+  if (tenantRedirect) {
+    return NextResponse.redirect(tenantRedirect);
+  }
+
   const dealershipId = await resolveDealershipIdFromHost({
     hostHeader: request.headers.get("host"),
     platformRootDomain: process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? null,
-    developmentTenantSlug: process.env.DEVELOPMENT_TENANT_SLUG ?? null,
+    developmentTenantSlug,
   });
 
   if (!dealershipId) {

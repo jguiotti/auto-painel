@@ -17,8 +17,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Entrar
         </h1>
         <p className="mt-2 max-w-md text-zinc-600 dark:text-zinc-400">
-          Acesse o painel da concessionária. Use o mesmo domínio da loja (ou o
-          ambiente de desenvolvimento configurado).
+          Inicie sessão com o e-mail e palavra-passe da sua conta. Se não conseguir entrar ou não tiver
+          credenciais, contacte quem gere o painel na sua concessionária ou o suporte AutoPainel.
         </p>
       </div>
       <LoginForm redirectTo={redirectTo} />

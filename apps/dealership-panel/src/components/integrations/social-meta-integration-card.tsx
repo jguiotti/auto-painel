@@ -40,6 +40,8 @@ interface OAuthMessagePayload {
 interface SocialMetaIntegrationCardProps {
   isEnabled: boolean;
   connection: MetaConnectionRow | null;
+  /** False until the dealership saved Meta App ID (or env fallback exists for dev). */
+  canStartOAuth?: boolean;
 }
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
@@ -81,6 +83,7 @@ function resolveActionLabel(status: ConnectionStatus): string {
 export function SocialMetaIntegrationCard({
   isEnabled,
   connection,
+  canStartOAuth = true,
 }: SocialMetaIntegrationCardProps) {
   const router = useRouter();
   const status = connection?.status ?? "disconnected";
@@ -238,9 +241,9 @@ export function SocialMetaIntegrationCard({
             <div>
               <CardTitle>Facebook Page e Instagram</CardTitle>
               <CardDescription>
-                Autenticação em popup oficial Meta; usar para publicações automáticas
-                quando disponíveis no plano (carrosséis são processadas em segundo
-                plano).
+                A sua aplicação Meta (developers.facebook.com) liga a página e o
+                Instagram Business. Fluxo iniciado no painel; futuras chamadas à Graph
+                API na AutoPainel usam apenas tokens desta loja.
               </CardDescription>
             </div>
             <Badge
@@ -288,10 +291,20 @@ export function SocialMetaIntegrationCard({
             </p>
           )}
 
+          {!canStartOAuth ? (
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Guarde primeiro o App ID (e o App Secret) da sua aplicação Meta na secção
+              acima, ou configure META_APP_CLIENT_ID no servidor apenas para
+              desenvolvimento.
+            </p>
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              disabled={!isEnabled || isBusy || status === "connected"}
+              disabled={
+                !isEnabled || isBusy || status === "connected" || !canStartOAuth
+              }
               onClick={() => {
                 void startMetaOAuth();
               }}

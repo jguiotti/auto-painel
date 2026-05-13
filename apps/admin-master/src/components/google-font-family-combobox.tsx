@@ -15,6 +15,7 @@ interface GoogleFontFamilyComboboxProps {
   formFieldName: string;
   label: string;
   description: string;
+  /** Parent should pass `key` including this value when server data changes (avoids syncing state in an effect). */
   initialFamily: string;
   disabled?: boolean;
 }
@@ -32,10 +33,6 @@ export function GoogleFontFamilyCombobox({
   const [selected, setSelected] = useState(initialFamily.trim());
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setSelected(initialFamily.trim());
-  }, [initialFamily]);
 
   useEffect(() => {
     function onDocPointer(ev: MouseEvent) {

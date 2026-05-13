@@ -93,6 +93,16 @@ export function DealershipCollaboratorsPanel({
                 toast.error(result.error);
                 return;
               }
+              if (result.linked_existing_user) {
+                setTempPasswordBanner(null);
+                toast.success(
+                  result.password_reset_email_sent
+                    ? "Conta Auth já existia: perfil ligado a esta concessionária. Foi enviado um e-mail para definir a senha no painel da loja (verifique o spam)."
+                    : "Conta Auth já existia: perfil ligado a esta concessionária. A pessoa deve usar «Esqueci minha senha» no login do painel (defina NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN para envio automático de e-mail).",
+                );
+                router.refresh();
+                return;
+              }
               if (result.temporary_password) {
                 setTempPasswordBanner(result.temporary_password);
               }

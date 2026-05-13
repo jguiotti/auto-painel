@@ -48,6 +48,41 @@
       "import": "./src/lib/dealership-public-url.ts",
       "default": "./src/lib/dealership-public-url.ts"
     },
+    "./lib/tenant/effective-platform-root-domain": {
+      "types": "./src/lib/tenant/effective-platform-root-domain.ts",
+      "import": "./src/lib/tenant/effective-platform-root-domain.ts",
+      "default": "./src/lib/tenant/effective-platform-root-domain.ts"
+    },
+    "./lib/tenant/development-tenant-slug-env": {
+      "types": "./src/lib/tenant/development-tenant-slug-env.ts",
+      "import": "./src/lib/tenant/development-tenant-slug-env.ts",
+      "default": "./src/lib/tenant/development-tenant-slug-env.ts"
+    },
+    "./lib/tenant/http-host-without-port": {
+      "types": "./src/lib/tenant/http-host-without-port.ts",
+      "import": "./src/lib/tenant/http-host-without-port.ts",
+      "default": "./src/lib/tenant/http-host-without-port.ts"
+    },
+    "./lib/tenant/looks-like-dealership-uuid": {
+      "types": "./src/lib/tenant/looks-like-dealership-uuid.ts",
+      "import": "./src/lib/tenant/looks-like-dealership-uuid.ts",
+      "default": "./src/lib/tenant/looks-like-dealership-uuid.ts"
+    },
+    "./lib/tenant/allow-cookie-tenant-fallback-host": {
+      "types": "./src/lib/tenant/allow-cookie-tenant-fallback-host.ts",
+      "import": "./src/lib/tenant/allow-cookie-tenant-fallback-host.ts",
+      "default": "./src/lib/tenant/allow-cookie-tenant-fallback-host.ts"
+    },
+    "./lib/tenant/is-dealership-panel-slug-bootstrap-enabled": {
+      "types": "./src/lib/tenant/is-dealership-panel-slug-bootstrap-enabled.ts",
+      "import": "./src/lib/tenant/is-dealership-panel-slug-bootstrap-enabled.ts",
+      "default": "./src/lib/tenant/is-dealership-panel-slug-bootstrap-enabled.ts"
+    },
+    "./lib/tenant/dealership-subdomain-surface-urls": {
+      "types": "./src/lib/tenant/dealership-subdomain-surface-urls.ts",
+      "import": "./src/lib/tenant/dealership-subdomain-surface-urls.ts",
+      "default": "./src/lib/tenant/dealership-subdomain-surface-urls.ts"
+    },
     "./lib/finance/calculate-price-installment": {
       "types": "./src/lib/finance/calculate-price-installment.ts",
       "import": "./src/lib/finance/calculate-price-installment.ts",

@@ -1,6 +1,7 @@
 import type { PricingPlanListRow } from "@autopainel/shared/types";
 import { notFound } from "next/navigation";
 
+import { DealershipOperatorSurfaceLinks } from "@/components/dealership-operator-surface-links";
 import { DealershipForm } from "@/components/dealership-form";
 import { PricingCatalogSchemaWarning } from "@/components/pricing-catalog-schema-warning";
 import { fetchDealershipById } from "@/lib/data/dealership-by-id";
@@ -53,6 +54,7 @@ export default async function EditarConcessionariaPage({
   ]);
   return (
     <div className="space-y-6">
+      <DealershipOperatorSurfaceLinks slug={row.slug} />
       {schema.kind !== "ok" ? (
         <PricingCatalogSchemaWarning state={schema} />
       ) : null}

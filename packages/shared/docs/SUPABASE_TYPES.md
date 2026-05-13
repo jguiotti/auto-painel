@@ -32,6 +32,14 @@ Public storefront reads `layout_id` (1–3) via `get_dealership_public_by_id` (r
 
 Closed list `default | serif_editorial | sans_geometric` — consumed by `resolveDealershipFontStacks` in `@autopainel/shared/lib/theme/branding`.
 
+### `dealership_classifieds_oauth_apps`
+
+Tabela **`public.dealership_classifieds_oauth_apps`**: `oauth_client_id` + **`oauth_client_secret_encrypted`** por `dealership_id` e provider (`olx` \| `webmotors`). **RLS:** JWT `anon`/`authenticated` sem acesso; escrita/leitura apenas **service role** / Edge (igual a **`dealership_classifieds_credentials`**). Tipos: **`DealershipClassifiedsOauthAppRow`**, **`DealershipClassifiedsOauthAppUpsertInput`**, **`DealershipClassifiedsOauthAppPublic`** em `packages/shared/src/types/classifieds-oauth-app.ts`. Migração: **`supabase/migrations/20260508220000_dealership_classifieds_oauth_apps.sql`**.
+
+### `dealership_meta_oauth_apps`
+
+Tabela **`public.dealership_meta_oauth_apps`** (1:1 `dealership_id`): **App ID** e **App Secret** cifrado para o fluxo OAuth Meta **da concessionária**. RLS: sem acesso JWT. Tipos em **`meta-oauth-app.ts`**. Migração **`supabase/migrations/20260508231000_dealership_meta_oauth_apps.sql`**. Cifra do secret com **`META_TOKENS_CRYPTO_SECRET`** (consistente com tokens em `dealership_meta_credentials`).
+
 ## Generated types (optional)
 
 You may complement with `supabase gen types` and merge with hand-written types; consume shared types from **`@autopainel/shared/types`** in all apps.
@@ -39,3 +47,10 @@ You may complement with `supabase gen types` and merge with hand-written types; 
 ## Applying database changes
 
 Migrations live in **`supabase/migrations/`**. The team convention is to provide SQL to run in the Supabase Dashboard unless a maintainer explicitly runs the CLI; see `rules/supabase-workflow.mdc`.
+
+## Security advisor (Supabase Dashboard)
+
+- **Leaked password protection:** in the project dashboard, open **Authentication** → **Policies** (or **Providers** / password settings, depending on dashboard version) and enable **breached password protection** (Have I Been Pwned). This is a product setting, not a migration.
+- **SECURITY DEFINER RPCs** used for the public vitrine (`get_dealership_public_by_slug`, `get_public_vehicle_by_id`, `effective_feature_keys_for_active_dealership`, `resolve_dealership_id_by_host_for_dashboard`, `get_dealership_id_by_slug_for_dashboard`): they stay `SECURITY DEFINER` so `anon`/`authenticated` callers can read storefront data **without** granting broad `SELECT` on `dealerships` / `vehicles` (which would allow cross-tenant listing). Hardening migrations such as `supabase/migrations/20260508164500_security_advisor_hardening.sql` narrow what we can (storage listing removal, RLS helpers in schema `private`, explicit deny policies on credential tables, `SECURITY INVOKER` on the dealerships plan trigger where safe).
+- **REST schema config:** keep **only** `public` (and defaults like `storage`) in **API → Exposed schemas**; do **not** add the `private` helper schema, or those helpers become callable RPCs again.
+- **SECURITY INVOKER delegates (`20260508201500_rpc_security_invoker_wrappers.sql`):** high-traffic storefront/dashboard RPCs remain under the same `public` names, but `public.*` is `SECURITY INVOKER` and delegates to `private.*_impl` (`SECURITY DEFINER`). The Advisor then reports DEFINER on `private.*`, not on the PostgREST-exposed `public` entrypoints.

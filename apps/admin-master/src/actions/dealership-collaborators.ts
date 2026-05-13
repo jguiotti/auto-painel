@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { getSupabasePublicEnv } from "@autopainel/shared/lib/supabase";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireAdminSession } from "@/lib/auth/require-admin";
@@ -10,6 +14,10 @@ export interface CollaboratorActionResult {
   error?: string;
   success?: boolean;
   temporary_password?: string;
+  /** Auth user already existed (e.g. vitrine signup); profile row was attached to this dealership. */
+  linked_existing_user?: boolean;
+  /** Supabase sent a password recovery email so the user can set a password at the dealership panel. */
+  password_reset_email_sent?: boolean;
 }
 
 const REVALIDATE = [
@@ -20,6 +28,68 @@ function isAllowedRole(
   r: string,
 ): r is "owner" | "manager" | "seller" {
   return r === "owner" || r === "manager" || r === "seller";
+}
+
+function isDuplicateAuthEmailError(err: { message?: string } | null): boolean {
+  if (!err?.message) {
+    return false;
+  }
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("already been registered") ||
+    msg.includes("already registered") ||
+    msg.includes("user already registered") ||
+    msg.includes("email address is already registered") ||
+    msg.includes("duplicate")
+  );
+}
+
+/**
+ * Looks up auth.users by email via Admin listUsers (paginated). Email is unique in Auth.
+ */
+async function findAuthUserIdByEmail(
+  supabase: SupabaseClient,
+  email: string,
+): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+  for (;;) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) {
+      return null;
+    }
+    const hit = data.users.find(
+      (u) => u.email?.trim().toLowerCase() === normalized,
+    );
+    if (hit?.id) {
+      return hit.id;
+    }
+    if (data.users.length < perPage) {
+      return null;
+    }
+    page += 1;
+  }
+}
+
+/**
+ * Triggers Supabase's built-in recovery email (anon client). Requires redirect URL allow-list in Dashboard.
+ */
+async function trySendDealershipPasswordSetupEmail(email: string): Promise<boolean> {
+  const baseRaw =
+    process.env.NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN?.trim() ??
+    process.env.NEXT_PUBLIC_DEALERSHIP_PANEL_URL?.trim();
+  if (!baseRaw) {
+    return false;
+  }
+  const base = baseRaw.replace(/\/$/, "");
+  const { supabaseUrl, supabaseAnonKey } = getSupabasePublicEnv();
+  const pub = createClient(supabaseUrl, supabaseAnonKey);
+  const nextPath = encodeURIComponent("/definir-senha");
+  const { error } = await pub.auth.resetPasswordForEmail(email, {
+    redirectTo: `${base}/auth/confirm?next=${nextPath}`,
+  });
+  return !error;
 }
 
 export async function inviteDealershipCollaboratorAction(
@@ -66,15 +136,71 @@ export async function inviteDealershipCollaboratorAction(
     user_metadata: { full_name },
   });
 
-  if (createErr || !created?.user?.id) {
+  let userId: string | undefined;
+  let temporaryPasswordOut: string | undefined;
+  let linkedExistingUser = false;
+
+  if (!createErr && created?.user?.id) {
+    userId = created.user.id;
+    temporaryPasswordOut = tempPassword;
+  } else if (createErr && isDuplicateAuthEmailError(createErr)) {
+    const existingId = await findAuthUserIdByEmail(supabase, email);
+    if (!existingId) {
+      return {
+        error:
+          "Este e-mail já está registado no Supabase, mas não foi possível localizar o utilizador. Tente novamente ou contacte o suporte.",
+      };
+    }
+    userId = existingId;
+    linkedExistingUser = true;
+    await supabase.auth.admin.updateUserById(existingId, {
+      user_metadata: { full_name },
+    });
+  } else {
     return {
       error:
         createErr?.message ??
-        "Não foi possível criar a conta de acesso. Verifique se o e-mail já existe.",
+        "Não foi possível criar a conta de acesso.",
     };
   }
 
-  const userId = created.user.id;
+  const { data: existingProfile, error: existingProfileError } = await supabase
+    .from("profiles")
+    .select("dealership_id, role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    if (!linkedExistingUser) {
+      await supabase.auth.admin.deleteUser(userId);
+    }
+    return {
+      error:
+        existingProfileError.message ??
+        "Não foi possível verificar o perfil existente.",
+    };
+  }
+
+  if (existingProfile) {
+    if (!linkedExistingUser) {
+      await supabase.auth.admin.deleteUser(userId);
+    }
+    if (existingProfile.role === "super_admin") {
+      return {
+        error:
+          "Este e-mail pertence a um operador da plataforma. Não pode ser adicionado como colaborador de concessionária.",
+      };
+    }
+    if (existingProfile.dealership_id === dealershipId) {
+      return {
+        error: "Esta pessoa já tem acesso a esta concessionária.",
+      };
+    }
+    return {
+      error:
+        "Este e-mail já está associado a outra concessionária. Use outro endereço ou remova o acesso na outra loja.",
+    };
+  }
 
   const { error: profileErr } = await supabase.from("profiles").insert({
     id: userId,
@@ -83,7 +209,9 @@ export async function inviteDealershipCollaboratorAction(
   });
 
   if (profileErr) {
-    await supabase.auth.admin.deleteUser(userId);
+    if (!linkedExistingUser) {
+      await supabase.auth.admin.deleteUser(userId);
+    }
     return {
       error:
         profileErr.message ??
@@ -91,12 +219,19 @@ export async function inviteDealershipCollaboratorAction(
     };
   }
 
+  let password_reset_email_sent = false;
+  if (linkedExistingUser) {
+    password_reset_email_sent = await trySendDealershipPasswordSetupEmail(email);
+  }
+
   REVALIDATE.forEach((p) => revalidatePath(p));
   revalidatePath(`/painel/concessionarias/${dealershipId}/editar`);
   revalidatePath(`/painel/concessionarias/${dealershipId}`);
   return {
     success: true,
-    temporary_password: tempPassword,
+    temporary_password: temporaryPasswordOut,
+    linked_existing_user: linkedExistingUser,
+    password_reset_email_sent,
   };
 }
 

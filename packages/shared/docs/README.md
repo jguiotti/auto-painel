@@ -7,5 +7,6 @@ Cross-cutting documentation lives here to avoid duplicating markdown across apps
 | [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) | Tailwind v4, tokens, `@config`, per-app overrides |
 | [SHADCN.md](./SHADCN.md) | Adding shadcn components only in `packages/shared` |
 | [SUPABASE_TYPES.md](./SUPABASE_TYPES.md) | TypeScript types aligned with DB / RPCs |
+| [TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md](./TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md) | Subdomínios por loja, dev local `*.localhost`, OAuth OLX/WebMotors/Meta por concessionária, Vercel |
 
 Project rules for agents/IDE: **`rules/`** at repo root (symlinked from `.cursor/rules`).

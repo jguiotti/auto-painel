@@ -92,6 +92,18 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       >
         {isSubmitting ? "Entrando…" : "Entrar"}
       </button>
+      <div className="flex flex-col gap-2 text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <Link
+          href="/recuperar-senha"
+          className="font-medium text-zinc-800 underline dark:text-zinc-200"
+        >
+          Esqueci minha senha / primeiro acesso (receber link por e-mail)
+        </Link>
+        <p>
+          Se a equipa AutoPainel criou o seu acesso, pode usar a senha provisória
+          ou pedir aqui um link para definir uma senha nova.
+        </p>
+      </div>
       <Link
         href="/"
         className="text-center text-sm font-medium text-zinc-600 underline dark:text-zinc-400"

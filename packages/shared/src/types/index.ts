@@ -2,6 +2,8 @@
  * Cross-app TypeScript definitions. Migrate domain types here gradually.
  */
 export * from "./supabase-rpc";
+export * from "./classifieds-oauth-app";
+export * from "./meta-oauth-app";
 export * from "./dealership-config";
 export * from "./dealership-storefront";
 export * from "./pricing-catalog";

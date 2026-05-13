@@ -1,10 +1,8 @@
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 import { NextResponse, type NextRequest } from "next/server";
 
-import {
-  getClassifiedsOAuthProviderConfig,
-  parseClassifiedsProvider,
-} from "@/lib/classifieds/oauth-provider";
+import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
+import { resolveClassifiedsOAuthProviderConfigForDealership } from "@/lib/classifieds/resolve-classifieds-oauth-config";
 import {
   createOAuthState,
   createPkceChallenge,
@@ -21,21 +19,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Fornecedor inválido." },
       { status: 400 },
-    );
-  }
-
-  let providerConfig;
-  try {
-    providerConfig = getClassifiedsOAuthProviderConfig(provider);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Configuração OAuth2 ausente para o provedor.",
-      },
-      { status: 500 },
     );
   }
 
@@ -82,6 +65,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Módulo de integrações não habilitado no plano da loja." },
       { status: 403 },
+    );
+  }
+
+  let providerConfig;
+  try {
+    providerConfig = await resolveClassifiedsOAuthProviderConfigForDealership({
+      dealershipId: dealershipIdFromCookie,
+      provider,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Configuração OAuth2 ausente para o provedor.",
+      },
+      { status: 500 },
     );
   }
 

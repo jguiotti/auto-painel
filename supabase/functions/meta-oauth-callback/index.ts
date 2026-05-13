@@ -1,6 +1,9 @@
-import { createClient } from "npm:@supabase/supabase-js@2.104.0";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.104.0";
 
-import { encryptSecretValue } from "../_shared/classifieds-crypto.ts";
+import {
+  decryptSecretValue,
+  encryptSecretValue,
+} from "../_shared/classifieds-crypto.ts";
 
 interface MetaOAuthSessionRow {
   id: string;
@@ -40,12 +43,72 @@ function requireEnvVar(name: string): string {
   return value;
 }
 
-function resolveGraphVersion(): string {
-  return Deno.env.get("META_GRAPH_API_VERSION")?.trim() || "21.0";
-}
-
 function resolveRedirectUri(defaultCallback: string): string {
   return Deno.env.get("META_OAUTH_REDIRECT_URI")?.trim() || defaultCallback;
+}
+
+interface MetaOauthAppsRow {
+  meta_app_id: string;
+  meta_app_secret_encrypted: string;
+  graph_api_version_override: string | null;
+}
+
+async function resolveMetaAppRuntimeConfig(
+  admin: SupabaseClient,
+  dealershipId: string,
+  supabaseUrl: string,
+): Promise<{
+  clientId: string;
+  clientSecret: string;
+  graphVersion: string;
+  redirectUri: string;
+}> {
+  const defaultCb = `${supabaseUrl}/functions/v1/meta-oauth-callback`;
+  const redirectUri = resolveRedirectUri(defaultCb);
+  const envGraph = Deno.env.get("META_GRAPH_API_VERSION")?.trim() || "21.0";
+  const envClientId = Deno.env.get("META_APP_CLIENT_ID")?.trim();
+  const envClientSecret = Deno.env.get("META_APP_CLIENT_SECRET")?.trim();
+
+  const { data: row } = await admin
+    .from("dealership_meta_oauth_apps")
+    .select("meta_app_id, meta_app_secret_encrypted, graph_api_version_override")
+    .eq("dealership_id", dealershipId)
+    .maybeSingle();
+
+  if (row?.meta_app_id?.trim()) {
+    const r = row as MetaOauthAppsRow;
+    const cryptoSecret = requireEnvVar("META_TOKENS_CRYPTO_SECRET");
+    let clientSecretPlain: string;
+    try {
+      clientSecretPlain = await decryptSecretValue(
+        r.meta_app_secret_encrypted,
+        cryptoSecret,
+      );
+    } catch {
+      throw new Error(
+        "Não foi possível descriptografar o App Secret Meta. Guarde novamente as credenciais no painel.",
+      );
+    }
+    return {
+      clientId: r.meta_app_id.trim(),
+      clientSecret: clientSecretPlain.trim(),
+      graphVersion: r.graph_api_version_override?.trim() || envGraph,
+      redirectUri,
+    };
+  }
+
+  if (!envClientId || !envClientSecret) {
+    throw new Error(
+      "Credenciais Meta em falta: configure a app no painel da concessionária ou defina META_APP_CLIENT_ID / META_APP_CLIENT_SECRET no ambiente (desenvolvimento).",
+    );
+  }
+
+  return {
+    clientId: envClientId,
+    clientSecret: envClientSecret,
+    graphVersion: envGraph,
+    redirectUri,
+  };
 }
 
 function jsonForPopup(payload: Record<string, unknown>): string {
@@ -167,15 +230,9 @@ Deno.serve(async (req: Request) => {
   const oauthError = url.searchParams.get("error");
   const oauthErrorDescription = url.searchParams.get("error_description");
 
-  const graphVersion = resolveGraphVersion();
   const supabaseUrl = requireEnvVar("SUPABASE_URL");
   const serviceRoleKey = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
-  const metaClientId = requireEnvVar("META_APP_CLIENT_ID");
-  const metaClientSecret = requireEnvVar("META_APP_CLIENT_SECRET");
   const tokenCryptoSecret = requireEnvVar("META_TOKENS_CRYPTO_SECRET");
-  const redirectUri = resolveRedirectUri(
-    `${supabaseUrl}/functions/v1/meta-oauth-callback`,
-  );
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -294,11 +351,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const appConfig = await resolveMetaAppRuntimeConfig(
+      admin,
+      oauthSession.dealership_id,
+      supabaseUrl,
+    );
+
     const shortLived = await fetchShortLivedUserToken({
-      graphVersion,
-      clientId: metaClientId,
-      clientSecret: metaClientSecret,
-      redirectUri,
+      graphVersion: appConfig.graphVersion,
+      clientId: appConfig.clientId,
+      clientSecret: appConfig.clientSecret,
+      redirectUri: appConfig.redirectUri,
       code,
     });
 
@@ -307,8 +370,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const longLived = await fetchLongLivedUserToken({
-      clientId: metaClientId,
-      clientSecret: metaClientSecret,
+      clientId: appConfig.clientId,
+      clientSecret: appConfig.clientSecret,
       shortLivedToken: shortLived.access_token,
     });
 
@@ -321,7 +384,7 @@ Deno.serve(async (req: Request) => {
       : null;
 
     const accounts = await fetchAllPageAccounts({
-      graphVersion,
+      graphVersion: appConfig.graphVersion,
       userAccessToken: longLived.access_token,
     });
 

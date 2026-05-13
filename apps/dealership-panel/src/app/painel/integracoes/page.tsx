@@ -2,8 +2,10 @@ import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-fe
 import { Card, CardContent, CardHeader, CardTitle } from "@autopainel/shared/ui";
 
 import { ClassifiedsIntegrationCards } from "@/components/integrations/classifieds-integration-cards";
+import { MetaDeveloperAppForm } from "@/components/integrations/meta-developer-app-form";
 import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta-integration-card";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import { getDealershipMetaOauthAppPublic } from "@/lib/data/dealership-meta-oauth-app";
 
 export default async function IntegracoesPage() {
   const { supabase, dealershipId } = await requireDashboardSession();
@@ -52,6 +54,13 @@ export default async function IntegracoesPage() {
   );
 
   const metaRow = metaConnectionRes.data;
+
+  const metaAppRow = await getDealershipMetaOauthAppPublic(dealershipId);
+  const hasMetaAppForOAuth =
+    !!(
+      metaAppRow?.meta_app_id?.trim() ||
+      process.env.META_APP_CLIENT_ID?.trim()
+    );
 
   function isMetaConnectionStatus(
     value: string | null | undefined,
@@ -109,10 +118,19 @@ export default async function IntegracoesPage() {
             </CardContent>
           </Card>
         ) : (
-          <SocialMetaIntegrationCard
-            isEnabled={isSocialMediaKitEnabled}
-            connection={normalizedMetaConnection}
-          />
+          <div className="space-y-6">
+            <MetaDeveloperAppForm
+              initialMetaAppId={metaAppRow?.meta_app_id ?? ""}
+              initialGraphOverride={
+                metaAppRow?.graph_api_version_override ?? ""
+              }
+            />
+            <SocialMetaIntegrationCard
+              isEnabled={isSocialMediaKitEnabled}
+              connection={normalizedMetaConnection}
+              canStartOAuth={hasMetaAppForOAuth}
+            />
+          </div>
         )}
       </section>
 

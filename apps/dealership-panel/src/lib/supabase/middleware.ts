@@ -1,4 +1,6 @@
 import { createSupabaseServerClient } from "@autopainel/shared/lib/supabase";
+import { allowCookieTenantFallbackHost } from "@autopainel/shared/lib/tenant/allow-cookie-tenant-fallback-host";
+import { looksLikeDealershipUuid } from "@autopainel/shared/lib/tenant/looks-like-dealership-uuid";
 import { type NextRequest, NextResponse } from "next/server";
 
 import {
@@ -46,35 +48,42 @@ export async function handleAuthAndTenant(request: NextRequest) {
 
   await supabase.auth.getUser();
 
-  if (pathRequiresDealershipResolution(pathname)) {
-    const resolutionMode =
-      pathname.startsWith("/painel") || pathname.startsWith("/login")
-        ? "dashboard"
-        : "public";
-
-    const dealershipId = await resolveDealershipIdFromHost({
-      hostHeader: request.headers.get("host"),
-      platformRootDomain: process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? null,
-      developmentTenantSlug: process.env.DEVELOPMENT_TENANT_SLUG ?? null,
-      resolutionMode,
-    });
-
-    if (!dealershipId) {
-      const redirectResponse = NextResponse.redirect(
-        new URL(DEALERSHIP_NOT_FOUND_PATH, request.url),
-      );
-      forwardCookies(response, redirectResponse);
-      return redirectResponse;
-    }
-
-    response.cookies.set(COOKIE_DEALERSHIP_ID, dealershipId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+  if (!pathRequiresDealershipResolution(pathname)) {
+    return response;
   }
+
+  const hostHeader = request.headers.get("host");
+
+  /** Canonical: Host maps to dealership (e.g. slug.autopainel.com.br). */
+  let dealershipId = await resolveDealershipIdFromHost({
+    hostHeader,
+    platformRootDomain: process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? null,
+    developmentTenantSlug: null,
+    resolutionMode: "dashboard",
+  });
+
+  if (!dealershipId && allowCookieTenantFallbackHost(hostHeader)) {
+    const cookieId = request.cookies.get(COOKIE_DEALERSHIP_ID)?.value;
+    if (cookieId && looksLikeDealershipUuid(cookieId)) {
+      dealershipId = cookieId;
+    }
+  }
+
+  if (!dealershipId) {
+    const redirectResponse = NextResponse.redirect(
+      new URL(DEALERSHIP_NOT_FOUND_PATH, request.url),
+    );
+    forwardCookies(response, redirectResponse);
+    return redirectResponse;
+  }
+
+  response.cookies.set(COOKIE_DEALERSHIP_ID, dealershipId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
 
   return response;
 }
