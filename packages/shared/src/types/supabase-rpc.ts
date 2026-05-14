@@ -12,11 +12,15 @@ export interface EffectiveFeatureKeysForDealershipArgs {
   p_dealership_id: string;
 }
 
-/** Example: align with public.resolve_dealership_id_by_host */
+/** `public.resolve_dealership_id_by_host` — vitrine / público; só `dealerships.status = active`. */
 export interface ResolveDealershipIdByHostArgs {
   p_host: string;
   p_platform_root_domain: string;
 }
+
+/** `public.resolve_dealership_id_by_host_for_dashboard` — painel; mesmos argumentos, sem filtro de status no resolver. */
+export type ResolveDealershipIdByHostForDashboardArgs =
+  ResolveDealershipIdByHostArgs;
 
 /** Example: public list_public_vehicles_filtered */
 export interface ListPublicVehiclesFilteredArgs {

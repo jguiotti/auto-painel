@@ -23,7 +23,7 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Kit de redes sociais com postagem automática (Meta) | `social_media_kit` | **Passo C inicial (OAuth + schema + UI Conexões) no repo**; pendentes render Sharp + worker Meta + UX finalização veículo | Esta página + `documentacao-tecnica.md` |
 | Central de gestão (Admin Master) | `dealership_management_hub` | **Passo A–B documentados**; scaffold parcial no repositório (BD + papel `manager` + bloqueio painel inativo); UI por abas e exportações — roadmap | Esta página + `documentacao-tecnica.md` |
 | Subdomínios por loja + OAuth por concessionária (OLX / WebMotors / Meta) | `classifieds_sync`, `social_media_kit`, resolução de host | **PRD/BZ** em `packages/shared/docs/TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md` §7 + **BZ-TERR-***; jornada operador — alinhar com **`tenant_operator_journey`** | Esta página + doc partilhado |
-| Acesso multi-tenant (Admin + painel + vitrine) | `tenant_operator_journey` | **PRD preenchido — Em revisão** (secção abaixo); **bloqueio squad** mantém-se até **PM humano aprovar** + **handoff UX** | Esta página |
+| Acesso multi-tenant (Admin + painel + vitrine) | `tenant_operator_journey` | **PRD aprovado** (2026-05-08); handoff UX **Fase 2** registrado abaixo; refinamento técnico / QA multi-tenant após **aprovação UX** | Esta página |
 | Templates dinâmicos da vitrine | `layout_id` | Implementado e registrado | Esta página + `documentacao-tecnica.md` |
 
 ---
@@ -95,72 +95,72 @@ Correcções técnicas já integradas no repositório (ex.: raiz efectiva `local
 
 #### Instrução imediata ao PM
 
-**PM: executar já o convite da secção «Modelo de e-mail ao PM» abaixo** — ou seja, cumprir **integralmente** os quatro passos do e-mail (abrir este ficheiro, **rever** o PRD **1–13** já preenchido em rascunho, **validar ou corrigir**, publicar no Admin quando aplicável, avisar a equipa). O texto do e-mail é **ordem de trabalho**; o bloqueio a UX/dev/QA mantém-se até o PRD estar **Aprovado** pelo PM titular + handoff UX.
+**PM:** o PRD **`tenant_operator_journey`** está **Aprovado** (2026-05-08) com **questões em aberto encerradas** na seção **13.1** e **handoff UX (Fase 2)** na **13.2**. Falta **confirmar o handoff UX** para liberar **Fase 3 (Arquiteto + Backend)**. Publique no Admin (**Documentação interna → Regras de negócio**) se usarem `platform_internal_documents` e atribua **Dono PM**.
 
-**PM humano: rever e fechar.** O ficheiro já contém um **rascunho «Em revisão»** (secção **«PRD — `tenant_operator_journey`…»** abaixo). Valide **BZ-*** e **CA-***, ajuste **Dono PM** e datas, marque **Aprovado** quando for oficial e, se a equipa usar a base, copie o conteúdo final para **Documentação interna** → **Regras de negócio** (`/painel/documentacao/regras-de-negocio`).
+**PM humano:** valide **Dono PM**, datas e copie o trecho relevante para o Admin quando aplicável. Texto deste arquivo em **pt-BR** (`rules/naming-and-language.mdc`).
 
 #### Modelo de e-mail ao PM (copiar / colar)
 
-**Assunto:** PRD `tenant_operator_journey` — preenchimento obrigatório hoje
+**Assunto:** PRD `tenant_operator_journey` — aprovado; confirmação do handoff UX (Fase 2)
 
 ---
 
 PM,
 
-Precisamos do **PRD completo** da iniciativa **acesso multi-tenant + atalhos no Admin Master + painel da loja + vitrine** antes de UX, refinamento técnico, desenvolvimento e QA.
+O **PRD** da iniciativa **multi-tenant + atalhos no Admin + painel + vitrine** está **Aprovado** no repositório (2026-05-08), com **13.1** (decisões PM) e **13.2** (handoff UX). Precisamos da **confirmação explícita do UX** para liberar **Fase 3 (Arquiteto + Backend)**.
 
-1. Abre `apps/admin-master/content/internal-docs/regras-de-negocio.md` e localiza a secção **«PRD — `tenant_operator_journey` (multi-tenant: Admin + painel + vitrine) — Em revisão»** (mais abaixo neste ficheiro, **depois** de «Modelo de e-mail ao PM»).
-2. **Revisa hoje** todas as secções **1–13** (corrige o que for necessário, confirma **BZ-*** e **CA-*** únicos, define **Dono PM**, **Última actualização** e **Estado do PRD** até **Aprovado** quando estiver fechado).
-3. **Publica** a versão final em **Documentação interna** → **Regras de negócio** (`/painel/documentacao/regras-de-negocio` → *Salvar alterações*), se o projecto usar `platform_internal_documents`.
-4. **Avisa a equipa** (Slack ou e-mail) com o link ou o commit quando o PRD estiver **Aprovado** ou **Em revisão** com data.
+1. Abra `apps/admin-master/content/internal-docs/regras-de-negocio.md` e localize a seção **«PRD — `tenant_operator_journey` … — Aprovado»** (abaixo, depois de «Modelo de e-mail ao PM»).
+2. **Revise** as seções **1–13** e **13.1–13.2**; confirme **BZ-*** e **CA-***; preencha **Dono PM**; mantenha **Estado do PRD** = **Aprovado** até eventual mudança de escopo.
+3. **Publique** no Admin (**Documentação interna → Regras de negócio** → *Salvar alterações*) se o projeto usar `platform_internal_documents`.
+4. **Avise a equipe** (Slack ou e-mail) com o link do commit quando o **handoff UX (13.2)** estiver **confirmado** para avançar a Fase 3.
 
-Sem este PRD fechado, **UX não arranca** e **dev / QA ficam bloqueados** por decisão de processo (`rules/squad-agent-workflow.mdc` + bloqueio neste ficheiro, secção **«Bloqueio squad — PRD completo (PM) + UX antes de desenvolvimento e QA»**).
+Enquanto o **handoff UX** não estiver **confirmado**, **Fase 3** e **implementação nova** permanecem sujeitas ao bloqueio em `rules/squad-agent-workflow.mdc` (PRD + UX antes de refinamento técnico / dev / QA de aceite).
 
 Obrigado,  
 Janaina
 
 ---
 
-### PRD — `tenant_operator_journey` (multi-tenant: Admin + painel + vitrine) — **Em revisão**
+### PRD — `tenant_operator_journey` (multi-tenant: Admin + painel + vitrine) — **Aprovado**
 
-> **Nota:** Rascunho produzido por assistente com **papel de PM** para acelerar a revisão. O **PM humano** titular deve validar, corrigir o campo **Dono PM**, alterar datas se necessário e marcar **Aprovado** quando o documento for oficial. Publicar também em **Documentação interna → Regras de negócio** quando a equipa usar `platform_internal_documents`.
+> **Nota:** PRD **aprovado** em **2026-05-08** para avanço de **UX** (Fase 2 da squad). O **PM humano** deve preencher **Dono PM**, espelhar no Admin (**Documentação interna → Regras de negócio**) se usarem `platform_internal_documents`, e registrar mudanças de escopo. Texto em **português do Brasil (pt-BR)**.
 
 | Campo | Valor |
 | --- | --- |
 | **Chave / ID da iniciativa** | `tenant_operator_journey` |
-| **Última actualização** | **2026-05-08** |
-| **Estado do PRD** | **Em revisão** |
-| **Dono PM** | **A atribuir pela equipa** |
-| **Stakeholders** | Engenharia (Engineering), Experiência de utilizador (UX), Operações AutoPainel (Operations AutoPainel) |
+| **Última atualização** | **2026-05-08** |
+| **Estado do PRD** | **Aprovado** |
+| **Dono PM** | **A atribuir pela equipe** |
+| **Stakeholders** | Engenharia (Engineering), Experiência do usuário (UX), Operações AutoPainel (Operations AutoPainel) |
 
 #### 1. Resumo executivo (5–10 linhas)
 
-Esta iniciativa define a **jornada multi-tenant** de ponta a ponta: um operador da AutoPainel abre, a partir do Admin Master, os links correctos da **vitrine** e do **painel** de cada concessionária; um colaborador da loja acede ao painel pelo **host** correcto (subdomínio da plataforma ou domínio próprio configurado); um visitante navega na **vitrine** apenas quando a loja está **activa** e o host resolve para essa loja. Quando o host não corresponde a nenhuma loja, ou a vitrine não está disponível por estado da loja, o utilizador vê **páginas de erro em português**, com linguagem **simples**, sem expor detalhes técnicos nem permitir **descobrir slugs** por tentativa pública. Em desenvolvimento local, as URLs por slug (`*.localhost` em portas distintas) devem comportar-se de forma **previsível** graças à raiz efectiva da plataforma alinhada com o código e à sincronização de variáveis de ambiente. O objectivo imediato é **fechar o produto** desta fatia (regras, superfícies, segurança e critérios de aceite) para o **UX** produzir o handoff de layout e copy, e só então avançar refinamento técnico adicional, desenvolvimento e QA formal, conforme governação da equipa.
+Esta iniciativa define a **jornada multi-tenant** de ponta a ponta: um operador da AutoPainel abre, a partir do Admin Master, os links corretos da **vitrine** e do **painel** de cada concessionária; um colaborador da loja acessa o painel pelo **host** correto (subdomínio da plataforma ou domínio próprio configurado); um visitante navega na **vitrine** apenas quando a loja está **ativa** e o host resolve para essa loja. Quando o host não corresponde a nenhuma loja, ou a vitrine não está disponível por estado da loja, o usuário vê **páginas de erro em português**, com linguagem **simples**, sem expor detalhes técnicos nem permitir **descobrir slugs** por tentativa pública. Em desenvolvimento local, as URLs por slug (`*.localhost` em portas distintas) devem comportar-se de forma **previsível** graças à raiz efetiva da plataforma alinhada com o código e à sincronização de variáveis de ambiente. O objetivo imediato é **fechar o produto** desta fatia (regras, superfícies, segurança e critérios de aceite) para o **UX** produzir o handoff de layout e copy, e só então avançar refinamento técnico adicional, desenvolvimento e QA formal, conforme governação da equipe.
 
 #### 2. Problema e contexto
 
 | Pergunta | Resposta (PM) |
 | --- | --- |
-| Que dor resolvemos? | Operadores e utilizadores finais perdem tempo e confiança quando o **mesmo slug** funciona num ambiente e falha noutro, quando aparecem **mensagens técnicas** ou genéricas que não explicam que «não há loja neste endereço», ou quando se misturam regras da **vitrine** (só loja activa) com as do **painel** (resolver de contexto «dashboard»). |
-| O que acontece hoje sem esta entrega? | Risco de **interpretações divergentes** entre equipas (o que mostrar em erro, quem pode ver que URL, se existe atalho público por slug), atraso no **handoff UX** e retrabalho em ecrãs de login, recuperação de senha e vitrine. |
-| Que decisões de produto já estão tomadas (e não podem ser alteradas pelo dev)? | **Sem enumeração pública de tenants**; **vitrine só para `dealerships.status = 'active'`**; **painel** com resolução de tenant via fluxo **dashboard** nas áreas que o exigem; **slug comparado de forma insensível a maiúsculas/minúsculas** no motor de host; em **desenvolvimento**, suporte explícito a `{slug}.localhost` com raiz efectiva coerente; **mensagens de erro e login orientadas ao utilizador não técnico** em produção; **atalhos oficiais** ao painel e à vitrine **a partir do Admin Master** para operadores. Alterações a estes pilares exigem **revisão de PM** (e impacto em UX/Engenharia). |
+| Que dor resolvemos? | Operadores e usuários finais perdem tempo e confiança quando o **mesmo slug** funciona num ambiente e falha noutro, quando aparecem **mensagens técnicas** ou genéricas que não explicam que «não há loja neste endereço», ou quando se misturam regras da **vitrine** (só loja ativa) com as do **painel** (resolver de contexto «dashboard»). |
+| O que acontece hoje sem esta entrega? | Risco de **interpretações divergentes** entre equipes (o que mostrar em erro, quem pode ver que URL, se existe atalho público por slug), atraso no **handoff UX** e retrabalho em telas de login, recuperação de senha e vitrine. |
+| Que decisões de produto já estão tomadas (e não podem ser alteradas pelo dev)? | **Sem enumeração pública de tenants**; **vitrine só para `dealerships.status = 'active'`**; **painel** com resolução de tenant via fluxo **dashboard** nas áreas que o exigem; **slug comparado de forma insensível a maiúsculas/minúsculas** no motor de host; em **desenvolvimento**, suporte explícito a `{slug}.localhost` com raiz efetiva coerente; **mensagens de erro e login orientadas ao usuário não técnico** em produção; **atalhos oficiais** ao painel e à vitrine **a partir do Admin Master** para operadores. Alterações a estes pilares exigem **revisão de PM** (e impacto em UX/Engenharia). |
 
 #### 3. Objectivos e métricas de sucesso
 
 | Objectivo | Métrica ou sinal verde (PM) |
 | --- | --- |
-| Operador abre vitrine e painel da mesma loja **activa** sem pedir URL por canal informal | Em sessão de validação interna, **100%** dos participantes Operations encontram os dois links no ecrã da concessionária no Admin sem instrução escrita adicional (amostra definida pelo PM na fase de QA). |
-| Utilizador da loja e visitante da vitrine **não** vêem jargão de infraestrutura, códigos de erro HTTP como substituto de explicação, nem pistas que permitam adivinhar outras lojas | Revisão de copy: **zero** ocorrências de termos como «RPC», «middleware», «404» como título principal em ecrãs finais em **produção**; lista de strings aprovada pelo UX após este PRD. |
+| Operador abre vitrine e painel da mesma loja **ativa** (`active`) sem pedir URL por canal informal | Em sessão de validação interna, **100%** dos participantes Operations encontram os dois links na tela da concessionária no Admin sem instrução escrita adicional (amostra definida pelo PM na fase de QA). |
+| Usuário da loja e visitante da vitrine **não** veem jargão de infraestrutura, códigos de erro HTTP como substituto de explicação, nem pistas que permitam adivinhar outras lojas | Revisão de copy: **zero** ocorrências de termos como «RPC», «middleware», «404» como título principal em telas finais em **produção**; lista de strings aprovada pelo UX após este PRD. |
 | Resolução de host **coerente** entre vitrine e painel conforme regra de contexto | Casos de teste CA-TOJ cobrem **painel** e **vitrine** com os mesmos slugs em dev e prod; falhas regressivas = bloqueio de release. |
-| Redução de tickets internos «o link não abre a minha loja» | Operações regista contagem **antes/depois** (baseline a definir na primeira semana após deploy); meta quantitativa a fixar com Operations após duas semanas de uso. |
+| Redução de tickets internos «o link não abre a minha loja» | Operações registra contagem **antes/depois** (baseline a definir na primeira semana após deploy); meta quantitativa a fixar com Operations após duas semanas de uso. |
 
 #### 4. Personas e permissões
 
 | Persona | O que precisa de fazer | Restrições / papéis |
 | --- | --- | --- |
-| Operador AutoPainel (`super_admin`) | Editar concessionária, confirmar slug e domínios, **copiar ou abrir** links oficiais da vitrine e do painel para suporte e onboarding | Apenas utilizadores autenticados no **admin-master** com papel adequado à documentação interna de RBAC; não divulgar URLs sensíveis fora dos canais da operação |
-| Utilizador da concessionária (owner / manager / seller) | Iniciar sessão, recuperar senha, concluir definição de senha quando aplicável, trabalhar no painel após autenticação | Acesso ao painel condicionado a **tenant resolvido** pelo host e a políticas de conta/estado da loja já definidas na plataforma (ex.: conta inactiva continua a ser tratada nas regras da central de gestão, sem contradizer este PRD) |
-| Visitante da vitrine | Consultar stock e páginas públicas da loja **activa** | Sem autenticação; sem acesso a dados internos; se o host não mapeia loja activa, apenas fluxo público de **erro de concessionária** |
+| Operador AutoPainel (`super_admin`) | Editar concessionária, confirmar slug e domínios, **copiar ou abrir** links oficiais da vitrine e do painel para suporte e onboarding | Apenas usuários autenticados no **admin-master** com papel adequado à documentação interna de RBAC; não divulgar URLs sensíveis fora dos canais da operação |
+| Usuário da concessionária (owner / manager / seller) | Iniciar sessão, recuperar senha, concluir definição de senha quando aplicável, trabalhar no painel após autenticação | Acesso ao painel condicionado a **tenant resolvido** pelo host e a políticas de conta/estado da loja já definidas na plataforma (ex.: conta inativa continua a ser tratada nas regras da central de gestão, sem contradizer este PRD) |
+| Visitante da vitrine | Consultar stock e páginas públicas da loja **ativa** (`active`) | Sem autenticação; sem acesso a dados internos; se o host não mapeia loja ativa, apenas fluxo público de **erro de concessionária** |
 
 #### 5. Âmbito funcional (superfícies)
 
@@ -168,80 +168,80 @@ Marque **In** / **Out** / **Mais tarde** por linha.
 
 | Superfície | In / Out / Mais tarde | Notas (PM) |
 | --- | --- | --- |
-| `admin-master` — edição de concessionária (atalhos vitrine + painel) | **In** | Cartão ou região única com acções «Abrir vitrine» e «Abrir painel» (rótulos finais sujeitos a handoff UX); URLs geradas com host de **produção** ou **dev** conforme ambiente |
+| `admin-master` — edição de concessionária (atalhos vitrine + painel) | **In** | Cartão ou região única com ações «Abrir vitrine» e «Abrir painel» (rótulos finais sujeitos a handoff UX); URLs geradas com host de **produção** ou **dev** conforme ambiente |
 | `dealership-panel` — resolução de tenant, login, erro, pós-login | **In** | Inclui rotas de autenticação em português, página de erro de concessionária e fluxo após `dealership_id` resolvido |
-| `customer-site` — resolução de tenant, home, erro | **In** | Home pública apenas quando a loja resolve e está **activa**; caso contrário redireccionamento para `/erro/concessionaria` |
+| `customer-site` — resolução de tenant, home, erro | **In** | Home pública apenas quando a loja resolve e está **ativa**; caso contrário redirecionamento para `/erro/concessionaria` |
 | Documentação interna / operador | **In** | `regras-de-negocio.md`, `documentacao-tecnica.md` e espelho em base quando em uso; deve mencionar variáveis, portas locais e política de enumeração |
 | `marketing-site` | **Out** | Não faz parte desta iniciativa; páginas de marketing não servem como atalho operacional nem como descoberta de slug |
-| Aplicações móveis nativas | **Mais tarde** | Qualquer app nativa futura deverá reutilizar as mesmas regras de host; fora do âmbito de entrega actual |
+| Aplicações móveis nativas | **Mais tarde** | Qualquer app nativa futura deverá reutilizar as mesmas regras de host; fora do âmbito de entrega atual |
 
 #### 6. Regras de negócio (BZ) — numerar todas
 
 | ID | Regra (testável, sem ambiguidade) |
 | --- | --- |
-| **BZ-TOJ-001** | **Consolida a intenção de BZ-TERR-001:** Se o sistema não determinar a concessionária pelo hostname (subdomínio da plataforma ou domínio personalizado válido), o utilizador deve ver uma página em **português** a explicar que **não existe loja associada a este endereço**, sem usar uma página em branco nem uma mensagem que sugira «erro genérico do servidor» ou «código 404» como substituto da explicação. |
-| **BZ-TOJ-002** | **Consolida a intenção de BZ-TERR-002:** Na vitrine (`customer-site`), apenas concessionárias com `dealerships.status = 'active'` podem ser resolvidas para conteúdo público; se a loja existir mas **não** estiver activa, o comportamento é o de **ausência de vitrine** nesse host (redireccionamento para `/erro/concessionaria` quando o fluxo público não obtém identificador válido). |
-| **BZ-TOJ-003** | **Consolida a intenção de BZ-TERR-003:** No painel (`dealership-panel`), nas rotas que exigem tenant, a resolução deve seguir o contrato **dashboard** (resolver adequado ao contexto de painel, p.ex. `resolve_dealership_id_by_host_for_dashboard`), **nunca** reutilizando o resolver de **vitrine** na raiz ou em páginas públicas da mesma aplicação de forma a bloquear incorrectamente lojas existentes; sem `dealership_id` resolvido, o utilizador **não** avança para área autenticada do painel. |
-| **BZ-TOJ-004** | **Consolida a intenção de BZ-TERR-004:** Em ambiente local, a variável `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` deve estar **sincronizada** entre apps (`npm run sync:env`). Para hosts `{slug}.localhost`, a plataforma deve usar raiz efectiva **`localhost`** na cadeia de resolução de host **mesmo** que o ficheiro de ambiente contenha o domínio de produção, de modo que o sufixo `.localhost` case com as regras esperadas; em `development`, mantém-se o fallback explícito `*.localhost` ⇒ `localhost` quando a variável não chega ao middleware de borda. |
+| **BZ-TOJ-001** | **Consolida a intenção de BZ-TERR-001:** Se o sistema não determinar a concessionária pelo hostname (subdomínio da plataforma ou domínio personalizado válido), o usuário deve ver uma página em **português** a explicar que **não existe loja associada a este endereço**, sem usar uma página em branco nem uma mensagem que sugira «erro genérico do servidor» ou «código 404» como substituto da explicação. |
+| **BZ-TOJ-002** | **Consolida a intenção de BZ-TERR-002:** Na vitrine (`customer-site`), apenas concessionárias com `dealerships.status = 'active'` podem ser resolvidas para conteúdo público; se a loja existir mas **não** estiver ativa, o comportamento é o de **ausência de vitrine** nesse host (redirecionamento para `/erro/concessionaria` quando o fluxo público não obtém identificador válido). |
+| **BZ-TOJ-003** | **Consolida a intenção de BZ-TERR-003:** No painel (`dealership-panel`), nas rotas que exigem tenant, a resolução deve seguir o contrato **dashboard** (resolver adequado ao contexto de painel, p.ex. `resolve_dealership_id_by_host_for_dashboard`), **nunca** reutilizando o resolver de **vitrine** na raiz ou em páginas públicas da mesma aplicação de forma a bloquear incorretamente lojas existentes; sem `dealership_id` resolvido, o usuário **não** avança para área autenticada do painel. |
+| **BZ-TOJ-004** | **Consolida a intenção de BZ-TERR-004:** Em ambiente local, a variável `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` deve estar **sincronizada** entre apps (`npm run sync:env`). Para hosts `{slug}.localhost`, a plataforma deve usar raiz efetiva **`localhost`** na cadeia de resolução de host **mesmo** que o arquivo de ambiente contenha o domínio de produção, de modo que o sufixo `.localhost` case com as regras esperadas; em `development`, mantém-se o fallback explícito `*.localhost` ⇒ `localhost` quando a variável não chega ao middleware de borda. |
 | **BZ-TOJ-005** | **Consolida a intenção de BZ-TERR-005:** O primeiro segmento do hostname da plataforma corresponde ao **slug** da concessionária (ex.: `minhaloja` em `minhaloja.localhost` ou `minhaloja.autopainel.com.br`); a comparação do slug na base é **insensível a maiúsculas e minúsculas** (comportamento alinhado à migração `20260508240000_resolve_dealership_host_slug_ci.sql`). |
 | **BZ-TOJ-006** | **Consolida a intenção de BZ-TERR-006:** **É proibida** a existência de qualquer página **pública** na Internet cujo propósito seja introduzir ou adivinhar slug de loja (enumeração ou «dicionário» de tenants). Os operadores obtêm URLs de vitrine e painel **apenas** no Admin Master (ex.: cartão «Abrir vitrine e painel desta concessionária» ou equivalente aprovado pelo UX). O caminho opcional `GET /painel/acesso/:slug` existe **somente** em desenvolvimento e **somente** com `NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP=true`. |
-| **BZ-TOJ-007** | Os links gerados no Admin Master para uma concessionária **activa** devem abrir, em cada ambiente, o **painel** na porta e aplicação correctas e a **vitrine** na aplicação e porta correctas, sem exigir que o operador edite manualmente o host além do previsto na documentação interna. |
+| **BZ-TOJ-007** | Os links gerados no Admin Master para uma concessionária **ativa** devem abrir, em cada ambiente, o **painel** na porta e aplicação corretas e a **vitrine** na aplicação e porta corretas, sem exigir que o operador edite manualmente o host além do previsto na documentação interna. |
 | **BZ-TOJ-008** | Domínio personalizado (`custom_domain`), quando configurado e válido, participa da mesma matriz de decisão: se não resolver a uma loja no contexto adequado (vitrine vs painel), aplicam-se as mesmas regras de **erro amigável** e **sem fuga de informação** sobre a existência de outras lojas. |
 | **BZ-TOJ-009** | Todos os **segmentos de URL visíveis no browser** para estas jornadas mantêm-se em **português** (kebab-case quando multi-palavra), alinhados à convenção da plataforma; identificadores técnicos de repositório (nomes de apps) permanecem em inglês apenas em documentação técnica. |
-| **BZ-TOJ-010** | Ecrãs de **início de sessão**, **recuperação de senha** e **definição de senha** no painel usam o mesmo princípio de **clareza** e **ausência de jargão** que a página de erro de concessionária; mensagens de falha descrevem a acção possível em linguagem humana (ex.: «verifique o endereço»), não mensagens de depuração. |
-| **BZ-TOJ-011** | Qualquer **pista técnica** para equipas (checklist de variáveis, lembretes de `sync:env`, etc.) na página de erro ou análoga é **permitida apenas** em ambiente de **desenvolvimento** e **apenas** atrás de um padrão de UX aprovado pelo PM no handoff (ex.: secção recolhível «Detalhes para a equipa técnica»); em **produção**, esses elementos **não** aparecem por defeito. |
-| **BZ-TOJ-012** | Após cada alteração de comportamento desta iniciativa, a **documentação interna** (regras de negócio e técnica) deve ser actualizada na **mesma entrega**, incluindo exemplos de URL, variáveis de ambiente e referência cruzada às regras **BZ-TERR-*** que permanecem como registo histórico no documento, sem duplicar conflitos com **BZ-TOJ-***. |
+| **BZ-TOJ-010** | Telas de **início de sessão**, **recuperação de senha** e **definição de senha** no painel usam o mesmo princípio de **clareza** e **ausência de jargão** que a página de erro de concessionária; mensagens de falha descrevem a ação possível em linguagem humana (ex.: «verifique o endereço»), não mensagens de depuração. |
+| **BZ-TOJ-011** | Qualquer **pista técnica** para equipes (checklist de variáveis, lembretes de `sync:env`, etc.) na página de erro ou análoga é **permitida apenas** em ambiente de **desenvolvimento** e **apenas** atrás de um padrão de UX aprovado pelo PM no handoff (ex.: seção recolhível «Detalhes para a equipe técnica»); em **produção**, esses elementos **não** aparecem por padrão. |
+| **BZ-TOJ-012** | Após cada alteração de comportamento desta iniciativa, a **documentação interna** (regras de negócio e técnica) deve ser atualizada na **mesma entrega**, incluindo exemplos de URL, variáveis de ambiente e referência cruzada às regras **BZ-TERR-*** que permanecem como registro histórico no documento, sem duplicar conflitos com **BZ-TOJ-***. |
 
 #### 7. Fluxos principais (descrever por passos)
 
 **7.1 Operador — abrir vitrine e painel de uma concessionária `active`**
 
-1. O operador inicia sessão no **admin-master** e navega até à ficha de edição da concessionária em estado **activo**.
-2. Na região de atalhos (nome final por UX), escolhe **Abrir vitrine**; o browser abre o URL público da vitrine com o host correcto para o ambiente (dev ou produção).
-3. Na mesma região, escolhe **Abrir painel**; o browser abre o URL do painel com o mesmo tenant implícito pelo host.
-4. Se algum link não abrir a loja esperada, o operador segue o guia interno (DNS, estado da loja, variáveis) e regista o incidente em Operations; **não** se divulga slug por canais não oficiais para contornar o fluxo.
+1. O operador inicia sessão no **admin-master** e navega até a ficha de edição da concessionária em estado **ativo** (`active`).
+2. Na região de atalhos (nome final por UX), escolhe **Abrir painel**; o browser abre o URL do painel com o host correto para o ambiente (dev ou produção).
+3. Na mesma região, escolhe **Abrir vitrine**; o browser abre o URL público da vitrine com o mesmo tenant implícito pelo host.
+4. Se algum link não abrir a loja esperada, o operador segue o guia interno (DNS, estado da loja, variáveis) e registra o incidente em Operations; **não** se divulga slug por canais não oficiais para contornar o fluxo.
 
-**7.2 Utilizador da loja — primeiro acesso e login**
+**7.2 Usuário da loja — primeiro acesso e login**
 
 1. O colaborador recebe o URL do painel (operacionalmente gerado a partir do Admin ou comunicação segura da loja).
 2. O browser carrega o host `{slug}.domínio` ou equivalente em desenvolvimento; o middleware resolve o tenant no contexto **painel**.
-3. O utilizador vê o ecrã de **início de sessão** em português, introduz credenciais e entra nas áreas permitidas pelo seu papel.
-4. Se usar **recuperar senha** ou **definir senha**, percorre os passos com mensagens simples; em caso de host incorrecto, vê primeiro o erro de concessionária antes de qualquer área autenticada.
+3. O usuário vê a tela de **início de sessão** em português, introduz credenciais e entra nas áreas permitidas pelo seu papel.
+4. Se usar **recuperar senha** ou **definir senha**, percorre os passos com mensagens simples; em caso de host incorreto, vê primeiro o erro de concessionária antes de qualquer área autenticada.
 
 **7.3 Erro — domínio ou loja não reconhecida**
 
-1. O utilizador acede a um host que não mapeia para uma concessionária no contexto pedido **ou** a vitrine não está disponível por estado da loja.
-2. A aplicação redirecciona ou mostra a página `/erro/concessionaria` com título e texto em **português claro**.
+1. O usuário acessa um host que não mapeia para uma concessionária no contexto pedido **ou** a vitrine não está disponível por estado da loja.
+2. A aplicação redireciona ou mostra a página `/erro/concessionaria` com título e texto em **português claro**.
 3. O texto explica que **não há loja neste endereço** ou equivalente aprovado pelo UX, com **próximo passo** humano (contactar quem geriu o site, verificar endereço).
-4. Em **produção**, não são exibidos por defeito blocos técnicos; em **desenvolvimento**, o bloco técnico só aparece conforme **BZ-TOJ-011**.
+4. Em **produção**, não são exibidos por padrão blocos técnicos; em **desenvolvimento**, o bloco técnico só aparece conforme **BZ-TOJ-011**.
 
 #### 8. Ambientes (dev vs produção)
 
 | Ambiente | Host esperado (exemplo) | Quem configura | Notas |
 | --- | --- | --- | --- |
-| Desenvolvimento local | Painel: `http://{slug}.localhost:3002` — Vitrine: `http://{slug}.localhost:3003` | Engenharia (com apoio de Operations para documentar o «como correr») | Portas alinhadas ao monorepo; `{slug}` é o slug da concessionária; requer resolução local conforme guia técnico; raiz efectiva `localhost` conforme **BZ-TOJ-004** |
+| Desenvolvimento local | Painel: `http://{slug}.localhost:3002` — Vitrine: `http://{slug}.localhost:3003` | Engenharia (com apoio de Operations para documentar o «como correr») | Portas alinhadas ao monorepo; `{slug}` é o slug da concessionária; requer resolução local conforme guia técnico; raiz efetiva `localhost` conforme **BZ-TOJ-004** |
 | Produção | `https://{slug}.{domínio_plataforma}` — exemplo: `https://{slug}.autopainel.com.br` | Operações AutoPainel em coordenação com Engenharia (DNS, certificados) | Domínio final da plataforma é a «fonte de verdade» operacional; **wildcard** ou equivalente deve cobrir `{slug}`; **TLS** obrigatório em `https` |
 
 #### 9. Segurança, privacidade e conformidade
 
-- **Enumeração de tenants:** **proibida** em qualquer superfície pública. Não existe formulário aberto do tipo «introduza o slug da sua loja» acessível sem contexto operador. O bootstrap `GET /painel/acesso/:slug` permanece **desligado** por defeito e **só** em desenvolvimento com flag explícita (**BZ-TOJ-006**).
-- **Dados mostrados em ecrãs públicos (login, erro):** apenas copy **não técnica** orientada a humanos; não revelar se um slug «existe mas está inactivo» versus «não existe» de forma distinguível por mensagens diferentes que permitam **enumeração por oráculo**; alinhamento exacto de formulação com **UX** após este PRD.
-- **Cookies / subdomínios / Auth redirects:** cada app mantém o isolamento adequado de cookies no mesmo **site** de primeiro nível conforme desenho técnico; as **Redirect URLs** do Supabase Auth devem incluir todos os hosts de painel previstos (dev e prod); alterações a hosts são **pré-release** verificadas pela checklist da secção 12.
+- **Enumeração de tenants:** **proibida** em qualquer superfície pública. Não existe formulário aberto do tipo «digite o slug da sua loja» acessível sem contexto operador. O bootstrap `GET /painel/acesso/:slug` permanece **desligado** por padrão e **só** em desenvolvimento com flag explícita (**BZ-TOJ-006**).
+- **Dados mostrados em telas públicos (login, erro):** apenas copy **não técnica** orientada a humanos; não revelar se um slug «existe mas está inativo» versus «não existe» de forma distinguível por mensagens diferentes que permitam **enumeração por oráculo**; alinhamento exato de formulação com **UX** após este PRD.
+- **Cookies / subdomínios / Auth redirects:** cada app mantém o isolamento adequado de cookies no mesmo **site** de primeiro nível conforme desenho técnico; as **Redirect URLs** do Supabase Auth devem incluir todos os hosts de painel previstos (dev e prod); alterações a hosts são **pré-release** verificadas pela checklist da seção 12.
 
 #### 10. Critérios de aceite (CA) — formato Given / When / Then
 
 | ID | Critério |
 | --- | --- |
-| **CA-TOJ-001** | **Dado** um host `{slug}.localhost:3003` sem concessionária registada com esse slug **quando** o visitante abre a raiz **então** é apresentada ou alcançada a página `/erro/concessionaria` com mensagem em português claro e **sem** título que invoque «erro 404» como substituto da explicação. |
+| **CA-TOJ-001** | **Dado** um host `{slug}.localhost:3003` sem concessionária registrada com esse slug **quando** o visitante abre a raiz **então** é apresentada ou alcançada a página `/erro/concessionaria` com mensagem em português claro e **sem** título que invoque «erro 404» como substituto da explicação. |
 | **CA-TOJ-002** | **Dado** uma concessionária existente com estado **diferente** de `active` **quando** o visitante abre a vitrine nesse host **então** **não** vê o site público da loja e é conduzido ao fluxo de erro de concessionária. |
 | **CA-TOJ-003** | **Dado** uma concessionária `active` **quando** o operador no `admin-master` usa o atalho de vitrine **então** o browser abre `http://{slug}.localhost:3003` em desenvolvimento ou `https://{slug}.{domínio_plataforma}` em produção com conteúdo público coerente. |
 | **CA-TOJ-004** | **Dado** a mesma concessionária `active` **quando** o operador usa o atalho de painel **então** o browser abre `http://{slug}.localhost:3002` em desenvolvimento ou `https://{slug}.{domínio_plataforma}` em produção na app `dealership-panel`. |
-| **CA-TOJ-005** | **Dado** o slug canónico `MinhaLoja` na base e o host `minhaloja.localhost` **quando** se resolve o tenant **então** a loja correcta é encontrada (correspondência **insensível** a maiúsculas/minúsculas). |
-| **CA-TOJ-006** | **Dado** um utilizador anónimo na Internet **quando** tenta enumerar slugs por tentativa sequencial de subdomínios **então** **não** existe página pública oficial que facilite ou incentive essa descoberta e as mensagens **não** confirmam existência de lojas por diferenças discriminatórias. |
+| **CA-TOJ-005** | **Dado** o slug canônico `MinhaLoja` na base e o host `minhaloja.localhost` **quando** se resolve o tenant **então** a loja correta é encontrada (correspondência **insensível** a maiúsculas/minúsculas). |
+| **CA-TOJ-006** | **Dado** um usuário anônimo na Internet **quando** tenta enumerar slugs por tentativa sequencial de subdomínios **então** **não** existe página pública oficial que facilite ou incentive essa descoberta e as mensagens **não** confirmam existência de lojas por diferenças discriminatórias. |
 | **CA-TOJ-007** | **Dado** `NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP` **falso** ou ambiente **não** de desenvolvimento **quando** se solicita `GET /painel/acesso/{slug}` **então** o comportamento não expõe um atalho de bootstrap reservado a desenvolvimento. |
-| **CA-TOJ-008** | **Dado** `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` com valor de produção no `.env` **quando** o developer acede a `{slug}.localhost:3002` **então** o painel continua a resolver o tenant sem exigir alteração manual do domínio raiz para cada loja (raiz efectiva `localhost`). |
+| **CA-TOJ-008** | **Dado** `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` com valor de produção no `.env` **quando** o developer acede a `{slug}.localhost:3002` **então** o painel continua a resolver o tenant sem exigir alteração manual do domínio raiz para cada loja (raiz efetiva `localhost`). |
 | **CA-TOJ-009** | **Dado** um colaborador na página de início de sessão do painel **quando** ocorre erro de credenciais ou de rede tratado pela UI **então** a mensagem está em português simples **sem** referências a «RPC», «middleware» ou stack técnica. |
-| **CA-TOJ-010** | **Dado** ambiente de **produção** **quando** o utilizador vê a página de erro de concessionária **então** **não** vê checklist técnica por defeito; **dado** ambiente de **desenvolvimento** e padrão UX aprovado **quando** expande a zona opcional de detalhes técnicos **então** pode ver checklist operacional sem que isso apareça em produção. |
+| **CA-TOJ-010** | **Dado** ambiente de **produção** **quando** o usuário vê a página de erro de concessionária **então** **não** vê checklist técnica por padrão; **dado** ambiente de **desenvolvimento** e padrão UX aprovado **quando** expande a zona opcional de detalhes técnicos **então** pode ver checklist operacional sem que isso apareça em produção. |
 
 #### 11. Fora de âmbito e riscos
 
@@ -249,29 +249,51 @@ Marque **In** / **Out** / **Mais tarde** por linha.
 
 | Risco | Probabilidade / impacto | Mitigação |
 | --- | --- | --- |
-| DNS wildcard ou certificados incompletos em produção | Alta / alto — quebra de todos os subdomínios | Checklist pré-release (secção 12); validação Operations antes do «go live»; monitorização de erros de TLS |
-| Redirect URLs do Auth desactualizados após mudança de domínio | Média / alto — login impossível | Manter lista versionada na documentação técnica; reverção imediata ou hotfix de configuração |
-| Equipa UX atrasada após este PRD | Média / médio — bloqueio deliberado de refinamento | PM agenda revisão «Em revisão» → «Aprovado» com stakeholders; entrada formal na fila UX |
+| DNS wildcard ou certificados incompletos em produção | Alta / alto — quebra de todos os subdomínios | Checklist pré-release (seção 12); validação Operations antes do «go live»; monitoramento de erros de TLS |
+| Redirect URLs do Auth desatualizados após mudança de domínio | Média / alto — login impossível | Manter lista versionada na documentação técnica; reversão imediata ou hotfix de configuração |
+| Equipe UX atrasada após este PRD | Média / médio — bloqueio deliberado de refinamento | PM agenda revisão com stakeholders; entrada formal na fila UX |
 | Confusão entre porta **3002** e **3003** localmente | Média / baixo — operador abre app errada | Documentação interna com tabela explícita; labels no Admin «Painel (3002 dev)» apenas se UX aprovar |
 
 #### 12. Dependências e checklist pré-release
 
-- [ ] **DNS / TLS:** wildcard `{slug}.{domínio_plataforma}` e registos para domínios personalizados acordados com o cliente, quando aplicável.
-- [ ] **Supabase Auth — Redirect URLs:** incluir URLs de `dealership-panel` para dev (`http://{slug}.localhost:3002/**`) e produção (`https://{slug}.{domínio_plataforma}/**`) conforme política de segurança do projecto.
+- [ ] **DNS / TLS:** wildcard `{slug}.{domínio_plataforma}` e registros para domínios personalizados acordados com o cliente, quando aplicável.
+- [ ] **Supabase Auth — Redirect URLs:** incluir URLs de `dealership-panel` para dev (`http://{slug}.localhost:3002/**`) e produção (`https://{slug}.{domínio_plataforma}/**`) conforme política de segurança do projeto.
 - [ ] **Variáveis de ambiente por app:** `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN`, `NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP` (apenas dev), chaves Supabase publicáveis, e quaisquer variáveis listadas em `documentacao-tecnica.md` para resolução de host.
 - [ ] **Comunicação a clientes (se aplicável):** Operations envia modelo de e-mail com os URLs finais e instruções de bookmark **após** DNS estável.
 
-#### 13. Entrada para UX (após este PRD aprovado)
+#### 13. Entrada para UX (PRD aprovado — decisões fechadas para handoff)
 
-Lista mínima de decisões que o UX **não** pode inventar sozinho — o PM marca o que já está fechado e o que fica em aberto.
-
-| Tópico | Decisão PM (fechada / aberta) | Nota |
+| Tópico | Decisão PM | Nota |
 | --- | --- | --- |
-| Tom de voz em erros e login | **Fechada** | Português **simples**, **segunda pessoa** ou **neutro** colectivo conforme guia de inclusão já usado na plataforma; **proibido** jargão técnico em produção; tons de urgência baixa para erro de tenant. |
-| Checklist técnico visível em dev | **Aberta** | **Permitido** apenas em `development` e **atrás** de controlo explícito (ex.: «Detalhes para a equipa técnica»); UX define hierarquia visual e rótulo exacto; PM aprova na revisão final do handoff. |
-| Número de botões no Admin e rótulos finais | **Aberta** | Mínimo de **duas** acções (vitrine + painel); UX pode propor ícones, ordem e microcopy; PM fecha após uma ronda de revisão com Operations (evitar jargão «3002/3003» em produção). |
+| Tom de voz em erros e login | **Fechada** | **pt-BR**; tom simples, neutro ou segunda pessoa; sem jargão técnico em produção; baixa urgência em erro de tenant. |
+| Checklist técnico visível em dev | **Fechada** | Permitido só em `development`, **atrás** de acordeão/disclosure (ex.: «Detalhes para a equipe técnica»); rótulo e hierarquia fechados em **13.2** (UX). |
+| Botões no Admin (atalhos) | **Fechada** | Ordem: **Abrir painel** → **Abrir vitrine** (suporte tende a validar sessão no painel primeiro). Ícones e microcopy finos: UX ajusta sem alterar ordem nem contagem mínima (2 botões). Sem números de porta em rótulos de **produção**; em **dev**, só se UX aprovar hint curto. |
 
----
+#### 13.1 Decisões PM — questões abertas encerradas (2026-05-08)
+
+| ID | Decisão |
+| --- | --- |
+| **O1 — `www` vs ápice em `custom_domain`** | **Canônico em ápice** (`loja.com.br`): `www` redireciona com **301** para o ápice quando ambos apontarem para a AutoPainel; se só `www` estiver configurado, documentar exceção em Operations. Mensagens de erro **não** ensinam o usuário a «tentar com ou sem www» — comportamento deve ser transparente. |
+| **O2 — Mensagem única vs variações (anti-oráculo)** | Na **vitrine pública**, usar **uma família de mensagem** para «não há loja neste endereço» tanto para host desconhecido quanto para loja existente porém **não** `active`, **sem** texto que revele estado interno. Operações e loja usam o Admin para diagnóstico. |
+| **O3 — Link institucional AutoPainel na página de erro** | **Rodapé discreto**: link «Sobre a AutoPainel» ou texto equivalente **só** como secundário; **não** competir com o CTA principal («Confira o endereço com quem enviou o link» / variante UX). |
+| **O4 — SLA Operations (baseline)** | **Primeira resposta** em **4 horas úteis** (dias comerciais definidos pela Operations) para tickets «site da loja não abre»; **meta interna** de resolução ou plano comunicado em **1 dia útil**. PM + Operations revisam baseline após 30 dias de uso. |
+| **O5 — Ordem dos botões no Admin** | Ver linha «Botões no Admin» na tabela acima (**painel** antes de **vitrine**). |
+| **O6 — Acessibilidade** | Alinhar às **WCAG 2.1 nível AA** nas páginas `/erro/concessionaria`, login e recuperação de senha do `dealership-panel` e `customer-site` — mesmo padrão mínimo do design system; sem exceção «abaixo do resto do produto». |
+
+#### 13.2 Handoff UX — Fase 2 (rascunho para confirmação da equipe)
+
+**Personas e metas (resumo)** — Visitante **mobile** (ver vitrine ou entender erro em 1 tela); **Comprador** vindo de anúncio (confiança de que é o site certo); **Colaborador** da loja (login sem medo); **Operador** Admin (dois cliques, mesma loja); **Gestor** da loja (saber a quem escalar).
+
+**Jornada principal (operador)** — Abrir ficha da concessionária `active` → **Abrir painel** → confirmar tenant → voltar ou abrir **Abrir vitrine** → confirmar vitrine pública.
+
+**Inventário de telas / estados** — Admin: cartão de atalhos (2 CTAs + opcional «copiar URLs» em texto monoespaçado só em dev se já existir). Painel/vitrine: `/erro/concessionaria` (título, corpo, CTA primário, CTA secundário opcional, rodapé institucional discreto); login, recuperar senha, definir senha; loading esquelético se houver delay de resolução de host.
+
+**Whitelabel e responsivo** — Erro e auth respeitam tokens do design system; em mobile, CTA principal **acima da dobra**; contraste AA; foco visível em teclado.
+
+**Casos de borda (UX)** — Teclado RTL não aplicável; zoom 200%; leitor de tela: ordem de leitura título → explicação → ação; `custom_domain` com redirecionamento `www`; loja `suspended` na vitrine (mensagem idêntica à de host inválido); dev: acordeão técnico fechado por padrão.
+
+**Pausa squad** — **Handoff UX confirmado** (equipe, 2026-05-08). **Fase 3** em `documentacao-tecnica.md`; **Fase 4** (UI `/erro/concessionaria`); **Fase 5** (matriz QA + E2E) na mesma doc. **Fase 6** (sprint review) — ver quadro «Fase 6» em `documentacao-tecnica.md`.
+
 ---
 
 ### 2026-05-08 — Iniciativa: Central de gestão, financeiro e permissões (Admin Master) (PRD — Passo A)

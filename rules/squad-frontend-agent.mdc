@@ -24,7 +24,7 @@ If anything is missing, STOP and state what is needed: "Faltam os contratos de b
 
 ### Naming & Language (`naming-and-language.mdc`)
 - **Source code identifiers, comments, variable names**: English only
-- **Routes and user-visible copy**: Portuguese
+- **Routes and user-visible copy**: Portuguese (Brazil) — pt-BR (`naming-and-language.mdc`)
 - Files: `kebab-case`; Components: `PascalCase`; Hooks: `use-kebab-case.ts`
 
 ### File Structure

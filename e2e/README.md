@@ -21,7 +21,7 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 
 ## O que os testes cobrem
 
-- **Painel:** página `/erro/concessionaria` renderiza; slug inexistente → erro ao pedir `/`. Com **`E2E_DEALERSHIP_SLUG`**, `/painel` → `/login` (resolver dashboard).
-- **Vitrine:** slug inventado → `/erro/concessionaria`; com **`E2E_DEALERSHIP_SLUG`** e loja **`active`**, a home carrega; se a loja não for `active`, o teste é **skipped** (ver ponto 3).
+- **Painel:** página `/erro/concessionaria` renderiza; slug inexistente → erro ao pedir `/`. Com **`E2E_DEALERSHIP_SLUG`**, `/painel` → `/login` (resolver dashboard). **Fase 5:** `h1` unificado, sem «404» no título; `<details>` técnico fechado por padrão em `development` (skip se `next start` em produção).
+- **Vitrine:** slug inventado → `/erro/concessionaria` com o mesmo `h1`; rota directa `/erro/concessionaria` no `127.0.0.1`; bare loopback → erro (salvo variáveis de dev tenant). Com **`E2E_DEALERSHIP_SLUG`** e loja **`active`**, a home carrega; se a loja não for `active`, o teste é **skipped** (ver ponto 3).
 
-Os testes **não** fazem login nem gravam dados — apenas verificam resolução de host + middleware e uma página de erro estável.
+Os testes **não** fazem login nem gravam dados — apenas verificam resolução de host + middleware e a página de erro estável.

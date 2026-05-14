@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { TENANT_ERROR_HEADING_RE } from "../helpers/tenant-error-page";
+
 const storefrontPort = process.env.E2E_CUSTOMER_SITE_PORT ?? "3003";
 
 test.describe.configure({ mode: "serial" });
@@ -25,6 +27,11 @@ test.describe("customer-site tenant routing", () => {
 
     await page.goto(`http://127.0.0.1:${storefrontPort}/`);
     await expect(page).toHaveURL(/\/erro\/concessionaria/);
+    await expect(
+      page.getByRole("heading", {
+        name: TENANT_ERROR_HEADING_RE,
+      }),
+    ).toBeVisible();
   });
 
   test("missing slug subdomain → erro", async ({ page }) => {
@@ -32,6 +39,36 @@ test.describe("customer-site tenant routing", () => {
     const fakeSlug = `e2e-store-${suffix}`;
     await page.goto(`http://${fakeSlug}.localhost:${storefrontPort}/`);
     await expect(page).toHaveURL(/\/erro\/concessionaria/);
+    await expect(
+      page.getByRole("heading", {
+        name: TENANT_ERROR_HEADING_RE,
+      }),
+    ).toBeVisible();
+  });
+
+  test("error page: direct path shows unified heading", async ({ page }) => {
+    await page.goto(`http://127.0.0.1:${storefrontPort}/erro/concessionaria`);
+    await expect(
+      page.getByRole("heading", { name: TENANT_ERROR_HEADING_RE }),
+    ).toBeVisible();
+  });
+
+  test("error page: single h1 and hero without 404 wording", async ({ page }) => {
+    await page.goto(`http://127.0.0.1:${storefrontPort}/erro/concessionaria`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const h1 = page.getByRole("heading", { level: 1 });
+    await expect(h1).toHaveText(TENANT_ERROR_HEADING_RE);
+    await expect(h1).not.toContainText(/404/i);
+  });
+
+  test("dev technical disclosure exists and starts collapsed", async ({ page }) => {
+    await page.goto(`http://127.0.0.1:${storefrontPort}/erro/concessionaria`);
+    const details = page.locator("details");
+    if ((await details.count()) === 0) {
+      test.skip(true, "Checklist técnica só em NODE_ENV=development (ex.: next dev).");
+    }
+    await expect(details).not.toHaveAttribute("open");
+    await expect(page.getByText("Detalhes para a equipe técnica")).toBeVisible();
   });
 
   test("dealership slug loads storefront home when status is active", async ({

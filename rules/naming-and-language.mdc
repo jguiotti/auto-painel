@@ -1,11 +1,11 @@
 ---
-description: Code in English; app routes and user-facing UI in Portuguese (AutoPainel).
+description: Code in English; app routes and user-facing UI in Brazilian Portuguese (pt-BR).
 alwaysApply: true
 ---
 
 # Naming, Language, and Routes (CRITICAL)
 
-Follow these three layers in every change. Do not mix languages in the wrong layer.
+Follow these layers in every change. Do not mix languages in the wrong layer.
 
 ## 1. Source code — English only
 
@@ -19,7 +19,7 @@ Write **only in English** in source files:
 
 Do not use Portuguese (or other languages) for code identifiers or comments.
 
-## 2. Routes (URLs) — Portuguese only
+## 2. Routes (URLs) — Portuguese only (Brazilian wording in any slug-visible copy)
 
 Path segments visible in the browser must be **Portuguese**, lowercase, kebab-case when multi-word:
 
@@ -28,20 +28,27 @@ Path segments visible in the browser must be **Portuguese**, lowercase, kebab-ca
 
 English path segments (e.g. `/dashboard`, `/inventory`) are not allowed unless an explicit exception is documented.
 
-## 3. User-facing interface — Portuguese only
+## 3. User-facing interface — Portuguese (Brazil) — pt-BR only
 
-All copy the end user sees must be **Portuguese**:
+All copy the end user sees must be **Brazilian Portuguese (pt-BR)**, not European Portuguese (pt-PT):
 
-- Visible text, labels, placeholders, buttons, headings, empty states, errors shown in UI
+- Visible text, labels, placeholders, buttons, headings, empty states, errors shown to users
 - `aria-label`, `title`, and similar when intended for users
 - Validation messages and toasts intended for the user
 
+**Orthography and vocabulary (examples):** *atualização*, *usuário*, *seção*, *não*, *cenário*, *contato*, *redirecionamento*, *efetivo/efetiva*, *ativo/ativa* (prose); avoid *actualização*, *utilizador*, *secção*, *redireccionamento*, *efectivo*, *activo* in UI strings. Prefer Brazilian terms (*celular*, *e-mail* with hyphen as commonly written in BR product copy) when choosing consumer-facing wording.
+
 English is allowed in developer-only logs and non-user-facing telemetry, not in UI strings.
+
+## 4. AI assistants and operator-facing markdown (when not English)
+
+When the model answers **in Portuguese** to the team, or when editing **operator-facing** fallback markdown under `apps/admin-master/content/internal-docs/*.md`, use **pt-BR** for prose. Keep **identifiers, paths, and migration filenames** in English as in the codebase.
 
 ## Quick check
 
-| Layer            | Language   |
-|------------------|------------|
-| Code & comments  | English    |
-| URL paths        | Portuguese |
-| UI copy          | Portuguese |
+| Layer | Language |
+| --- | --- |
+| Code & comments | English |
+| URL paths | Portuguese (pt-BR tone in any user-visible segment labels if applicable) |
+| UI copy | Portuguese (Brazil) — pt-BR |
+| Squad PRD/UX text in PT in repo | pt-BR |
