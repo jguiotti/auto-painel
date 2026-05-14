@@ -1,4 +1,5 @@
 import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
+import type { StorefrontThemeMode } from "@autopainel/shared/types";
 
 export interface DealershipAdminRow {
   id: string;
@@ -20,6 +21,7 @@ export interface DealershipAdminRow {
   billing_notes: string | null;
   pricing_plan_id: string | null;
   layout_id: StorefrontLayoutTemplateId;
+  storefront_theme_mode: StorefrontThemeMode;
   created_at: string;
   updated_at: string;
 }

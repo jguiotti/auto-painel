@@ -5,6 +5,7 @@ import {
   parseStorefrontLayoutId,
   type StorefrontLayoutTemplateId,
 } from "@autopainel/shared/types";
+import type { StorefrontThemeMode } from "@autopainel/shared/types";
 
 import type { DealershipAdminRow } from "@/types/dealership-admin";
 
@@ -31,16 +32,21 @@ export function normalizeRow(raw: Record<string, unknown>): DealershipAdminRow {
   const pricing_plan_id =
     typeof pid === "string" && UUID_LOOSE.test(pid) ? pid : null;
 
+  const theme_config = asRecord(raw.theme_config);
+  const storefront_theme_mode: StorefrontThemeMode =
+    theme_config.storefront_theme_mode === "dark" ? "dark" : "light";
+
   return {
     ...(raw as unknown as DealershipAdminRow),
     theme_settings: asRecord(raw.theme_settings),
-    theme_config: asRecord(raw.theme_config),
+    theme_config,
     content_config: asRecord(raw.content_config),
     enabled_features: Array.isArray(ef)
       ? ef.filter((x): x is string => typeof x === "string")
       : [],
     pricing_plan_id,
     layout_id,
+    storefront_theme_mode,
   };
 }
 

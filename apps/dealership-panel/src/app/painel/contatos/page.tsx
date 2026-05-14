@@ -4,7 +4,9 @@ import type { LeadAssigneeOption } from "@/components/leads/lead-assignee-select
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 export default async function LeadsPage() {
-  const { supabase, profile } = await requireDashboardSession();
+  const { supabase, profile, dealershipId } = await requireDashboardSession();
+  const canManageAssignments =
+    profile.role === "owner" || profile.role === "super_admin";
 
   const [{ data: rows, error }, { data: assigneeRows }] = await Promise.all([
     supabase
@@ -12,11 +14,12 @@ export default async function LeadsPage() {
       .select(
         "id, client_name, phone, type, created_at, assigned_user_id, vehicles(id, brand, model, public_slug)",
       )
+      .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false }),
     supabase
       .from("profiles")
       .select("id, role")
-      .eq("dealership_id", profile.dealership_id)
+      .eq("dealership_id", dealershipId)
       .in("role", ["owner", "seller"])
       .order("role", { ascending: true }),
   ]);
@@ -67,7 +70,7 @@ export default async function LeadsPage() {
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Interessados vindos da vitrine. Abra o WhatsApp com um clique.
         </p>
-        {profile.role === "owner" ? (
+        {canManageAssignments ? (
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-500 dark:text-zinc-400">
             Atribua cada contato a um vendedor para que ele apareça no painel
             dessa pessoa. Contatos sem responsável ficam visíveis apenas para o
@@ -78,6 +81,7 @@ export default async function LeadsPage() {
       <LeadList
         leads={leads}
         viewerRole={profile.role}
+        canManageAssignments={canManageAssignments}
         assignees={assignees}
       />
     </div>

@@ -5,6 +5,7 @@ import type {
   BrazilianAddressFields,
   PricingPlanListRow,
   StorefrontLayoutTemplateId,
+  StorefrontThemeMode,
 } from "@autopainel/shared/types";
 import {
   Button,
@@ -123,6 +124,16 @@ function faviconUrlFromDealership(dealership: DealershipAdminRow): string {
   return readStr(dealership.theme_config as Record<string, unknown>, "favicon_url");
 }
 
+function storefrontThemeModeFromDealership(
+  dealership: DealershipAdminRow,
+): StorefrontThemeMode {
+  const mode = readStr(
+    dealership.theme_config as Record<string, unknown>,
+    "storefront_theme_mode",
+  );
+  return mode === "dark" ? "dark" : "light";
+}
+
 function isOptionalFeatureChecked(
   dealership: DealershipAdminRow | null,
   key: string,
@@ -160,6 +171,7 @@ type FormDefaults = {
   social_website: string;
   status: string;
   layout_id: StorefrontLayoutTemplateId;
+  storefront_theme_mode: StorefrontThemeMode;
 };
 
 function getDefaults(
@@ -193,6 +205,7 @@ function getDefaults(
       social_website: readSocial(cc, "website"),
       status: dealership.status,
       layout_id: dealership.layout_id ?? 1,
+      storefront_theme_mode: storefrontThemeModeFromDealership(dealership),
     };
   }
   return {
@@ -218,6 +231,7 @@ function getDefaults(
     social_website: "",
     status: "pending_setup",
     layout_id: 1,
+    storefront_theme_mode: "light",
   };
 }
 
@@ -546,6 +560,23 @@ export function DealershipForm({
             <p className="text-xs text-muted-foreground">
               Escolha o modelo da vitrine. Cores e imagens acima aplicam-se a
               qualquer template.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="d-storefront-theme-mode">Tema base da vitrine</Label>
+            <select
+              id="d-storefront-theme-mode"
+              name="storefront_theme_mode"
+              className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              defaultValue={defaults.storefront_theme_mode}
+              disabled={pending}
+            >
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Define o fundo base da vitrine da loja. O modo escuro usa superfícies escuras;
+              o modo claro usa superfícies claras.
             </p>
           </div>
           <DealershipTemplatePicker

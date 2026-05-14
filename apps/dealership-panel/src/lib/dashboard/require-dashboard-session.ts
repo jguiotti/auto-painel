@@ -9,15 +9,15 @@ export interface DashboardSession {
   supabase: SupabaseClient;
   user: User;
   profile: {
-    dealership_id: string;
+    dealership_id: string | null;
     role: string;
   };
   dealershipId: string;
 }
 
 /**
- * Ensures an authenticated user and that their profile `dealership_id` matches the
- * tenant cookie resolved from the host — so dashboard queries only ever see that tenant (RLS).
+ * Ensures an authenticated user and a valid dealership resolved from host cookie.
+ * Tenant users must match `profiles.dealership_id`; `super_admin` may operate any host dealership.
  *
  * @param loginRedirectPathFallback Used when x-dashboard-path is missing (e.g. Server Actions).
  */
@@ -54,7 +54,10 @@ export async function requireDashboardSession(
     .eq("id", user.id)
     .single();
 
-  if (error || !profile || profile.dealership_id !== cookieDealershipId) {
+  const isSuperAdmin = profile?.role === "super_admin";
+  const isDealershipBoundProfile = profile?.dealership_id === cookieDealershipId;
+
+  if (error || !profile || (!isSuperAdmin && !isDealershipBoundProfile)) {
     redirect("/erro/concessionaria");
   }
 
@@ -76,6 +79,6 @@ export async function requireDashboardSession(
     supabase,
     user,
     profile,
-    dealershipId: profile.dealership_id,
+    dealershipId: cookieDealershipId,
   };
 }

@@ -13,10 +13,10 @@ export async function updateLeadAssigneeAction(
   leadId: string,
   assignedUserId: string | null,
 ): Promise<AssignLeadResult> {
-  const { supabase, profile } = await requireDashboardSession();
+  const { supabase, profile, dealershipId } = await requireDashboardSession();
 
-  if (profile.role !== "owner") {
-    return { error: "Apenas o gestor da loja pode atribuir contatos." };
+  if (profile.role !== "owner" && profile.role !== "super_admin") {
+    return { error: "Apenas perfis de gestão podem atribuir contatos." };
   }
 
   if (assignedUserId) {
@@ -24,7 +24,7 @@ export async function updateLeadAssigneeAction(
       .from("profiles")
       .select("id")
       .eq("id", assignedUserId)
-      .eq("dealership_id", profile.dealership_id)
+      .eq("dealership_id", dealershipId)
       .in("role", ["owner", "seller"])
       .maybeSingle();
 

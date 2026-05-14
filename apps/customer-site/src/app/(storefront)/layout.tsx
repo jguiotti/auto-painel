@@ -1,3 +1,4 @@
+import { resolveDealershipFaviconUrl } from "@autopainel/shared/lib/theme/branding";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -11,10 +12,17 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!dealership?.name) {
     return { title: "Vitrine" };
   }
+  const faviconUrl = resolveDealershipFaviconUrl(dealership.theme_config);
 
   return {
     title: dealership.name,
     description: `Veículos e condições — ${dealership.name}`,
+    icons: faviconUrl
+      ? {
+          icon: faviconUrl,
+          shortcut: faviconUrl,
+        }
+      : undefined,
   };
 }
 

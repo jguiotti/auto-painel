@@ -51,23 +51,55 @@ function parsePrice(value: string): number | null {
   return n;
 }
 
+function parseOptionalPrice(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+  return parsePrice(value);
+}
+
+function parseVehicleType(value: string): string | null {
+  const allowed = new Set([
+    "automovel",
+    "motocicleta",
+    "caminhonete",
+    "van",
+    "suv",
+    "utilitario",
+    "caminhao",
+    "outro",
+  ]);
+  return allowed.has(value) ? value : null;
+}
+
 export async function createVehicleAction(formData: FormData) {
   const { supabase, dealershipId } = await requireDashboardSession("/painel/estoque/novo");
 
   const brand = String(formData.get("brand") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
+  const vehicleType = parseVehicleType(String(formData.get("vehicle_type") ?? "").trim());
+  const vehicleTypeCustom = String(formData.get("vehicle_type_custom") ?? "").trim();
   const publicSlug = normalizePublicSlug(String(formData.get("public_slug") ?? ""));
   const description = String(formData.get("description") ?? "").trim();
   const status = String(formData.get("status") ?? "available");
+  const isActive = String(formData.get("is_active") ?? "true") !== "false";
+  const isFeatured = String(formData.get("is_featured") ?? "").trim() === "true";
   const manufacturingYear = parseIntSafe(
     String(formData.get("manufacturing_year") ?? ""),
   );
   const modelYear = parseIntSafe(String(formData.get("model_year") ?? ""));
   const mileage = parseIntSafe(String(formData.get("mileage") ?? ""));
-  const price = parsePrice(String(formData.get("price") ?? ""));
+  const salePrice = parsePrice(String(formData.get("sale_price") ?? ""));
+  const fipePrice = parseOptionalPrice(String(formData.get("fipe_price") ?? ""));
 
   if (!brand || !model || !publicSlug) {
     return { error: "Preencha marca, modelo e slug público." };
+  }
+  if (!vehicleType) {
+    return { error: "Tipo de veículo inválido." };
+  }
+  if (vehicleType === "outro" && !vehicleTypeCustom) {
+    return { error: "Informe o tipo personalizado quando selecionar 'Outro'." };
   }
   if (status !== "available" && status !== "sold") {
     return { error: "Status inválido." };
@@ -76,7 +108,7 @@ export async function createVehicleAction(formData: FormData) {
     manufacturingYear === null ||
     modelYear === null ||
     mileage === null ||
-    price === null
+    salePrice === null
   ) {
     return { error: "Ano, quilometragem e preço devem ser números válidos." };
   }
@@ -110,7 +142,13 @@ export async function createVehicleAction(formData: FormData) {
       manufacturing_year: manufacturingYear,
       model_year: modelYear,
       mileage,
-      price,
+      price: salePrice,
+      sale_price: salePrice,
+      fipe_price: fipePrice,
+      vehicle_type: vehicleType,
+      vehicle_type_custom: vehicleType === "outro" ? vehicleTypeCustom : null,
+      is_active: isActive,
+      is_featured: isFeatured,
       description: description.length > 0 ? description : null,
       status,
       public_slug: publicSlug,
@@ -147,7 +185,11 @@ export async function createVehicleAction(formData: FormData) {
     });
     if (upErr) {
       await removeAllImagesForVehicle(supabase, dealershipId, vehicleId);
-      await supabase.from("vehicles").delete().eq("id", vehicleId);
+      await supabase
+        .from("vehicles")
+        .delete()
+        .eq("id", vehicleId)
+        .eq("dealership_id", dealershipId);
       return { error: `Falha ao enviar imagem: ${upErr.message}` };
     }
     const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -178,6 +220,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     .from("vehicles")
     .select("id, images")
     .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId)
     .single();
 
   if (loadError || !existing) {
@@ -186,18 +229,29 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
 
   const brand = String(formData.get("brand") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
+  const vehicleType = parseVehicleType(String(formData.get("vehicle_type") ?? "").trim());
+  const vehicleTypeCustom = String(formData.get("vehicle_type_custom") ?? "").trim();
   const publicSlug = normalizePublicSlug(String(formData.get("public_slug") ?? ""));
   const description = String(formData.get("description") ?? "").trim();
   const status = String(formData.get("status") ?? "available");
+  const isActive = String(formData.get("is_active") ?? "true") !== "false";
+  const isFeatured = String(formData.get("is_featured") ?? "").trim() === "true";
   const manufacturingYear = parseIntSafe(
     String(formData.get("manufacturing_year") ?? ""),
   );
   const modelYear = parseIntSafe(String(formData.get("model_year") ?? ""));
   const mileage = parseIntSafe(String(formData.get("mileage") ?? ""));
-  const price = parsePrice(String(formData.get("price") ?? ""));
+  const salePrice = parsePrice(String(formData.get("sale_price") ?? ""));
+  const fipePrice = parseOptionalPrice(String(formData.get("fipe_price") ?? ""));
 
   if (!brand || !model || !publicSlug) {
     return { error: "Preencha marca, modelo e slug público." };
+  }
+  if (!vehicleType) {
+    return { error: "Tipo de veículo inválido." };
+  }
+  if (vehicleType === "outro" && !vehicleTypeCustom) {
+    return { error: "Informe o tipo personalizado quando selecionar 'Outro'." };
   }
   if (status !== "available" && status !== "sold") {
     return { error: "Status inválido." };
@@ -206,7 +260,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     manufacturingYear === null ||
     modelYear === null ||
     mileage === null ||
-    price === null
+    salePrice === null
   ) {
     return { error: "Ano, quilometragem e preço devem ser números válidos." };
   }
@@ -238,14 +292,21 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       manufacturing_year: manufacturingYear,
       model_year: modelYear,
       mileage,
-      price,
+      price: salePrice,
+      sale_price: salePrice,
+      fipe_price: fipePrice,
+      vehicle_type: vehicleType,
+      vehicle_type_custom: vehicleType === "outro" ? vehicleTypeCustom : null,
+      is_active: isActive,
+      is_featured: isFeatured,
       description: description.length > 0 ? description : null,
       status,
       public_slug: publicSlug,
       dealership_unit_id: dealershipUnitId,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", vehicleId);
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId);
 
   if (updateError) {
     return {
@@ -285,7 +346,8 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
         images: currentUrls,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", vehicleId);
+      .eq("id", vehicleId)
+      .eq("dealership_id", dealershipId);
   }
 
   revalidatePath("/painel");
@@ -294,7 +356,9 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
 }
 
 export async function removeVehicleImageAction(vehicleId: string, imageUrl: string) {
-  const { supabase } = await requireDashboardSession(`/painel/estoque/${vehicleId}/editar`);
+  const { supabase, dealershipId } = await requireDashboardSession(
+    `/painel/estoque/${vehicleId}/editar`,
+  );
 
   const path = storageObjectPathFromPublicUrl(imageUrl);
   if (path) {
@@ -305,6 +369,7 @@ export async function removeVehicleImageAction(vehicleId: string, imageUrl: stri
     .from("vehicles")
     .select("images")
     .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId)
     .single();
 
   const next = ((row?.images as string[] | null) ?? []).filter((u) => u !== imageUrl);
@@ -315,7 +380,8 @@ export async function removeVehicleImageAction(vehicleId: string, imageUrl: stri
       images: next,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", vehicleId);
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId);
 
   revalidatePath("/painel/estoque");
   revalidatePath(`/painel/estoque/${vehicleId}/editar`);
@@ -327,7 +393,8 @@ export async function deleteVehicleAction(vehicleId: string) {
   const { error: leadsError } = await supabase
     .from("leads")
     .delete()
-    .eq("vehicle_id", vehicleId);
+    .eq("vehicle_id", vehicleId)
+    .eq("dealership_id", dealershipId);
 
   if (leadsError) {
     return { error: leadsError.message };
@@ -335,7 +402,11 @@ export async function deleteVehicleAction(vehicleId: string) {
 
   await removeAllImagesForVehicle(supabase, dealershipId, vehicleId);
 
-  const { error } = await supabase.from("vehicles").delete().eq("id", vehicleId);
+  const { error } = await supabase
+    .from("vehicles")
+    .delete()
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId);
 
   if (error) {
     return { error: error.message };

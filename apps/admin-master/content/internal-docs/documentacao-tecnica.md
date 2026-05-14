@@ -142,6 +142,83 @@ Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento*
 - **Rota `/erro/concessionaria` (painel + vitrine):** quando o middleware não resolve `dealership_id` a partir do host (RPC devolve `null`), redireciona-se para esta rota em **`dealership-panel`** e **`customer-site`**. **Não** confundir com o erro HTTP 404 do Next.js: a página comunica em PT sem usar «404» como título; em `development` o checklist técnico fica dentro de `<details>` (fechado por padrão). Implementação: `apps/dealership-panel/src/app/erro/concessionaria/page.tsx`, `apps/customer-site/src/app/erro/concessionaria/page.tsx`. Critérios de falha comuns: `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` vazio no Edge (mitigado para hosts `*.localhost` — ver abaixo); slug inexistente; vitrine com loja não `active`. Código: `resolveDealershipIdFromHost`, RPCs acima, `apps/*/src/lib/supabase/middleware.ts` (padrões por app). **Next.js 16:** a convenção ativa para boundary de rede é `src/proxy.ts`; manter só `middleware.ts` no root do app deixa a resolução de tenant inoperante em runtime. Correção aplicada em `apps/dealership-panel/src/proxy.ts` e `apps/customer-site/src/proxy.ts`. **Mitigação `*.localhost`:** `resolveEffectivePlatformRootDomain` (`packages/shared/src/lib/tenant/effective-platform-root-domain.ts`) — quando o `Host` (sem porta) é `{slug}.localhost`, a raiz passada às RPCs é **sempre** `localhost` **antes** de usar `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN`, para evitar `null` em dev com env já apontado para produção (ex.: `autopainel.com.br` + host `guiotti.localhost`). Se a variável pública faltar no Edge e o host for `*.localhost`, o resultado continua `localhost`. Logging opcional `[tenant-host-resolve]` nos resolvers quando a RPC falha. **`localhost` nu:** usar `http://slug.localhost:PORT` ou `NEXT_PUBLIC_DEVELOPMENT_TENANT_SLUG` + redireccionamento (`buildBareLocalhostTenantRedirectUrl` em `development-tenant-slug-env.ts`) — o Edge pode omitir `DEVELOPMENT_TENANT_SLUG`. **RLS (correção 2026-05-08):** migração `supabase/migrations/20260508253000_resolve_dealership_id_by_host_private_impl.sql` — lógica em `private.resolve_dealership_id_by_host_impl`; `public.resolve_dealership_id_by_host` é delegate **SECURITY INVOKER** (alinhado a `get_dealership_public_by_slug`), para o `anon` não depender de política `SELECT` em `dealerships` durante a resolução do host. **Reforço:** `supabase/migrations/20260508254500_resolve_dealership_id_by_host_impl_row_security_off.sql` — `perform set_config('row_security', 'off', true)` no início do corpo da função (executado como dono da função no Supabase), para eliminar `null` persistente quando RLS ainda bloqueava o `SELECT` interno. **Sufixo do host (2026-05-08):** `supabase/migrations/20260508262000_host_resolver_platform_suffix_without_like.sql` — deixa de se usar `LIKE '%.' || v_root` para validar subdomínio da plataforma; usa `right(v_host, char_length(v_root)+1) = '.' || v_root` (evita falsos `null` em alguns ambientes). **Dono das funções (2026-05-08):** `supabase/migrations/20260508263500_resolve_host_impl_owner_matches_dealerships.sql` — `ALTER FUNCTION ... OWNER TO` o mesmo papel que possui `public.dealerships`, para os `SELECT` em `SECURITY DEFINER` beneficiarem do bypass de RLS do dono da tabela (sem isto, o papel dono da função migrada não tem política `authenticated` e o resolver devolve sempre `null`). **Estado `status` normalizado (2026-05-08):** `supabase/migrations/20260508265000_resolve_host_status_trim_and_positional_delegate.sql` — filtro `lower(trim(d.status)) = 'active'` na vitrine e delegate `public` com `$1,$2` (evita `status` com espaços invisíveis e edge cases no corpo SQL). **Port no Host / regexp PostgreSQL (2026-05-12):** `supabase/migrations/20260512184500_host_resolver_strip_port_posix_digit_class.sql` — remove sufixo `:porta` com `:[0-9]+$` em vez de `:\\d+$`: num literal SQL não‑E, `\d` não é classe de dígitos, pelo que `guiotti.localhost:3002` ficava sem normalizar e as RPC devolviam `null`. As apps (`dealership-panel`, `customer-site`) enviam também `p_host` sem porta (`normalizeHost`). **Grant obrigatório para vitrine:** `public.get_dealership_public_by_id(uuid)` precisa de `grant execute to anon, authenticated`; sem isto a vitrine em host válido cai em `/erro/concessionaria` com `permission denied`.
 
 - **Painel — bootstrap opcional por path:** rota `apps/dealership-panel/src/app/painel/acesso/[slug]/route.ts` só quando **`NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP=true`**; middleware `cookie` + RPC dashboard; helper `packages/shared/src/lib/tenant/allow-cookie-tenant-fallback-host.ts`. **Admin Master — `DealershipOperatorSurfaceLinks`:** em `NODE_ENV=development`, os botões principais usam **`buildLocalhostDealershipPreviewUrls`** (`packages/shared/src/lib/tenant/dealership-subdomain-surface-urls.ts`) para `http://{slug}.localhost:{3002|3003}`, mesmo quando **`NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN`** já é o domínio de produção — evita abrir `https://{slug}.{root}` sem serviço local; bloco monospace opcional mostra URL canónico de **`buildDealershipSubdomainSurfaceUrls`**. Produção (`NODE_ENV=production`): só URLs canónicos.
+- **Whitelabel (Fase Frontend — 2026-05-13):** formulário de concessionária em `apps/admin-master/src/components/dealership-form.tsx` inclui `storefront_theme_mode` (`light`/`dark`) e grava em `theme_config.storefront_theme_mode` via `apps/admin-master/src/actions/dealerships.ts`. Resolução visual no `customer-site` passa por `packages/shared/src/lib/theme/branding.ts` (`resolveDealershipBranding`) com fallback de fundo/superfície por modo: claro (`#fafafa/#ffffff`) e escuro (`#0b1120/#111827`). Tabela de concessionárias exibe coluna de tema para operação rápida (`apps/admin-master/src/components/dealerships-table.tsx`).
+- **Polimento operacional (Fase Frontend — 2026-05-13):** `apps/admin-master/src/components/dealerships-table.tsx` recebeu filtros rápidos (busca por nome/slug/domínio/plano; selects por status/tema/plano), badges por status/plano/tema e contadores de carteira por estado (`active`, `pending_setup`, `suspended`, `churned`) para reduzir tempo de triagem no backoffice.
+
+#### Fase 5 — QA (`admin_master_visual_refresh`)
+
+**E2E (automatizado)**
+
+- Suite de tenant executada após alterações visuais/tema (`E2E_DEALERSHIP_SLUG=guiotti npm run test:e2e`): **12 passed**.
+- Cobertura automática desta suite permanece focada em resolução de tenant e regressões críticas (`/erro/concessionaria`, host canónico, login redirect), garantindo que o pacote de UI não regressou o fluxo principal de acesso às lojas.
+
+**Cenários QA (Given / When / Then) — pacote atual**
+
+Test: filtro por status e busca textual na lista de concessionárias  
+Given: operador `super_admin` autenticado no `admin-master`  
+When: aplica filtro de status + texto (nome/slug/domínio/plano) em `/painel/concessionarias`  
+Then: tabela mostra apenas linhas compatíveis e estado vazio contextual quando não há resultados  
+Status: [ ] manual pendente
+
+Test: tema base da vitrine persistido por loja  
+Given: loja editável em `/painel/concessionarias/[id]/editar`  
+When: operador alterna `storefront_theme_mode` para `light` e depois `dark` e guarda  
+Then: valor persiste em `theme_config.storefront_theme_mode` e volta no formulário após refresh  
+Status: [ ] manual pendente
+
+Test: reflexo visual no `customer-site` (tema claro)  
+Given: loja com `storefront_theme_mode=light`  
+When: visitante abre `http://{slug}.localhost:3003`  
+Then: shell aplica fallback de superfícies claras (`--dealer-bg`/`--dealer-surface`) sem quebrar contraste  
+Status: [ ] manual pendente
+
+Test: reflexo visual no `customer-site` (tema escuro)  
+Given: loja com `storefront_theme_mode=dark`  
+When: visitante abre `http://{slug}.localhost:3003`  
+Then: shell aplica fallback de superfícies escuras (`--dealer-bg`/`--dealer-surface`) sem quebrar legibilidade dos CTAs  
+Status: [ ] manual pendente
+
+Test: badges e contadores operacionais  
+Given: lista com lojas em múltiplos estados  
+When: operador abre `/painel/concessionarias`  
+Then: badges de status/plano/tema e contadores (`total`, `active`, `pending_setup`, `suspended`, `churned`) refletem os dados atuais  
+Status: [ ] manual pendente
+
+**Matriz de permissões / RLS (feature atual)**
+
+| Role | Ação | Resultado esperado |
+| --- | --- | --- |
+| `super_admin` | ver/filtrar lista de concessionárias no Admin | ✅ permitido |
+| `super_admin` | editar `storefront_theme_mode` em concessionária | ✅ permitido |
+| `owner` / `manager` / `seller` | acessar rota do `admin-master` de concessionárias | ❌ bloqueado por `requireAdminSession` / RBAC |
+| `anon` | acessar `admin-master` | ❌ redirecionado para autenticação |
+| `anon` (vitrine) | ler loja ativa por host (`get_dealership_public_by_*`) | ✅ permitido (com grants corretos) |
+| `anon` (vitrine) | resolver host inválido / loja não ativa | ❌ sem dados; redireciona para `/erro/concessionaria` |
+
+**Checklist de segurança (Supabase + app)**
+
+- [x] Nenhuma nova tabela criada; sem regressão de RLS por DDL no pacote atual.
+- [x] `storefront_theme_mode` é metadado de apresentação (não sensível) em `theme_config`.
+- [x] Sessão `super_admin` continua obrigatória para mutações no `admin-master`.
+- [x] Suite E2E de tenant manteve 12/12 após mudanças de UI.
+- [ ] Smoke manual em produção para confirmar contraste final do tema escuro com branding extremo.
+
+**Riscos de regressão**
+
+- Alterações de contraste da marca (cores muito próximas) podem reduzir legibilidade em modo escuro em casos extremos.
+- Filtros client-side em listas muito grandes podem exigir paginação/filtro server-side numa próxima iteração.
+- Divergência futura entre coluna dedicada e `theme_config.storefront_theme_mode` se uma migração de normalização não for aplicada.
+
+**Achados**
+
+- Sem bloqueantes técnicos na rodada atual.
+- Regressão crítica de tenant não detectada após o pacote visual (E2E 12/12).
+
+**Fase 6 — Sprint review (concluído em 2026-05-13)**
+
+- Entregue: refinamento visual do `admin-master`, filtros operacionais e tema claro/escuro por loja refletido na vitrine.
+- Riscos remanescentes: validação manual de contraste com combinações extremas de branding no modo escuro.
+- Follow-up recomendado: considerar normalização definitiva de `storefront_theme_mode` em coluna dedicada de `dealerships` + filtro server-side quando volume de lojas crescer.
 
 #### UX (Passo B — tabs sugeridas)
 
@@ -159,7 +236,7 @@ Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento*
 
 #### Middleware / sessão dashboard
 
-- **`requireDashboardSession`** (painel): após validar perfil ≠ cookie tenant, ler `dealerships.status`; se **`status <> 'active'`** ⇒ `redirect('/conta-inativa')`.
+- **`requireDashboardSession`** (painel): valida sessão Auth + tenant por cookie/host. Perfis vinculados à loja continuam a exigir `profiles.dealership_id = cookie tenant`; perfis `super_admin` passam a operar em qualquer concessionária resolvida pelo host (permissão máxima operacional no `dealership-panel`), mantendo o tenant efetivo no `cookieDealershipId`. Depois da validação, ler `dealerships.status`; se **`status <> 'active'`** ⇒ `redirect('/conta-inativa')`.
 - Página **`/conta-inativa`**: texto em PT («Conta inativa ou suspensa…»); fora do layout `/painel` para evitar ciclo.
 
 #### Prompts de execução detalhados (Passo C — tickets)
@@ -1122,6 +1199,118 @@ Ensure apps/customer-site/src/app/(storefront)/page.tsx (or equivalent home) ren
 ```
 Document manual QA: two dealerships different slug + hosts, different layout_id + theme_config — verify CA-001–CA-006 from PRD. Verify anon cannot PATCH dealerships via REST if exposed.
 ```
+
+---
+
+## Histórico vivo — 2026-05-14 — `super_admin` no `dealership-panel`
+
+- Atualizado `apps/dealership-panel/src/lib/dashboard/require-dashboard-session.ts` para aceitar `role = super_admin` em qualquer host de concessionária resolvido por cookie (`ap-dealership-id`), mantendo bloqueio para perfis sem vínculo/sem permissão.
+- Endurecido escopo tenant no app com filtros explícitos por `dealership_id` em consultas de painel (`/painel`, `/painel/estoque`, `/painel/contatos`, `/painel/integracoes` e ações de estoque), evitando dependência exclusiva de RLS para escopo visual.
+- APIs de início OAuth (`/api/painel/integracoes/*/oauth/start`) passam a autorizar `super_admin` além do perfil vinculado à loja.
+- Nova migração `supabase/migrations/20260514013000_super_admin_max_access_dealership_panel.sql` cria políticas RLS permissivas de `super_admin` para superfícies operacionais do painel (vehicles, leads, profiles, dealerships, units e conexões/sessões OAuth), garantindo acesso máximo sem quebrar o fluxo multi-tenant por host.
+- Correção pós-migração: `supabase/migrations/20260514014000_fix_profiles_super_admin_rls_recursion.sql` remove recursão potencial na policy de `public.profiles` (`profiles_select_super_admin`). A policy anterior referenciava `public.is_platform_super_admin()`, que consulta `public.profiles`; a versão corrigida usa `private.current_profile_role()` para validar `super_admin` sem auto-referência de RLS.
+
+## Histórico vivo — 2026-05-14 — padronização visual Admin + Painel da loja
+
+- Novo componente compartilhado `packages/shared/src/ui/page-container.tsx` (exportado em `packages/shared/src/ui/index.ts`) para unificar largura/margens horizontais entre `admin-master` e `dealership-panel`.
+- `apps/admin-master/src/components/admin-shell.tsx` passou a usar `PageContainer` no cabeçalho contextual e no conteúdo principal, reduzindo divergência de spacing entre páginas.
+- `apps/admin-master/src/components/dealerships-table.tsx` substituiu selects nativos por componentes `Select` do shared shadcn e consolidou bloco de filtros em `Card`/`CardContent`.
+- `apps/dealership-panel/src/components/dashboard/DashboardShell.tsx` foi normalizado para fundo claro e navegação com `Button` do shared shadcn; header agora exibe `logo` da loja quando disponível.
+- `apps/dealership-panel/src/app/painel/layout.tsx` passou a resolver `logo` e `favicon` da concessionária e aplicar `generateMetadata()` com ícone por tenant no painel.
+- `apps/customer-site/src/app/(storefront)/layout.tsx` passou a publicar favicon por loja em `generateMetadata()` via `resolveDealershipFaviconUrl`.
+- `apps/dealership-panel/src/app/globals.css` removeu override `prefers-color-scheme: dark` para manter o painel da loja sempre em fundo claro (tema da vitrine segue independente).
+
+## Histórico vivo — 2026-05-14 — skeleton global + evolução de formulário de veículos
+
+- Adicionado componente shadcn `Skeleton` em `packages/shared/src/ui/skeleton.tsx` (via CLI) e export em `packages/shared/src/ui/index.ts`.
+- Novos `loading.tsx` para cobertura de carregamento em múltiplas superfícies:
+  - `apps/admin-master/src/app/loading.tsx`
+  - `apps/admin-master/src/app/(platform)/painel/loading.tsx`
+  - `apps/dealership-panel/src/app/loading.tsx`
+  - `apps/dealership-panel/src/app/painel/loading.tsx`
+  - `apps/dealership-panel/src/app/(public)/loading.tsx`
+  - `apps/customer-site/src/app/loading.tsx`
+  - `apps/customer-site/src/app/(storefront)/loading.tsx`
+  - `apps/marketing-site/src/app/loading.tsx`
+- Formulário de veículos (`apps/dealership-panel/src/components/inventory/VehicleForm.tsx`) incrementado com:
+  - tipo de veículo (lista + `outro` com texto customizado),
+  - valor FIPE,
+  - valor de venda,
+  - flag `destaque`,
+  - seletor de ativação/inativação do anúncio.
+- Ações de create/update (`apps/dealership-panel/src/app/painel/estoque/actions.ts`) atualizadas para persistir os novos campos e manter compatibilidade com `price` legado via espelho para `sale_price`.
+- Inventário e edição de veículo ajustados para leitura/exibição dos campos novos:
+  - `apps/dealership-panel/src/app/painel/estoque/page.tsx`
+  - `apps/dealership-panel/src/components/inventory/VehicleInventoryTable.tsx`
+  - `apps/dealership-panel/src/app/painel/estoque/[vehicleId]/editar/page.tsx`
+- Nova migração de dados/contratos públicos:
+  - `supabase/migrations/20260514030000_vehicle_catalog_fields_and_active_visibility.sql`
+  - adiciona colunas `vehicle_type`, `vehicle_type_custom`, `fipe_price`, `sale_price`, `is_featured`, `is_active`,
+  - aplica checks e índices,
+  - força RPCs públicas (`list_public_vehicles_filtered`, `get_public_vehicle_by_slug`, `private.get_public_vehicle_by_id_impl`) a retornarem apenas veículos `status='available'` e `is_active=true`.
+- Novo smoke visual automatizado: `e2e/specs/visual-layout-smoke.spec.ts` valida ausência de overflow horizontal em superfícies públicas e páginas de autenticação (rotas dependentes de app não iniciado ficam em `skip` controlado).
+- Refino visual premium (frontend): `apps/admin-master/src/components/admin-shell.tsx` ganhou header operacional com `CommandDialog` (busca global), dropdown de utilizador e notificações; `apps/customer-site/src/components/storefront/storefront-shell.tsx` adotou `NavigationMenu` para navegação horizontal limpa; `apps/customer-site/src/components/storefront/home-hero.tsx` ganhou quick-search integrada ao hero.
+
+#### Fase 5 — QA (`ui_standardization_admin_and_dealership_panel`)
+
+**E2E (automatizado)**
+
+- Execução: `E2E_DEALERSHIP_SLUG=guiotti npm run test:e2e`
+- Resultado: **13 passed**
+- Novo cenário automatizado: `dealership-panel keeps light background on auth boundary` (`e2e/specs/dealership-panel-tenant.spec.ts`) garantindo que o painel da loja permaneça claro mesmo no boundary de autenticação.
+
+**Cenários QA (Given / When / Then)**
+
+Test: painel da loja mantém fundo claro  
+Given: concessionária válida em host `slug.localhost:3002`  
+When: utilizador navega para `/painel` sem sessão e cai no login  
+Then: `body` mantém `rgb(255, 255, 255)` (fundo claro)  
+Status: [x] passed
+
+Test: tenant routing não regressiona após refresh visual  
+Given: slug válido e inválido no ambiente local  
+When: abrir raiz e `/painel` em `dealership-panel` e `customer-site`  
+Then: slug válido resolve tenant; inválido redireciona para `/erro/concessionaria`  
+Status: [x] passed
+
+Test: favicon por loja na vitrine  
+Given: concessionária com `theme_config.favicon_url` preenchido  
+When: acessar `customer-site` da loja  
+Then: metadata publica `icons.icon` e `icons.shortcut` com o favicon configurado  
+Status: [ ] manual pendente
+
+**Matriz de permissões / RLS (feature atual)**
+
+| Role | Action | Expected Result |
+| --- | --- | --- |
+| `super_admin` | acessar `admin-master` e padronização visual | ✅ permitido |
+| `super_admin` | acessar `dealership-panel` por host de qualquer loja | ✅ permitido (tenant por host/cookie) |
+| `owner` / `manager` | acessar `dealership-panel` da própria loja | ✅ permitido |
+| `seller` | acessar áreas permitidas no `dealership-panel` | ✅ permitido (restrições de ação mantidas) |
+| `owner` / `manager` / `seller` | acessar `admin-master` | ❌ bloqueado |
+| `anon` | acessar `/painel` no `dealership-panel` | ❌ redirecionado para `/login` |
+| `anon` | host inválido (`dealership-panel` / `customer-site`) | ❌ `/erro/concessionaria` |
+
+**Checklist de segurança (Supabase-focused)**
+
+- [x] RLS continua habilitado nas tabelas tocadas (sem desativação nesta fase).
+- [x] Isolamento por tenant mantém-se no fluxo por host/cookie e filtros explícitos.
+- [x] Requisições não autenticadas no painel são bloqueadas/redirecionadas antes de mutações.
+- [x] Sem exposição de tokens/segredos em mensagens desta fase.
+- [x] Sem novas Edge Functions nesta entrega.
+
+**Riscos de regressão**
+
+- Inconsistência residual em páginas que ainda não migraram completamente para primitives shared.
+- Dependência de assets externos (logo/favicon) pode gerar fallback visual em ambientes com links expirados.
+- Diferenças de contraste podem aparecer em branding extremo (cores muito próximas ao fundo).
+
+**Findings & Follow-ups**
+
+| # | Severity | Description | Owner | Status |
+|---|----------|-------------|-------|--------|
+| 1 | 🟡 minor | Favicon por loja validado por contrato/metadata; falta smoke visual automatizado assertivo em navegador para casos com e sem favicon | Frontend + QA | open |
+| 2 | 🟡 minor | Ainda há espaço para ampliar cobertura E2E de consistência visual em páginas de CRUD do `admin-master` | QA | deferred |
 
 ---
 

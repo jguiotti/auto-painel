@@ -39,6 +39,7 @@ export interface LeadListItem {
 interface LeadListProps {
   leads: LeadListItem[];
   viewerRole: string;
+  canManageAssignments: boolean;
   assignees: LeadAssigneeOption[];
 }
 
@@ -50,10 +51,9 @@ const typeLabel: Record<string, string> = {
 export function LeadList({
   leads,
   viewerRole,
+  canManageAssignments,
   assignees,
 }: LeadListProps) {
-  const isOwner = viewerRole === "owner";
-
   if (leads.length === 0) {
     const sellerHint =
       viewerRole === "seller"
@@ -77,7 +77,7 @@ export function LeadList({
               <TableHead>Telefone</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Veículo</TableHead>
-              {isOwner ? <TableHead>Responsável</TableHead> : null}
+              {canManageAssignments ? <TableHead>Responsável</TableHead> : null}
               <TableHead className="text-right">WhatsApp</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,7 +116,7 @@ export function LeadList({
                       "—"
                     )}
                   </TableCell>
-                  {isOwner ? (
+                  {canManageAssignments ? (
                     <TableCell>
                       <LeadAssigneeSelect
                         leadId={lead.id}
@@ -185,7 +185,7 @@ export function LeadList({
                   </Link>
                 </p>
               ) : null}
-              {isOwner ? (
+              {canManageAssignments ? (
                 <div className="mt-3 border-t border-border pt-3">
                   <p className="text-xs font-medium text-muted-foreground">
                     Responsável

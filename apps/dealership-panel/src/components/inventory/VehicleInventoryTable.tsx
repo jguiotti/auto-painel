@@ -19,11 +19,14 @@ export interface VehicleInventoryRow {
   id: string;
   brand: string;
   model: string;
+  vehicle_type: string;
   manufacturing_year: number;
   model_year: number;
   mileage: number;
   price: number;
   status: string;
+  is_featured: boolean;
+  is_active: boolean;
   public_slug: string;
   images: string[] | null;
   unit_name?: string | null;
@@ -38,6 +41,20 @@ const statusLabel: Record<string, string> = {
   available: "Disponível",
   sold: "Vendido",
 };
+
+function vehicleTypeLabel(value: string): string {
+  const labels: Record<string, string> = {
+    automovel: "Automóvel",
+    motocicleta: "Motocicleta",
+    caminhonete: "Caminhonete",
+    van: "Van",
+    suv: "SUV",
+    utilitario: "Utilitário",
+    caminhao: "Caminhão",
+    outro: "Outro",
+  };
+  return labels[value] ?? value;
+}
 
 export function VehicleInventoryTable({
   vehicles,
@@ -59,6 +76,7 @@ export function VehicleInventoryTable({
             <TableRow>
               <TableHead>Foto</TableHead>
               <TableHead>Veículo</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead>Unidade</TableHead>
               <TableHead>Anos</TableHead>
               <TableHead>Km</TableHead>
@@ -95,6 +113,7 @@ export function VehicleInventoryTable({
                       {v.public_slug}
                     </div>
                   </TableCell>
+                  <TableCell>{vehicleTypeLabel(v.vehicle_type)}</TableCell>
                   <TableCell className="max-w-[140px] truncate text-sm text-muted-foreground">
                     {v.unit_name ?? "—"}
                   </TableCell>
@@ -103,7 +122,16 @@ export function VehicleInventoryTable({
                   </TableCell>
                   <TableCell>{v.mileage.toLocaleString("pt-BR")}</TableCell>
                   <TableCell>{formatBrl(Number(v.price))}</TableCell>
-                  <TableCell>{statusLabel[v.status] ?? v.status}</TableCell>
+                  <TableCell>
+                    {v.is_active
+                      ? statusLabel[v.status] ?? v.status
+                      : "Inativo"}
+                    {v.is_featured ? (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">
+                        Destaque
+                      </span>
+                    ) : null}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
                       <Button variant="link" className="h-auto p-0" asChild>
@@ -118,7 +146,9 @@ export function VehicleInventoryTable({
                       <Button variant="link" className="h-auto p-0" asChild>
                         <Link href={`/painel/estoque/${v.id}/editar`}>Editar</Link>
                       </Button>
-                      {isQrGeneratorEnabled && v.status === "available" ? (
+                      {isQrGeneratorEnabled &&
+                      v.status === "available" &&
+                      v.is_active ? (
                         <Button variant="link" className="h-auto p-0" asChild>
                           <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR Code</Link>
                         </Button>
@@ -158,7 +188,12 @@ export function VehicleInventoryTable({
                     {v.brand} {v.model}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {formatBrl(Number(v.price))} · {statusLabel[v.status] ?? v.status}
+                    {formatBrl(Number(v.price))} ·{" "}
+                    {v.is_active ? statusLabel[v.status] ?? v.status : "Inativo"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Tipo: {vehicleTypeLabel(v.vehicle_type)}
+                    {v.is_featured ? " · Destaque" : ""}
                   </p>
                   <p className="mt-1 font-mono text-xs text-muted-foreground">
                     {v.public_slug}
@@ -177,7 +212,7 @@ export function VehicleInventoryTable({
                     Vitrine
                   </Link>
                 </Button>
-                {isQrGeneratorEnabled && v.status === "available" ? (
+                {isQrGeneratorEnabled && v.status === "available" && v.is_active ? (
                   <Button size="sm" variant="outline" asChild>
                     <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR</Link>
                   </Button>

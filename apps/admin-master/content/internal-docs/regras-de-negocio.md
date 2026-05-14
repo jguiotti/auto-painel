@@ -158,7 +158,10 @@ Esta iniciativa define a **jornada multi-tenant** de ponta a ponta: um operador 
 
 | Persona | O que precisa de fazer | Restrições / papéis |
 | --- | --- | --- |
-| Operador AutoPainel (`super_admin`) | Editar concessionária, confirmar slug e domínios, **copiar ou abrir** links oficiais da vitrine e do painel para suporte e onboarding | Apenas usuários autenticados no **admin-master** com papel adequado à documentação interna de RBAC; não divulgar URLs sensíveis fora dos canais da operação |
+| Operador AutoPainel (`super_admin`) | Editar concessionária, confirmar slug e domínios, **copiar ou abrir** links oficiais da vitrine e do painel para suporte e onboarding; quando necessário, entrar no `dealership-panel` de qualquer loja para operação assistida | Apenas usuários autenticados com papel `super_admin`; no `dealership-panel`, a operação segue o tenant resolvido pelo host actual (sem enumeração pública de slugs) |
+
+- O `dealership-panel` deve manter layout operacional com **fundo claro fixo**; customizações de tema (claro/escuro, cores e fontes) continuam restritas à vitrine (`customer-site`).
+- Logo e favicon cadastrados da concessionária devem ser reaproveitados em ambas as superfícies (`customer-site` e `dealership-panel`), com fallback apenas quando o ativo estiver ausente.
 | Usuário da concessionária (owner / manager / seller) | Iniciar sessão, recuperar senha, concluir definição de senha quando aplicável, trabalhar no painel após autenticação | Acesso ao painel condicionado a **tenant resolvido** pelo host e a políticas de conta/estado da loja já definidas na plataforma (ex.: conta inativa continua a ser tratada nas regras da central de gestão, sem contradizer este PRD) |
 | Visitante da vitrine | Consultar stock e páginas públicas da loja **ativa** (`active`) | Sem autenticação; sem acesso a dados internos; se o host não mapeia loja ativa, apenas fluxo público de **erro de concessionária** |
 
@@ -288,11 +291,11 @@ Marque **In** / **Out** / **Mais tarde** por linha.
 
 **Inventário de telas / estados** — Admin: cartão de atalhos (2 CTAs + opcional «copiar URLs» em texto monoespaçado só em dev se já existir). Painel/vitrine: `/erro/concessionaria` (título, corpo, CTA primário, CTA secundário opcional, rodapé institucional discreto); login, recuperar senha, definir senha; loading esquelético se houver delay de resolução de host.
 
-**Whitelabel e responsivo** — Erro e auth respeitam tokens do design system; em mobile, CTA principal **acima da dobra**; contraste AA; foco visível em teclado.
+**Whitelabel e responsivo** — Erro e auth respeitam tokens do design system; em mobile, CTA principal **acima da dobra**; contraste AA; foco visível em teclado. Configuração da loja passa a incluir **Tema base da vitrine** (`Claro`/`Escuro`) para controlar fundo e superfícies do `customer-site` sem exigir edição manual de hex para cada concessionária.
 
 **Casos de borda (UX)** — Teclado RTL não aplicável; zoom 200%; leitor de tela: ordem de leitura título → explicação → ação; `custom_domain` com redirecionamento `www`; loja `suspended` na vitrine (mensagem idêntica à de host inválido); dev: acordeão técnico fechado por padrão.
 
-**Pausa squad** — **Handoff UX confirmado** (equipe, 2026-05-08). **Fase 3** em `documentacao-tecnica.md`; **Fase 4** (UI `/erro/concessionaria`); **Fase 5** (matriz QA + E2E) na mesma doc. **Fase 6** (sprint review) — ver quadro «Fase 6» em `documentacao-tecnica.md`.
+**Pausa squad** — **Handoff UX confirmado** (equipe, 2026-05-08). **Fase 3** em `documentacao-tecnica.md`; **Fase 4** (UI `/erro/concessionaria` + refresh visual do Admin + tema claro/escuro por loja na vitrine); **Fase 5** (matriz QA + E2E) na mesma doc. **Fase 6** (sprint review) — ver quadro «Fase 6» em `documentacao-tecnica.md`.
 
 ---
 
@@ -770,6 +773,28 @@ Não havia seleção explícita de **estrutura de storefront** por concessionár
 4. **CA-004**: Mudar só cores/logos na loja A atualiza apenas A.
 5. **CA-005**: Fonte permitida aplica headings/body de forma consistente nos três layouts (baseline CLS no refinamento UX).
 6. **CA-006**: Visitante anônimo não altera `layout_id`.
+
+---
+
+## 2026-05-14 — Padronização visual + catálogo de veículos (incremental)
+
+### Regras de negócio (BZ)
+
+1. **BZ-007**: Todas as aplicações (`admin-master`, `dealership-panel`, `customer-site`, `marketing-site`) devem apresentar estado de carregamento com skeleton, mantendo padrão visual mínimo entre rotas.
+2. **BZ-008**: O `dealership-panel` mantém fundo claro fixo; personalização de tema (claro/escuro, cores e fontes) continua exclusiva da vitrine.
+3. **BZ-009**: Cadastro/edição de veículo passa a exigir `tipo de veículo` (lista fechada com opção `outro` + descrição personalizada quando aplicável).
+4. **BZ-010**: Veículo passa a aceitar `valor FIPE` e `valor de venda`; valor de venda é a referência operacional/publicada.
+5. **BZ-011**: Veículo com `is_active = false` não pode ser acessado/publicado na vitrine pública, mesmo com slug/id válido.
+6. **BZ-012**: Veículo pode receber flag de destaque para uso futuro de merchandising nas vitrines e listagens.
+
+### Critérios de aceite
+
+1. **CA-007**: Navegação entre rotas mostra skeleton consistente em todas as aplicações.
+2. **CA-008**: Painel da loja mantém fundo claro durante navegação e boundary de autenticação.
+3. **CA-009**: Formulário de veículo permite selecionar tipo padrão ou cadastrar tipo personalizado.
+4. **CA-010**: Valor FIPE e valor de venda persistem e reaparecem na edição.
+5. **CA-011**: Veículo inativo não é retornado pelas RPCs públicas de listagem/detalhe.
+6. **CA-012**: Flag de destaque persiste para uso futuro sem quebrar o fluxo atual.
 
 ---
 

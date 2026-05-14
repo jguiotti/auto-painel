@@ -16,7 +16,8 @@ export default async function IntegracoesPage() {
     }),
     supabase
       .from("dealership_classifieds_connections")
-      .select("provider, status, token_expires_at, connected_at, last_error"),
+      .select("provider, status, token_expires_at, connected_at, last_error")
+      .eq("dealership_id", dealershipId),
     supabase
       .from("dealership_meta_connections")
       .select(

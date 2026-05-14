@@ -34,7 +34,9 @@ export default async function NewVehiclePage() {
           Novo veículo
         </h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Preencha os dados e envie imagens (até o limite do bucket). O slug define a URL pública em /veiculo/seu-slug.
+          Preencha os dados comerciais e operacionais (tipo, FIPE, venda, destaque e
+          ativação) e envie imagens. O slug define a URL pública em
+          /veiculo/seu-slug.
         </p>
       </div>
       <VehicleForm mode="create" units={units} />

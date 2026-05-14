@@ -8,9 +8,12 @@ export type DealershipFontPairId =
   | "serif_editorial"
   | "sans_geometric";
 
+export type StorefrontThemeMode = "light" | "dark";
+
 export interface DealershipThemeConfig {
   primary_color?: string;
   secondary_color?: string;
+  storefront_theme_mode?: StorefrontThemeMode;
   /** @deprecated Mirrors header logo URL for legacy reads; prefer `header_logo_url`. */
   logo_url?: string;
   /** Wide / horizontal logo for storefront header navigation. */

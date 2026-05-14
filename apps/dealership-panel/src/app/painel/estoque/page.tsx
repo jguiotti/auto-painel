@@ -10,11 +10,15 @@ interface VehicleDbRow {
   id: string;
   brand: string;
   model: string;
+  vehicle_type: string;
   manufacturing_year: number;
   model_year: number;
   mileage: number;
   price: number;
+  sale_price: number | null;
   status: string;
+  is_featured: boolean;
+  is_active: boolean;
   public_slug: string;
   images: string[] | null;
   /** Supabase may infer FK embed as object or single-element array depending on typings */
@@ -42,11 +46,15 @@ export default async function InventoryPage() {
         id,
         brand,
         model,
+        vehicle_type,
         manufacturing_year,
         model_year,
         mileage,
         price,
+        sale_price,
         status,
+        is_featured,
+        is_active,
         public_slug,
         images,
         dealership_units (
@@ -54,6 +62,7 @@ export default async function InventoryPage() {
         )
       `,
       )
+      .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false }),
     supabase.rpc("effective_feature_keys_for_active_dealership", {
       p_dealership_id: dealershipId,
@@ -72,11 +81,14 @@ export default async function InventoryPage() {
     id: row.id,
     brand: row.brand,
     model: row.model,
+    vehicle_type: row.vehicle_type,
     manufacturing_year: row.manufacturing_year,
     model_year: row.model_year,
     mileage: row.mileage,
-    price: row.price,
+    price: row.sale_price ?? row.price,
     status: row.status,
+    is_featured: row.is_featured,
+    is_active: row.is_active,
     public_slug: row.public_slug,
     images: row.images,
     unit_name: embeddedDealershipUnitName(row.dealership_units),

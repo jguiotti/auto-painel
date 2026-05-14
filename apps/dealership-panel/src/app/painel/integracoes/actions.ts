@@ -26,7 +26,8 @@ export async function saveDealershipMetaOauthAppAction(
     );
     if (
       profile.role !== "owner" &&
-      profile.role !== "manager"
+      profile.role !== "manager" &&
+      profile.role !== "super_admin"
     ) {
       return { ok: false, error: "Sem permissão para alterar credenciais Meta." };
     }

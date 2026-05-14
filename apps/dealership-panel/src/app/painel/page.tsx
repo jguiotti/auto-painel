@@ -86,25 +86,35 @@ export default async function DashboardHomePage({
     inventoryValueRes,
     recentLeadsRes,
   ] = await Promise.all([
-    supabase.from("vehicles").select("*", { count: "exact", head: true }),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("dealership_id", dealershipId),
+    supabase
+      .from("vehicles")
+      .select("*", { count: "exact", head: true })
+      .eq("dealership_id", dealershipId)
       .eq("status", "available"),
     supabase
       .from("vehicles")
       .select("*", { count: "exact", head: true })
+      .eq("dealership_id", dealershipId)
       .eq("status", "sold"),
-    supabase.from("leads").select("*", { count: "exact", head: true }),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("dealership_id", dealershipId),
     supabase
       .from("vehicles")
       .select("price, created_at")
+      .eq("dealership_id", dealershipId)
       .eq("status", "available"),
     supabase
       .from("leads")
       .select(
         "id, client_name, phone, type, created_at, vehicles(brand, model)",
       )
+      .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
@@ -153,15 +163,18 @@ export default async function DashboardHomePage({
       supabase
         .from("leads")
         .select("type, created_at")
+        .eq("dealership_id", dealershipId)
         .gte("created_at", periodStart.toISOString()),
       supabase
         .from("leads")
         .select("id")
+        .eq("dealership_id", dealershipId)
         .gte("created_at", previousPeriodStart.toISOString())
         .lt("created_at", periodStart.toISOString()),
       supabase
         .from("vehicle_view_events")
         .select("vehicle_id, viewed_at, vehicles(brand, model, public_slug)")
+        .eq("dealership_id", dealershipId)
         .gte("viewed_at", periodStart.toISOString()),
     ]);
 

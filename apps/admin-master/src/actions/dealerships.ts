@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { DEALERSHIP_OPTIONAL_FEATURES } from "@autopainel/shared/lib/dealership-features";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
-import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
+import type {
+  StorefrontLayoutTemplateId,
+  StorefrontThemeMode,
+} from "@autopainel/shared/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import googleFontFamilies from "@autopainel/shared/data/google-fonts-families.json";
 
@@ -135,6 +138,13 @@ function parseLayoutIdFromForm(formData: FormData): StorefrontLayoutTemplateId {
     return 3;
   }
   return 1;
+}
+
+function parseStorefrontThemeModeFromForm(
+  formData: FormData,
+): StorefrontThemeMode {
+  const raw = String(formData.get("storefront_theme_mode") ?? "light").trim();
+  return raw === "dark" ? "dark" : "light";
 }
 
 function parseThemeSettings(raw: unknown): Record<string, unknown> {
@@ -614,6 +624,9 @@ export async function createDealershipAction(
     theme_config.google_font_body = bodyFont.family;
   }
 
+  const storefront_theme_mode = parseStorefrontThemeModeFromForm(formData);
+  theme_config.storefront_theme_mode = storefront_theme_mode;
+
   const content_config = buildContentConfig(formData, {});
   const enabled_features = parseEnabledFeaturesFromForm(formData);
   const layout_id = parseLayoutIdFromForm(formData);
@@ -907,6 +920,8 @@ export async function updateDealershipAction(
     primary_color: primary,
     secondary_color: secondary,
   };
+  const storefront_theme_mode = parseStorefrontThemeModeFromForm(formData);
+  theme_config.storefront_theme_mode = storefront_theme_mode;
 
   if (headingFont.family) {
     theme_config.google_font_heading = headingFont.family;

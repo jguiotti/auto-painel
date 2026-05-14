@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
-import { Button } from "@autopainel/shared/ui";
+import { Button, Input } from "@autopainel/shared/ui";
 
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
 
@@ -15,6 +15,23 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
   const dealership = usePublicDealership();
 
   const titleStyle = { fontFamily: "var(--dealer-font-heading)" } as const;
+  const quickSearch = (
+    <form
+      method="get"
+      action="/"
+      className="mt-8 grid w-full max-w-3xl gap-3 rounded-2xl border border-black/10 bg-[var(--dealer-surface)]/90 p-4 shadow-lg backdrop-blur sm:grid-cols-4"
+    >
+      <Input name="brand" placeholder="Marca" />
+      <Input name="model" placeholder="Modelo" />
+      <Input name="minPrice" inputMode="decimal" placeholder="Preço mín." />
+      <Button
+        type="submit"
+        className="bg-[var(--dealer-accent)] text-white hover:opacity-95"
+      >
+        Buscar
+      </Button>
+    </form>
+  );
 
   const stockLink = (
     <Button
@@ -47,6 +64,7 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
             a equipe quando quiser.
           </p>
           <div className="mt-8 flex justify-center">{stockLink}</div>
+          <div className="flex justify-center">{quickSearch}</div>
         </div>
       </section>
     );
@@ -74,6 +92,7 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
             estoque em grade ampla logo abaixo.
           </p>
           <div className="mt-10 flex justify-center gap-4">{stockLink}</div>
+          <div className="flex justify-center">{quickSearch}</div>
         </div>
       </section>
     );
@@ -97,6 +116,7 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
             fale com a equipe em poucos cliques.
           </p>
           <div className="mt-6">{stockLink}</div>
+          {quickSearch}
         </div>
         <div
           aria-hidden

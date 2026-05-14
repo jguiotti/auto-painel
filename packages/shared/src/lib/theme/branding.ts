@@ -3,7 +3,10 @@
  * with fallback to legacy `theme_settings` (primary, accent, etc.).
  */
 
-import type { DealershipFontPairId } from "../../types/dealership-config";
+import type {
+  DealershipFontPairId,
+  StorefrontThemeMode,
+} from "../../types/dealership-config";
 
 import { buildGoogleFontsStylesheetHref } from "./google-fonts-stylesheet-url";
 
@@ -52,12 +55,48 @@ const FALLBACK: ResolvedDealerTheme = {
   surface: "#ffffff",
 };
 
+const LIGHT_MODE_DEFAULTS: Pick<
+  ResolvedDealerTheme,
+  "background" | "foreground" | "surface"
+> = {
+  background: "#fafafa",
+  foreground: "#171717",
+  surface: "#ffffff",
+};
+
+const DARK_MODE_DEFAULTS: Pick<
+  ResolvedDealerTheme,
+  "background" | "foreground" | "surface"
+> = {
+  background: "#0b1120",
+  foreground: "#e5e7eb",
+  surface: "#111827",
+};
+
+function readStorefrontThemeMode(
+  ts: Record<string, unknown>,
+  tc: Record<string, unknown>,
+): StorefrontThemeMode {
+  const themeMode = readString(tc, "storefront_theme_mode");
+  if (themeMode === "dark") {
+    return "dark";
+  }
+  if (themeMode === "light") {
+    return "light";
+  }
+  const legacyThemeMode = readString(ts, "storefront_theme_mode");
+  return legacyThemeMode === "dark" ? "dark" : "light";
+}
+
 export function resolveDealershipBranding(input: {
   theme_settings?: unknown;
   theme_config?: unknown;
 }): ResolvedDealerTheme {
   const ts = asRecord(input.theme_settings);
   const tc = asRecord(input.theme_config);
+  const themeMode = readStorefrontThemeMode(ts, tc);
+  const modeDefaults =
+    themeMode === "dark" ? DARK_MODE_DEFAULTS : LIGHT_MODE_DEFAULTS;
 
   const primary =
     readHex(tc, "primary_color") ??
@@ -68,11 +107,15 @@ export function resolveDealershipBranding(input: {
     readHex(ts, "accent") ??
     FALLBACK.accent;
   const background =
-    readHex(ts, "background") ?? readHex(tc, "background") ?? FALLBACK.background;
+    readHex(ts, "background") ??
+    readHex(tc, "background") ??
+    modeDefaults.background;
   const foreground =
-    readHex(ts, "foreground") ?? readHex(tc, "foreground") ?? FALLBACK.foreground;
+    readHex(ts, "foreground") ??
+    readHex(tc, "foreground") ??
+    modeDefaults.foreground;
   const surface =
-    readHex(ts, "surface") ?? readHex(tc, "surface") ?? FALLBACK.surface;
+    readHex(ts, "surface") ?? readHex(tc, "surface") ?? modeDefaults.surface;
 
   return { primary, accent, background, foreground, surface };
 }

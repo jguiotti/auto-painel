@@ -13,11 +13,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Badge,
   Button,
+  Card,
+  CardContent,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -50,12 +59,109 @@ function formatDomain(row: DealershipAdminRow) {
   return row.slug;
 }
 
+function formatThemeModeLabel(mode: DealershipAdminRow["storefront_theme_mode"]) {
+  return mode === "dark" ? "Escuro" : "Claro";
+}
+
+function statusLabel(status: DealershipAdminRow["status"]) {
+  if (status === "active") {
+    return "Ativa";
+  }
+  if (status === "pending_setup") {
+    return "Configuração pendente";
+  }
+  if (status === "suspended") {
+    return "Suspensa";
+  }
+  return "Encerrada";
+}
+
+function statusBadgeClass(status: DealershipAdminRow["status"]) {
+  if (status === "active") {
+    return "border-emerald-600/30 bg-emerald-600/10 text-emerald-700";
+  }
+  if (status === "pending_setup") {
+    return "border-amber-600/30 bg-amber-600/10 text-amber-700";
+  }
+  if (status === "suspended") {
+    return "border-orange-600/30 bg-orange-600/10 text-orange-700";
+  }
+  return "border-zinc-500/30 bg-zinc-500/10 text-zinc-700";
+}
+
 export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<DealershipAdminRow | null>(
     null,
   );
   const [pending, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    DealershipAdminRow["status"] | "all"
+  >("all");
+  const [themeFilter, setThemeFilter] = useState<
+    DealershipAdminRow["storefront_theme_mode"] | "all"
+  >("all");
+  const [planFilter, setPlanFilter] = useState<string>("all");
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const planOptions = Array.from(
+    new Set(
+      rows
+        .map((row) => row.subscription_plan?.trim())
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  const filteredRows = rows.filter((row) => {
+    if (
+      normalizedQuery.length > 0 &&
+      ![
+        row.name,
+        row.slug,
+        row.custom_domain ?? "",
+        row.subscription_plan ?? "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery)
+    ) {
+      return false;
+    }
+    if (statusFilter !== "all" && row.status !== statusFilter) {
+      return false;
+    }
+    if (themeFilter !== "all" && row.storefront_theme_mode !== themeFilter) {
+      return false;
+    }
+    if (planFilter !== "all" && row.subscription_plan !== planFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  const statusCounters = rows.reduce(
+    (acc, row) => {
+      acc.total += 1;
+      if (row.status === "active") {
+        acc.active += 1;
+      } else if (row.status === "pending_setup") {
+        acc.pending_setup += 1;
+      } else if (row.status === "suspended") {
+        acc.suspended += 1;
+      } else {
+        acc.churned += 1;
+      }
+      return acc;
+    },
+    {
+      total: 0,
+      active: 0,
+      pending_setup: 0,
+      suspended: 0,
+      churned: 0,
+    },
+  );
 
   function confirmDelete() {
     if (!deleteTarget) {
@@ -89,6 +195,100 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
         </Button>
       </div>
 
+      <Card className="mb-4 border-border shadow-sm">
+        <CardContent className="space-y-4 p-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Buscar loja
+            </p>
+            <Input
+              placeholder="Nome, slug, domínio ou plano"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Status
+            </p>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as DealershipAdminRow["status"] | "all")
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Ativa</SelectItem>
+                <SelectItem value="pending_setup">Configuração pendente</SelectItem>
+                <SelectItem value="suspended">Suspensa</SelectItem>
+                <SelectItem value="churned">Encerrada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Tema
+            </p>
+            <Select
+              value={themeFilter}
+              onValueChange={(value) =>
+                setThemeFilter(
+                  value as DealershipAdminRow["storefront_theme_mode"] | "all",
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="light">Claro</SelectItem>
+                <SelectItem value="dark">Escuro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Plano
+            </p>
+            <Select value={planFilter} onValueChange={(value) => setPlanFilter(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {planOptions.map((plan) => (
+                  <SelectItem key={plan} value={plan}>
+                    {plan}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Badge variant="outline">Total: {statusCounters.total}</Badge>
+          <Badge className={statusBadgeClass("active")}>
+            Ativas: {statusCounters.active}
+          </Badge>
+          <Badge className={statusBadgeClass("pending_setup")}>
+            Pendentes: {statusCounters.pending_setup}
+          </Badge>
+          <Badge className={statusBadgeClass("suspended")}>
+            Suspensas: {statusCounters.suspended}
+          </Badge>
+          <Badge className={statusBadgeClass("churned")}>
+            Encerradas: {statusCounters.churned}
+          </Badge>
+        </div>
+        </CardContent>
+      </Card>
+
       <div className="rounded-lg border border-border bg-card shadow-sm">
         <Table>
           <TableHeader>
@@ -98,19 +298,22 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
               <TableHead>Subdomínio</TableHead>
               <TableHead>Cor</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Tema</TableHead>
               <TableHead>Plano</TableHead>
               <TableHead className="w-[70px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  Nenhuma concessionária cadastrada.
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  {rows.length === 0
+                    ? "Nenhuma concessionária cadastrada."
+                    : "Nenhuma concessionária encontrada com os filtros atuais."}
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              filteredRows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-sm">
@@ -122,8 +325,19 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
                     </code>
                   </TableCell>
                   <TableCell>{swatch(row.theme_settings)}</TableCell>
-                  <TableCell className="capitalize">{row.status}</TableCell>
-                  <TableCell className="capitalize">{row.subscription_plan}</TableCell>
+                  <TableCell>
+                    <Badge className={statusBadgeClass(row.status)}>
+                      {statusLabel(row.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {formatThemeModeLabel(row.storefront_theme_mode)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{row.subscription_plan}</Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

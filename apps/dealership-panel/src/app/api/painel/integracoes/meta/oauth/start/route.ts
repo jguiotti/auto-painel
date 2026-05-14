@@ -42,11 +42,14 @@ export async function POST(request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("dealership_id")
+    .select("dealership_id, role")
     .eq("id", user.id)
     .single();
 
-  if (profileError || !profile || profile.dealership_id !== dealershipIdFromCookie) {
+  const canAccessDealership =
+    profile?.role === "super_admin" ||
+    profile?.dealership_id === dealershipIdFromCookie;
+  if (profileError || !profile || !canAccessDealership) {
     return NextResponse.json(
       { error: "Perfil sem acesso à concessionária ativa." },
       { status: 403 },

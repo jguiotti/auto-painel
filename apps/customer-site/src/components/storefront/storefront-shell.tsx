@@ -2,7 +2,14 @@ import Link from "next/link";
 
 import type { CSSProperties } from "react";
 
-import { Button } from "@autopainel/shared/ui";
+import {
+  Button,
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@autopainel/shared/ui";
 
 import {
   resolveDealershipBranding,
@@ -89,14 +96,14 @@ export function StorefrontShell({
         <header
           className={`sticky top-0 z-30 border-b bg-[var(--dealer-surface)]/95 backdrop-blur dark:border-white/10 ${headerTone}`}
         >
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
-            <Link href="/" className="flex items-center gap-3">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-4 py-3">
+            <Link href="/" className="flex items-center gap-3 rounded-xl px-1 py-1">
               {headerLogoSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element -- URLs externas do painel master
                 <img
                   src={headerLogoSrc}
                   alt={dealership.name}
-                  className="h-10 w-auto max-w-[160px] object-contain"
+                  className="h-10 w-auto max-w-[180px] object-contain"
                 />
               ) : (
                 <span
@@ -107,19 +114,30 @@ export function StorefrontShell({
                 </span>
               )}
             </Link>
-            <nav className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/#estoque">Estoque</Link>
-              </Button>
-              {showFinanceSimulator ? (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/simular-financiamento">Simular financiamento</Link>
-                </Button>
-              ) : null}
+            <div className="flex items-center gap-2">
+              <NavigationMenu>
+                <NavigationMenuList className="gap-1">
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link href="/#estoque">Estoque</Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  {showFinanceSimulator ? (
+                    <NavigationMenuItem>
+                      <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        <Link href="/simular-financiamento">Simular financiamento</Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  ) : null}
+                </NavigationMenuList>
+              </NavigationMenu>
               {whatsappHref ? (
                 <Button
                   size="sm"
-                  className="bg-[var(--dealer-accent)] text-white hover:opacity-95"
+                  className="bg-[var(--dealer-accent)] px-5 text-white hover:opacity-95"
                   asChild
                 >
                   <a
@@ -136,7 +154,7 @@ export function StorefrontShell({
                   <a href={`${panelBase}/painel`}>Área da loja</a>
                 </Button>
               ) : null}
-            </nav>
+            </div>
           </div>
         </header>
 

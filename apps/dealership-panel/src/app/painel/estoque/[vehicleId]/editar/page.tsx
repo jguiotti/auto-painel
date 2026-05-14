@@ -16,7 +16,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
     supabase
       .from("vehicles")
       .select(
-        "brand, model, public_slug, manufacturing_year, model_year, mileage, price, description, status, images, dealership_unit_id",
+        "brand, model, vehicle_type, vehicle_type_custom, public_slug, manufacturing_year, model_year, mileage, fipe_price, sale_price, price, description, status, is_featured, is_active, images, dealership_unit_id",
       )
       .eq("id", vehicleId)
       .single(),
@@ -57,7 +57,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
           Editar veículo
         </h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Atualize informações ou envie novas imagens.
+          Atualize dados de venda, FIPE, tipo, destaque, ativação e imagens.
         </p>
       </div>
       <VehicleForm
@@ -67,13 +67,19 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
         defaultValues={{
           brand: vehicle.brand,
           model: vehicle.model,
+          vehicle_type: vehicle.vehicle_type,
+          vehicle_type_custom: vehicle.vehicle_type_custom ?? "",
           public_slug: vehicle.public_slug,
           manufacturing_year: vehicle.manufacturing_year,
           model_year: vehicle.model_year,
           mileage: vehicle.mileage,
+          fipe_price: vehicle.fipe_price ? Number(vehicle.fipe_price) : null,
+          sale_price: Number(vehicle.sale_price ?? vehicle.price),
           price: Number(vehicle.price),
           description: vehicle.description ?? "",
           status: vehicle.status as "available" | "sold",
+          is_featured: Boolean(vehicle.is_featured),
+          is_active: vehicle.is_active !== false,
           images: (vehicle.images as string[] | null) ?? [],
           dealership_unit_id: dealershipUnitId,
         }}
