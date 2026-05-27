@@ -48,6 +48,31 @@
       "import": "./src/lib/dealership-public-url.ts",
       "default": "./src/lib/dealership-public-url.ts"
     },
+    "./lib/vehicle/vehicle-type-labels": {
+      "types": "./src/lib/vehicle/vehicle-type-labels.ts",
+      "import": "./src/lib/vehicle/vehicle-type-labels.ts",
+      "default": "./src/lib/vehicle/vehicle-type-labels.ts"
+    },
+    "./lib/vehicle/vehicle-catalog-options": {
+      "types": "./src/lib/vehicle/vehicle-catalog-options.ts",
+      "import": "./src/lib/vehicle/vehicle-catalog-options.ts",
+      "default": "./src/lib/vehicle/vehicle-catalog-options.ts"
+    },
+    "./lib/vehicle/vehicle-type-spec-options": {
+      "types": "./src/lib/vehicle/vehicle-type-spec-options.ts",
+      "import": "./src/lib/vehicle/vehicle-type-spec-options.ts",
+      "default": "./src/lib/vehicle/vehicle-type-spec-options.ts"
+    },
+    "./lib/notifications/notification-read-storage": {
+      "types": "./src/lib/notifications/notification-read-storage.ts",
+      "import": "./src/lib/notifications/notification-read-storage.ts",
+      "default": "./src/lib/notifications/notification-read-storage.ts"
+    },
+    "./hooks/use-notification-read-state": {
+      "types": "./src/hooks/use-notification-read-state.ts",
+      "import": "./src/hooks/use-notification-read-state.ts",
+      "default": "./src/hooks/use-notification-read-state.ts"
+    },
     "./lib/tenant/effective-platform-root-domain": {
       "types": "./src/lib/tenant/effective-platform-root-domain.ts",
       "import": "./src/lib/tenant/effective-platform-root-domain.ts",
@@ -87,6 +112,16 @@
       "types": "./src/lib/finance/calculate-price-installment.ts",
       "import": "./src/lib/finance/calculate-price-installment.ts",
       "default": "./src/lib/finance/calculate-price-installment.ts"
+    },
+    "./lib/finance/calculate-finance-simulation": {
+      "types": "./src/lib/finance/calculate-finance-simulation.ts",
+      "import": "./src/lib/finance/calculate-finance-simulation.ts",
+      "default": "./src/lib/finance/calculate-finance-simulation.ts"
+    },
+    "./lib/theme/storefront-css-vars": {
+      "types": "./src/lib/theme/storefront-css-vars.ts",
+      "import": "./src/lib/theme/storefront-css-vars.ts",
+      "default": "./src/lib/theme/storefront-css-vars.ts"
     },
     "./lib/supabase": {
       "types": "./src/lib/supabase/index.ts",

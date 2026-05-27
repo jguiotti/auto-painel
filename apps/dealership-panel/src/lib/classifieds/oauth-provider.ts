@@ -41,6 +41,16 @@ export function parseClassifiedsProvider(
  * Env-only defaults for OLX / WebMotors OAuth (used when no per-dealership row exists).
  * See {@link resolveClassifiedsOAuthProviderConfigForDealership} for merged config.
  */
+export function tryGetClassifiedsOAuthProviderConfig(
+  provider: ClassifiedsProvider,
+): ClassifiedsOAuthProviderConfig | null {
+  try {
+    return getClassifiedsOAuthProviderConfig(provider);
+  } catch {
+    return null;
+  }
+}
+
 export function getClassifiedsOAuthProviderConfig(
   provider: ClassifiedsProvider,
 ): ClassifiedsOAuthProviderConfig {

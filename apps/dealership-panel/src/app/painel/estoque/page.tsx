@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
-
 import { VehicleInventoryTable } from "@/components/inventory/VehicleInventoryTable";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
@@ -38,7 +36,7 @@ function embeddedDealershipUnitName(
 export default async function InventoryPage() {
   const { supabase, dealershipId } = await requireDashboardSession();
 
-  const [{ data: vehiclesRaw, error }, featureRes] = await Promise.all([
+  const [{ data: vehiclesRaw, error }] = await Promise.all([
     supabase
       .from("vehicles")
       .select(
@@ -64,9 +62,6 @@ export default async function InventoryPage() {
       )
       .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false }),
-    supabase.rpc("effective_feature_keys_for_active_dealership", {
-      p_dealership_id: dealershipId,
-    }),
   ]);
 
   if (error) {
@@ -94,14 +89,6 @@ export default async function InventoryPage() {
     unit_name: embeddedDealershipUnitName(row.dealership_units),
   }));
 
-  const activeFeatures = Array.isArray(featureRes.data)
-    ? featureRes.data.filter((x): x is string => typeof x === "string")
-    : [];
-  const isQrGeneratorEnabled = isDealershipFeatureEnabled(
-    activeFeatures,
-    "qr_generator",
-  );
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -110,7 +97,7 @@ export default async function InventoryPage() {
             Estoque
           </h1>
           <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-            Cadastre e edite veículos por unidade; imagens ficam no Storage por concessionária.
+            Cadastre e edite veículos por unidade. As fotos ficam salvas na sua loja.
           </p>
         </div>
         <Link
@@ -121,16 +108,7 @@ export default async function InventoryPage() {
         </Link>
       </div>
 
-      {!isQrGeneratorEnabled ? (
-        <p className="rounded-xl border border-dashed border-border bg-card p-3 text-sm text-muted-foreground">
-          O módulo Gerador de QR Code não está habilitado no plano desta concessionária.
-        </p>
-      ) : null}
-
-      <VehicleInventoryTable
-        vehicles={vehicles}
-        isQrGeneratorEnabled={isQrGeneratorEnabled}
-      />
+      <VehicleInventoryTable vehicles={vehicles} />
     </div>
   );
 }

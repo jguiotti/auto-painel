@@ -11,11 +11,13 @@ import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
 interface VehicleEngagementSectionProps {
   vehicleId: string;
   vehiclePrice: number;
+  monthlyRatePercent: number;
 }
 
 export function VehicleEngagementSection({
   vehicleId,
   vehiclePrice,
+  monthlyRatePercent,
 }: VehicleEngagementSectionProps) {
   const dealership = usePublicDealership();
   const showFinanceSimulator = isDealershipFeatureEnabled(
@@ -39,6 +41,7 @@ export function VehicleEngagementSection({
       {showFinanceSimulator ? (
         <FinanceSimulator
           vehiclePrice={vehiclePrice}
+          monthlyRatePercent={monthlyRatePercent}
           onSnapshotChange={handleSnapshot}
         />
       ) : null}

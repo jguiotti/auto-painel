@@ -89,7 +89,24 @@ function statusBadgeClass(status: DealershipAdminRow["status"]) {
   return "border-zinc-500/30 bg-zinc-500/10 text-zinc-700";
 }
 
-export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
+function resolvePlanLabel(
+  row: DealershipAdminRow,
+  pricingPlanLabels: Record<string, string>,
+): string {
+  if (row.pricing_plan_id && pricingPlanLabels[row.pricing_plan_id]) {
+    return pricingPlanLabels[row.pricing_plan_id];
+  }
+  const legacy = row.subscription_plan?.trim();
+  return legacy && legacy.length > 0 ? legacy : "—";
+}
+
+export function DealershipsTable({
+  rows,
+  pricingPlanLabels = {},
+}: {
+  rows: DealershipAdminRow[];
+  pricingPlanLabels?: Record<string, string>;
+}) {
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<DealershipAdminRow | null>(
     null,
@@ -108,8 +125,8 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
   const planOptions = Array.from(
     new Set(
       rows
-        .map((row) => row.subscription_plan?.trim())
-        .filter((value): value is string => Boolean(value)),
+        .map((row) => resolvePlanLabel(row, pricingPlanLabels))
+        .filter((value) => value !== "—"),
     ),
   ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
@@ -120,7 +137,7 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
         row.name,
         row.slug,
         row.custom_domain ?? "",
-        row.subscription_plan ?? "",
+        resolvePlanLabel(row, pricingPlanLabels),
       ]
         .join(" ")
         .toLowerCase()
@@ -134,7 +151,10 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
     if (themeFilter !== "all" && row.storefront_theme_mode !== themeFilter) {
       return false;
     }
-    if (planFilter !== "all" && row.subscription_plan !== planFilter) {
+    if (
+      planFilter !== "all" &&
+      resolvePlanLabel(row, pricingPlanLabels) !== planFilter
+    ) {
       return false;
     }
     return true;
@@ -336,7 +356,9 @@ export function DealershipsTable({ rows }: { rows: DealershipAdminRow[] }) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{row.subscription_plan}</Badge>
+                    <Badge variant="secondary">
+                      {resolvePlanLabel(row, pricingPlanLabels)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

@@ -2,27 +2,34 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
+import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
 import {
   type ClassifiedsOAuthProviderConfig,
   type ClassifiedsProvider,
-  getClassifiedsOAuthProviderConfig,
+  tryGetClassifiedsOAuthProviderConfig,
 } from "@/lib/classifieds/oauth-provider";
+import { tryResolvePlatformClassifiedsOAuthConfig } from "@/lib/classifieds/resolve-platform-classifieds-oauth";
 
 /**
- * Merge env defaults with optional per-dealership OAuth app (authorization URL + client id).
- * Client secret is never used on the authorize URL step — only in Edge token exchange.
+ * Resolves OAuth authorize-step config: platform settings → env → optional per-dealership client id override.
  */
 export async function resolveClassifiedsOAuthProviderConfigForDealership(params: {
   dealershipId: string;
   provider: ClassifiedsProvider;
 }): Promise<ClassifiedsOAuthProviderConfig> {
-  const envConfig = getClassifiedsOAuthProviderConfig(params.provider);
+  const platformConfig = await tryResolvePlatformClassifiedsOAuthConfig(params.provider);
+  const envConfig = tryGetClassifiedsOAuthProviderConfig(params.provider);
+  const baseConfig = platformConfig ?? envConfig;
+
+  if (!baseConfig) {
+    throw new ClassifiedsOAuthNotConfiguredError(params.provider);
+  }
 
   let admin;
   try {
     admin = createSupabaseServiceRoleClient();
   } catch {
-    return envConfig;
+    return baseConfig;
   }
 
   const { data: appRow, error } = await admin
@@ -33,15 +40,15 @@ export async function resolveClassifiedsOAuthProviderConfigForDealership(params:
     .maybeSingle();
 
   if (error || !appRow?.oauth_client_id?.trim()) {
-    return envConfig;
+    return baseConfig;
   }
 
   return {
     provider: params.provider,
     authorizationUrl:
-      appRow.authorization_url_override?.trim() || envConfig.authorizationUrl,
+      appRow.authorization_url_override?.trim() || baseConfig.authorizationUrl,
     clientId: appRow.oauth_client_id.trim(),
-    scope: envConfig.scope,
-    redirectUri: envConfig.redirectUri,
+    scope: baseConfig.scope,
+    redirectUri: baseConfig.redirectUri,
   };
 }

@@ -70,7 +70,6 @@ const DOC_KIND_PT: Record<BillingSupportingDocKind, string> = {
 
 interface DealershipOperatorFinancePanelProps {
   dealership: DealershipAdminRow;
-  commercialPlanLabel: string;
   operatorBilling: DealershipBillingRow | null;
   billingHistory: DealershipBillingHistoryRow[];
   billingTablesUnavailable?: boolean;
@@ -78,7 +77,6 @@ interface DealershipOperatorFinancePanelProps {
 
 export function DealershipOperatorFinancePanel({
   dealership,
-  commercialPlanLabel,
   operatorBilling,
   billingHistory,
   billingTablesUnavailable = false,
@@ -274,9 +272,8 @@ export function DealershipOperatorFinancePanel({
         <CardHeader>
           <CardTitle>Cobrança comercial SaaS</CardTitle>
           <CardDescription>
-            Resumo centrado na subscrição, no período contractual e nos dados de cobrança
-            recurrente. Observações ficam apenas em «Notas internas», sem duplicar blocos da
-            base de dados antiga versus a nova.
+            Estado da cobrança, valores mensais, contrato e histórico de pagamentos.
+            O plano comercial desta loja é definido na aba «Plano».
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -302,20 +299,6 @@ export function DealershipOperatorFinancePanel({
             />
 
             <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2 rounded-md border border-border bg-muted/30 p-4">
-                <Label className="text-xs uppercase text-muted-foreground">
-                  Plano comercial
-                </Label>
-                <p className="text-base font-medium text-foreground">
-                  {commercialPlanLabel}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  O vínculo ao catálogo de planos ajusta-se no formulário principal
-                  (campo «Plano comercial» ou rótulo legado em{" "}
-                  <span className="font-mono">subscription_plan</span>).
-                </p>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="subscription_status">Estado da cobrança</Label>
                 <select

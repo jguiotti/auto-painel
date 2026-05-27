@@ -25,12 +25,13 @@ import {
 } from "@/app/painel/estoque/actions";
 
 import { RemoveImageButton } from "@/components/inventory/RemoveImageButton";
+import { VehicleCatalogFields } from "@/components/inventory/vehicle-catalog-fields";
+import { VehicleImageUploadPreview } from "@/components/inventory/vehicle-image-upload-preview";
+import { VehicleTypeSpecFields } from "@/components/inventory/vehicle-type-spec-fields";
+import type { VehicleTypeSpecFields as VehicleTypeSpecDefaults } from "@autopainel/shared/lib/vehicle/vehicle-type-spec-options";
 
 const selectClassName =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
-const fileInputClassName =
-  "flex h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90";
 
 export interface VehicleFormDefaultValues {
   brand: string;
@@ -43,6 +44,7 @@ export interface VehicleFormDefaultValues {
     | "suv"
     | "utilitario"
     | "caminhao"
+    | "onibus"
     | "outro";
   vehicle_type_custom: string;
   public_slug: string;
@@ -58,6 +60,33 @@ export interface VehicleFormDefaultValues {
   is_active: boolean;
   images: string[];
   dealership_unit_id?: string;
+  version?: string | null;
+  fuel_type?: string | null;
+  transmission?: string | null;
+  color?: string | null;
+  body_style?: string | null;
+  accepts_trade?: boolean;
+  single_owner?: boolean;
+  all_revisions_done?: boolean;
+  factory_warranty?: boolean;
+  ipva_paid?: boolean;
+  is_licensed?: boolean;
+  features?: string[];
+  gear_count?: number | null;
+  displacement_cc?: number | null;
+  engine_type?: string | null;
+  cooling_type?: string | null;
+  motorcycle_style?: string | null;
+  starter_type?: string | null;
+  brake_front?: string | null;
+  brake_rear?: string | null;
+  fuel_system?: string | null;
+  traction?: string | null;
+  axle_count?: number | null;
+  gross_weight_kg?: number | null;
+  passenger_capacity?: number | null;
+  cab_type?: string | null;
+  body_truck_type?: string | null;
 }
 
 interface VehicleFormProps {
@@ -225,8 +254,8 @@ export function VehicleForm({
       <CardHeader>
         <CardTitle>{mode === "create" ? "Novo veículo" : "Editar veículo"}</CardTitle>
         <CardDescription>
-          Dados e fotos ficam restritos à sua concessionária (RLS no Supabase). Imagens
-          aceitas: JPEG, PNG, WebP ou GIF.
+          Dados e fotos ficam restritos à sua loja. Envie as imagens na galeria abaixo (JPEG,
+          PNG, WebP ou GIF).
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -294,6 +323,7 @@ export function VehicleForm({
                 <option value="suv">SUV</option>
                 <option value="utilitario">Utilitário</option>
                 <option value="caminhao">Caminhão</option>
+                <option value="onibus">Ônibus</option>
                 <option value="outro">Outro (cadastrar)</option>
               </select>
             </div>
@@ -311,6 +341,29 @@ export function VehicleForm({
                 />
               </div>
             ) : null}
+            <VehicleTypeSpecFields
+              vehicleType={vehicleTypeInput}
+              disabled={isSubmitting}
+              defaults={
+                {
+                  gear_count: defaults?.gear_count,
+                  displacement_cc: defaults?.displacement_cc,
+                  engine_type: defaults?.engine_type,
+                  cooling_type: defaults?.cooling_type,
+                  motorcycle_style: defaults?.motorcycle_style,
+                  starter_type: defaults?.starter_type,
+                  brake_front: defaults?.brake_front,
+                  brake_rear: defaults?.brake_rear,
+                  fuel_system: defaults?.fuel_system,
+                  traction: defaults?.traction,
+                  axle_count: defaults?.axle_count,
+                  gross_weight_kg: defaults?.gross_weight_kg,
+                  passenger_capacity: defaults?.passenger_capacity,
+                  cab_type: defaults?.cab_type,
+                  body_truck_type: defaults?.body_truck_type,
+                } satisfies Partial<VehicleTypeSpecDefaults>
+              }
+            />
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="public_slug">Slug público (URL)</Label>
               <Input
@@ -410,7 +463,9 @@ export function VehicleForm({
                 required
                 defaultValue={defaults?.status ?? "available"}
                 disabled={isSubmitting}
-                onChange={(event) => setStatusInput(event.target.value)}
+                onChange={(event) =>
+                  setStatusInput(event.target.value as "available" | "sold")
+                }
                 className={selectClassName}
               >
                 <option value="available">Disponível</option>
@@ -461,6 +516,24 @@ export function VehicleForm({
             </div>
           </div>
 
+          <VehicleCatalogFields
+            disabled={isSubmitting}
+            defaults={{
+              version: defaults?.version,
+              fuel_type: defaults?.fuel_type,
+              transmission: defaults?.transmission,
+              color: defaults?.color,
+              body_style: defaults?.body_style,
+              accepts_trade: defaults?.accepts_trade,
+              single_owner: defaults?.single_owner,
+              all_revisions_done: defaults?.all_revisions_done,
+              factory_warranty: defaults?.factory_warranty,
+              ipva_paid: defaults?.ipva_paid,
+              is_licensed: defaults?.is_licensed,
+              features: defaults?.features,
+            }}
+          />
+
           {mode === "edit" && defaults?.images?.length ? (
             <div>
               <Label>Imagens atuais</Label>
@@ -481,31 +554,18 @@ export function VehicleForm({
 
           <Separator />
 
-          <div className="space-y-3 rounded-lg border border-dashed border-input bg-muted/30 p-4">
-            <div>
-              <Label htmlFor={imageFieldName}>
-                {mode === "create"
-                  ? "Fotos do veículo"
-                  : "Adicionar novas fotos (opcional)"}
-              </Label>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Envie uma ou mais imagens. Elas serão armazenadas na sua pasta segura no
-                Supabase Storage.
-              </p>
-            </div>
-            <Input
-              id={imageFieldName}
-              name={imageFieldName}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              className={fileInputClassName}
-              disabled={isSubmitting}
-              onChange={(event) =>
-                setUploadedImageCount(event.currentTarget.files?.length ?? 0)
-              }
-            />
-          </div>
+          <VehicleImageUploadPreview
+            inputId={imageFieldName}
+            inputName={imageFieldName}
+            label={
+              mode === "create"
+                ? "Fotos do veículo (galeria)"
+                : "Adicionar novas fotos (opcional)"
+            }
+            description="Selecione várias imagens de uma vez. Elas compõem a galeria na vitrine e nas redes sociais."
+            disabled={isSubmitting}
+            onFilesChange={setUploadedImageCount}
+          />
 
           {errorMessage ? (
             <p className="text-sm text-destructive" role="alert">

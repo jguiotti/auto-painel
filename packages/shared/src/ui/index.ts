@@ -84,3 +84,20 @@ export {
   TableRow,
 } from "./table";
 export { Textarea } from "./textarea";
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./sheet";
+export { ScrollArea, ScrollBar } from "./scroll-area";
+export {
+  NotificationCenter,
+  NotificationCenterSheet,
+  NotificationBellTrigger,
+  type NotificationCenterItem,
+} from "../components/notification-center";

@@ -47,8 +47,8 @@ export default async function ModulosPlataformaPage() {
             Catálogo de módulos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Lista mestre da plataforma. Cada plano comercial escolhe um subconjunto
-            destes módulos na base de dados.
+            Cadastro mestre das funcionalidades da plataforma. Inclua cada módulo
+            nos planos comerciais — não marque módulos diretamente na concessionária.
           </p>
         </div>
         {schema.kind === "ok" ? (
@@ -66,7 +66,7 @@ export default async function ModulosPlataformaPage() {
         <CardHeader>
           <CardTitle>Módulos disponíveis</CardTitle>
           <CardDescription>
-            Metadados editáveis no admin; a chave técnica permanece fixa.
+            Nome e descrição visíveis ao operador; a chave técnica não muda após a criação.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">

@@ -34,8 +34,7 @@ Chaves estáveis (`key`) são contratos de código; labels em PT-BR na UI admin.
 | `finance_simulator` | Simulador de financiamento | Fluxo / página de simulação na vitrine e ferramentas associadas no painel. |
 | `qr_generator` | QR Code para veículos | Geração / uso de QR vinculado ao catálogo. |
 | `advanced_metrics` | Métricas avançadas | Relatórios e indicadores extras no painel da loja. |
-| `classifieds_sync` | Integração com classificados (OLX & WebMotors) | Conexão OAuth2 por popup, publicação e baixa automática de anúncios por loja. |
-| `olx_sync` | Integração OLX | Sincronização ou feeds OLX (escopo técnico na epic de integração). |
+| `classifieds_sync` | Integração com classificados (OLX & WebMotors) | Conexão OAuth2 por popup, publicação e baixa automática de anúncios por loja. **Única chave** para ambos os portais — não usar módulos separados por portal. |
 | `social_media_kit` | Kit redes sociais | Geração de carrosséis whitelabel (1080×1080, templates Classic/Performance/Tech), conexão Meta (Facebook Page + Instagram Business) OAuth por popup e publicação assíncrona via Graph API a partir da finalização do cadastro do veículo (`dealership-panel`). |
 | `crm_enhanced` | CRM / pipeline avançado | Funcionalidades de CRM além do fluxo mínimo de leads (quando existir). |
 | `multi_branch_console` | Console multi-unidade avançado | Regras extras por filial além do cadastro base de unidades (se produto diferenciar). |

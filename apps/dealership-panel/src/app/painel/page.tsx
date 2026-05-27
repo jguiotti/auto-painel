@@ -65,7 +65,7 @@ export default async function DashboardHomePage({
 }: DashboardHomePageProps) {
   const { periodo } = await searchParams;
   const rangeDays = parseRangeDays(periodo);
-  const { supabase, user, dealershipId } = await requireDashboardSession();
+  const { supabase, dealershipId } = await requireDashboardSession();
 
   const featureRes = await supabase.rpc("effective_feature_keys_for_active_dealership", {
     p_dealership_id: dealershipId,
@@ -270,9 +270,7 @@ export default async function DashboardHomePage({
           Painel
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Olá, {user.email ?? user.id}. Estes números refletem apenas a sua loja: o
-          Supabase aplica RLS por <code className="rounded bg-muted px-1">dealership_id</code>{" "}
-          e validamos o cookie de tenant em cada requisição.
+          Acompanhe estoque, contatos e resultados da sua concessionária em um só lugar.
         </p>
       </div>
 
@@ -474,8 +472,8 @@ export default async function DashboardHomePage({
         </section>
       ) : (
         <p className="rounded-lg border border-dashed border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-          O módulo de Métricas Avançadas não está habilitado no plano da sua
-          concessionária.
+          Métricas detalhadas de desempenho não estão incluídas no seu plano atual. Fale
+          com nosso time comercial se quiser acompanhar tendências de leads e visualizações.
         </p>
       )}
 

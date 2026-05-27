@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import {
   Button,
@@ -18,13 +17,10 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted/50">
-          <Image
+          <img
             src="/autopainel-logo.png"
             alt="AutoPainel"
-            width={300}
-            height={67}
             className="h-9 w-auto bg-transparent"
-            priority
           />
         </Link>
         <NavigationMenu className="hidden md:flex">

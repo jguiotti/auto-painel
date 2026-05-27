@@ -65,23 +65,28 @@ export default async function VehicleQrPage({
           .no-print {
             display: none !important;
           }
+          [data-dashboard-shell] main {
+            padding: 0 !important;
+          }
           body {
             background: #fff !important;
           }
           .print-sheet {
             box-shadow: none !important;
-            border: 1px solid #d4d4d8 !important;
+            border: none !important;
             margin: 0 auto !important;
             break-inside: avoid;
+            max-width: none !important;
+            width: 100% !important;
           }
           @page {
-            size: A4;
-            margin: 10mm;
+            size: ${printFormat === "a4" ? "A4" : "100mm 150mm"};
+            margin: ${printFormat === "a4" ? "10mm" : "4mm"};
           }
         }
       `}</style>
 
-      <div className="flex flex-col gap-2">
+      <div className="no-print flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Lâmina de venda com QR Code
         </h1>

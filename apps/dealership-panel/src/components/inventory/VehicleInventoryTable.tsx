@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Eye, Pencil } from "lucide-react";
 
 import {
   Button,
@@ -34,7 +35,6 @@ export interface VehicleInventoryRow {
 
 interface VehicleInventoryTableProps {
   vehicles: VehicleInventoryRow[];
-  isQrGeneratorEnabled?: boolean;
 }
 
 const statusLabel: Record<string, string> = {
@@ -51,15 +51,31 @@ function vehicleTypeLabel(value: string): string {
     suv: "SUV",
     utilitario: "Utilitário",
     caminhao: "Caminhão",
+    onibus: "Ônibus",
     outro: "Outro",
   };
   return labels[value] ?? value;
 }
 
-export function VehicleInventoryTable({
-  vehicles,
-  isQrGeneratorEnabled = false,
-}: VehicleInventoryTableProps) {
+function InventoryIconActions({ vehicleId }: { vehicleId: string }) {
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Button variant="ghost" size="icon" className="size-8" asChild>
+        <Link href={`/painel/estoque/${vehicleId}`} aria-label="Visualizar veículo">
+          <Eye className="size-4" aria-hidden />
+        </Link>
+      </Button>
+      <Button variant="ghost" size="icon" className="size-8" asChild>
+        <Link href={`/painel/estoque/${vehicleId}/editar`} aria-label="Editar veículo">
+          <Pencil className="size-4" aria-hidden />
+        </Link>
+      </Button>
+      <DeleteVehicleButton vehicleId={vehicleId} />
+    </div>
+  );
+}
+
+export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) {
   if (vehicles.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
@@ -108,7 +124,12 @@ export function VehicleInventoryTable({
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {v.brand} {v.model}
+                    <Link
+                      href={`/painel/estoque/${v.id}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {v.brand} {v.model}
+                    </Link>
                     <div className="mt-0.5 font-mono text-xs font-normal text-muted-foreground">
                       {v.public_slug}
                     </div>
@@ -133,28 +154,7 @@ export function VehicleInventoryTable({
                     ) : null}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                      <Button variant="link" className="h-auto p-0" asChild>
-                        <Link
-                          href={`/veiculo/${v.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Ver vitrine
-                        </Link>
-                      </Button>
-                      <Button variant="link" className="h-auto p-0" asChild>
-                        <Link href={`/painel/estoque/${v.id}/editar`}>Editar</Link>
-                      </Button>
-                      {isQrGeneratorEnabled &&
-                      v.status === "available" &&
-                      v.is_active ? (
-                        <Button variant="link" className="h-auto p-0" asChild>
-                          <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR Code</Link>
-                        </Button>
-                      ) : null}
-                      <DeleteVehicleButton vehicleId={v.id} />
-                    </div>
+                    <InventoryIconActions vehicleId={v.id} />
                   </TableCell>
                 </TableRow>
               );
@@ -203,21 +203,8 @@ export function VehicleInventoryTable({
                   </p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-                <Button size="sm" asChild>
-                  <Link href={`/painel/estoque/${v.id}/editar`}>Editar</Link>
-                </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/veiculo/${v.id}`} target="_blank" rel="noopener noreferrer">
-                    Vitrine
-                  </Link>
-                </Button>
-                {isQrGeneratorEnabled && v.status === "available" && v.is_active ? (
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/painel/estoque/${v.id}/qr`}>Gerar QR</Link>
-                  </Button>
-                ) : null}
-                <DeleteVehicleButton vehicleId={v.id} />
+              <div className="mt-3 flex justify-end border-t border-border pt-3">
+                <InventoryIconActions vehicleId={v.id} />
               </div>
             </li>
           );

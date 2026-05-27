@@ -11,6 +11,23 @@ Esta página é **somente para a equipe AutoPainel**. Use para registrar decisõ
 
 ---
 
+## Supabase local (Docker + CLI)
+
+Stack de desenvolvimento via **Supabase CLI** (`supabase start`), com Postgres, Auth, Storage, Studio e Edge Functions em Docker.
+
+| Artefato | Caminho / comando |
+| --- | --- |
+| Config versionada | `supabase/config.toml` |
+| Migrações | `supabase/migrations/` |
+| Scripts npm (raiz) | `supabase:start`, `supabase:stop`, `supabase:status`, `supabase:reset` |
+| Guia operacional | `packages/shared/docs/SUPABASE_LOCAL.md` |
+
+**Correção (2026-05-27):** `20260506180000_fix_profiles_rls_recursion.sql` passou a recriar `profiles_update_authenticated_owner_peers` (em vez de `alter` em `admin_peers`, removida por `20260423120000`) — necessário para `supabase start` / `db reset` em instalação limpa.
+
+Projeto remoto linkado: `wcgevmvystdhqpzwuyig` (AutoPainel). Alternar `.env.local` entre remoto e `http://127.0.0.1:54321` conforme cenário (ver guia).
+
+---
+
 ## Iniciativa — módulos da plataforma (2026)
 
 Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento** (`saas_modules.key = 'finance_simulator'`). Blueprint de catálogo dinâmico e RLS: `packages/shared/docs/PRD_DYNAMIC_PRICING_PLANS_AND_MODULES.md`.
@@ -144,6 +161,8 @@ Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento*
 - **Painel — bootstrap opcional por path:** rota `apps/dealership-panel/src/app/painel/acesso/[slug]/route.ts` só quando **`NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP=true`**; middleware `cookie` + RPC dashboard; helper `packages/shared/src/lib/tenant/allow-cookie-tenant-fallback-host.ts`. **Admin Master — `DealershipOperatorSurfaceLinks`:** em `NODE_ENV=development`, os botões principais usam **`buildLocalhostDealershipPreviewUrls`** (`packages/shared/src/lib/tenant/dealership-subdomain-surface-urls.ts`) para `http://{slug}.localhost:{3002|3003}`, mesmo quando **`NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN`** já é o domínio de produção — evita abrir `https://{slug}.{root}` sem serviço local; bloco monospace opcional mostra URL canónico de **`buildDealershipSubdomainSurfaceUrls`**. Produção (`NODE_ENV=production`): só URLs canónicos.
 - **Whitelabel (Fase Frontend — 2026-05-13):** formulário de concessionária em `apps/admin-master/src/components/dealership-form.tsx` inclui `storefront_theme_mode` (`light`/`dark`) e grava em `theme_config.storefront_theme_mode` via `apps/admin-master/src/actions/dealerships.ts`. Resolução visual no `customer-site` passa por `packages/shared/src/lib/theme/branding.ts` (`resolveDealershipBranding`) com fallback de fundo/superfície por modo: claro (`#fafafa/#ffffff`) e escuro (`#0b1120/#111827`). Tabela de concessionárias exibe coluna de tema para operação rápida (`apps/admin-master/src/components/dealerships-table.tsx`).
 - **Polimento operacional (Fase Frontend — 2026-05-13):** `apps/admin-master/src/components/dealerships-table.tsx` recebeu filtros rápidos (busca por nome/slug/domínio/plano; selects por status/tema/plano), badges por status/plano/tema e contadores de carteira por estado (`active`, `pending_setup`, `suspended`, `churned`) para reduzir tempo de triagem no backoffice.
+- **Catálogo planos × módulos × lojas (2026-05-27):** fluxo único **Módulos → Planos → Plano na concessionária**. Removidos checkboxes legados `enabled_features` / `DEALERSHIP_OPTIONAL_FEATURES` do formulário de loja; `createDealershipAction` / `updateDealershipAction` exigem `pricing_plan_id` e gravam `enabled_features: []` (gating efetivo via RPC `effective_feature_keys_for_active_dealership`). Ficha da loja em abas (`geral`, `vitrine`, `plano`, `unidades`, `equipe`, `financeiro`) — preview read-only dos módulos do plano em `dealership-plan-modules-preview.tsx`; lista de planos com contagem de módulos; tabela de concessionárias resolve nome do plano por `pricing_plan_id`. Removido `dealership-dialog.tsx` (código morto). Paths: `dealership-form.tsx`, `actions/dealerships.ts`, `lib/data/pricing-catalog.ts` (`fetchPlanModulesMapForAdmin`, `fetchPricingPlanModuleCountsForAdmin`), páginas `/painel/modulos`, `/painel/planos`, `/painel/concessionarias/*`.
+- **Consolidação classificados (2026-05-27):** removido módulo legado `olx_sync` («Integração OLX») do catálogo; única chave `classifieds_sync` cobre OLX + WebMotors (gating já existente no `dealership-panel`). Migração `supabase/migrations/20260527200000_consolidate_classifieds_saas_module.sql` — migrar pivôs de plano e apagar linha duplicada em `saas_modules`.
 
 #### Fase 5 — QA (`admin_master_visual_refresh`)
 
@@ -1311,6 +1330,168 @@ Status: [ ] manual pendente
 |---|----------|-------------|-------|--------|
 | 1 | 🟡 minor | Favicon por loja validado por contrato/metadata; falta smoke visual automatizado assertivo em navegador para casos com e sem favicon | Frontend + QA | open |
 | 2 | 🟡 minor | Ainda há espaço para ampliar cobertura E2E de consistência visual em páginas de CRUD do `admin-master` | QA | deferred |
+
+---
+
+## Iniciativa — Ambiente demo E2E (3 concessionárias) — 2026-05-26
+
+| Campo | Valor |
+| --- | --- |
+| **Objetivo** | Seed idempotente + templates vitrine 1/2/3 + gestores demo para validação ponta a ponta |
+| **Migração** | `supabase/migrations/20260514120000_seed_demo_dealerships_e2e.sql` |
+| **Script usuários** | `scripts/seed-demo-dealership-users.mjs` (`npm run seed:demo-users`) |
+| **Apps** | `customer-site` (layouts), `dealership-panel` (RLS estoque), `admin-master` (já edita `layout_id`) |
+
+### Seed (Postgres)
+
+- Upsert por `dealerships.slug`: `guiotti`, `autoprime`, `ecodrive`
+- `layout_id`: 1 / 2 / 3 respectivamente
+- `theme_config`: cores primária/secundária, `storefront_theme_mode: dark`, fontes Google
+- `content_config.about_text` + `hq_address`
+- Unidade `Matriz` em `dealership_units` (obrigatória para `vehicles.dealership_unit_id`)
+- 6 veículos demo por loja (`public_slug` prefixo `demo-`, `is_featured` nos primeiros de cada loja)
+- **Nota:** update em conflito de slug **não** altera `pricing_plan_id` (trigger de plano só operador)
+
+### Frontend (`customer-site`)
+
+| Arquivo | Papel |
+| --- | --- |
+| `src/components/storefront/storefront-home-layout.tsx` | Orquestra home por `layout_id` |
+| `src/components/storefront/home-hero.tsx` | Hero premium por template (ref. layout1/2/3 HTML) |
+| `src/components/storefront/home-heritage-section.tsx` | Secção herança (layouts 1 e 2) |
+| `src/components/storefront/home-featured-bento.tsx` | Destaques dinâmicos (`is_featured`) — layout 3 |
+| `src/components/storefront/vehicle-listing-grid.tsx` | Cards por template (2 cols layout 1/2, 4 cols layout 3) |
+| `src/components/storefront/storefront-shell.tsx` | Header premium por template |
+| `next.config.ts` | `images.remotePatterns` inclui `images.unsplash.com` |
+
+### Credenciais demo (painel)
+
+| E-mail | Loja | Senha |
+| --- | --- | --- |
+| `gestor.guiotti@autopainel.demo` | guiotti | `LojaDemo123!` |
+| `gestor.autoprime@autopainel.demo` | autoprime | `LojaDemo123!` |
+| `gestor.ecodrive@autopainel.demo` | ecodrive | `LojaDemo123!` |
+
+### URLs locais
+
+- Vitrine: `http://{slug}.localhost:3003`
+- Painel: `http://{slug}.localhost:3002/login`
+
+### QA checklist (manual)
+
+- [ ] `guiotti.localhost:3003` — layout 1 dourado, sidebar filtros, 6 veículos
+- [ ] `autoprime.localhost:3003` — layout 2 vermelho, hero central, herança, grid 2 colunas
+- [ ] `ecodrive.localhost:3003` — layout 3 azul, bento destaques, grid 4 colunas
+- [ ] Login gestor em cada painel — estoque isolado (RLS)
+- [ ] Editar preço de um veículo demo — vitrine reflete após refresh
+- [ ] Host inválido continua em `/erro/concessionaria`
+
+### Hotfix QA (2026-05-26)
+
+| Defeito | Causa | Correção |
+| --- | --- | --- |
+| Vitrine: `permission denied for function list_public_vehicles_filtered` | Migration `20260514030000` recriou RPCs sem `grant execute` para `anon` | `supabase/migrations/20260526120000_grant_public_vehicle_list_rpcs.sql` |
+| Painel estoque: `images.unsplash.com` não configurado | Seed demo usa imagens Unsplash; só `customer-site` tinha `remotePatterns` | `apps/dealership-panel/next.config.ts` — hostname `images.unsplash.com` |
+
+---
+
+## Sprint lapidação UX/copy/whitelabel/financiamento — 2026-05-26
+
+| Campo | Valor |
+| --- | --- |
+| **Objetivo** | Vitrine com copy de vendas; painel lojista legível; motor CSS unificado; simulador Price+IOF; planos demo distintos para gating |
+| **Migração** | `supabase/migrations/20260526153000_demo_dealership_differentiated_plans.sql` (aplicada no remoto) |
+
+### Shared
+
+| Arquivo | Papel |
+| --- | --- |
+| `packages/shared/src/lib/finance/calculate-finance-simulation.ts` | Tabela Price + estimativa IOF (0,38% + 0,0082%/dia × prazo) |
+| `packages/shared/src/lib/theme/storefront-css-vars.ts` | `buildStorefrontCssVariables` — aliases `--primary-color`, `--secondary-color`, `--storefront-*` |
+| `packages/shared/src/types/finance-simulation.ts` | Snapshot com `estimatedIofAmount`, `principalWithIof`, prazos 12–60 |
+
+### customer-site
+
+- Copy hero/layout: linguagem de vendas («Encontre seu carro», «Agende um test drive»); removido jargão técnico.
+- `finance-simulator.tsx`: prazos 12/24/36/48/60, select shadcn, slider entrada, disclaimer legal.
+- `storefront-shell.tsx` + `globals.css`: consome motor CSS unificado.
+- `public-lead.ts`: aceita `termMonths = 12`.
+
+### dealership-panel
+
+- `DashboardShell.tsx`: sidebar shadcn, agrupamentos Operação/Divulgação, link vitrine via `buildDealershipSubdomainSurfaceUrls`.
+- `painel/layout.tsx`: RPC `effective_feature_keys_for_active_dealership` → gating menu Integrações.
+- `painel/page.tsx`: copy amigável (sem RLS/cookie exposto ao lojista).
+- `integracoes/page.tsx`: só renderiza secções habilitadas; redirect `/painel` se plano sem integrações.
+
+### Planos demo (pós-migração)
+
+| Slug | Plano | Chaves efetivas esperadas |
+| --- | --- | --- |
+| `guiotti` | enterprise | catálogo completo |
+| `autoprime` | business | `finance_simulator`, `qr_generator` |
+| `ecodrive` | starter | `finance_simulator` |
+
+### QA manual (lapidação)
+
+- [ ] Simular financiamento na vitrine → lead tipo `simulation` em `/painel/contatos`
+- [ ] EcoDrive: sem menu Integrações; Guiotti: com Integrações
+- [ ] AutoPrime: QR no estoque; EcoDrive: sem QR
+- [ ] Alterar cor primária no admin/painel → vitrine reflete após refresh
+
+### Hotfix UX/CRM/imagens (2026-05-27)
+
+| Item | Detalhe |
+| --- | --- |
+| **Migração** | `20260527090000_leads_assigned_user_business_plan_demo_images.sql` — `leads.assigned_user_id`, plano `business` só finance+QR, URLs Unsplash demo |
+| **Vitrine filtros** | `vehicle-filters-panel.tsx` — selects por marca/modelo/faixa/ano; layout unificado responsivo nos 3 templates |
+| **Copy vitrine** | `lead-capture-form.tsx`, cards estoque, detalhe veículo — CTAs promocionais |
+| **Painel** | Sidebar fixa, `DashboardNotificationCenter`, `LeadInbox` com busca/filtro |
+| **QR print** | `@media print` oculta shell; folha A4/etiqueta limpa |
+
+### Hotfix vitrine WhatsApp, filtros e integrações (2026-05-27)
+
+| Item | Detalhe |
+| --- | --- |
+| **Migração** | `20260527120000_vehicle_type_filter_guiotti_motos.sql` — `p_vehicle_type` em `list_public_vehicles_filtered`, motos demo Guiotti, fix URLs Unsplash 404 |
+| **WhatsApp UTM** | `build-storefront-whatsapp-url.ts` — `utm_source=vitrine`, `utm_medium=whatsapp`, `utm_campaign`, `utm_content={slug}`; hero sem `/contato` |
+| **Filtro tipo** | `vehicle-filters-panel.tsx` + `build-vehicle-filter-options.ts` — select tipos cadastrados no estoque |
+| **Header mobile** | `storefront-header-nav.tsx` — menu colapsável em `< md` |
+| **OAuth demo** | `oauth/start` → HTTP 503 `oauth_not_configured` quando env OLX/WebMotors ausente |
+| **E2E** | `e2e/specs/storefront-lapida-qa.spec.ts` |
+
+### Notificações e layout painéis (2026-05-27)
+
+| Item | Detalhe |
+| --- | --- |
+| **Shared UI** | `packages/shared/src/ui/sheet.tsx`, `scroll-area.tsx`, `components/notification-center.tsx` — sininho + badge vermelho + Sheet `100dvh` |
+| **Painel lojista** | `DashboardNotificationCenter` refatorado; `DashboardMobileNav` (Sheet lateral); `dashboard-mobile-nav-mount.tsx` evita hydration mismatch; header harmonizado |
+| **Admin master** | `AdminNotificationProvider` — subscription única + `AdminNotificationTrigger` no header mobile/desktop; corrige erro Realtime por canal duplicado |
+| **E2E OAuth** | `e2e/helpers/dealership-panel-login.ts`, `e2e/specs/dealership-panel-integrations-oauth.spec.ts` |
+
+### Vitrine — página `/estoque` e detalhe veículo (2026-05-27)
+
+| Item | Detalhe |
+| --- | --- |
+| **Rota** | `apps/customer-site/src/app/(storefront)/estoque/page.tsx` — estoque completo com filtros avançados (marca, modelo, preço, ano, tipo, km, ordenação) |
+| **Home** | `storefront-home-layout.tsx` + `home-inventory-teaser.tsx` — home dos 3 templates mantém hero; teaser de destaques com link “Ver estoque completo” |
+| **Layout** | `storefront-page-container.tsx` (`max-w-7xl`), `storefront-inventory-page.tsx`, `vehicle-inventory-list.tsx` (cards horizontais estilo classificados) |
+| **Detalhe** | `vehicle-detail-layout.tsx` — galeria, grid de specs, sidebar sticky, WhatsApp com UTM |
+| **RPC** | `list_public_vehicles_filtered` — params `p_vehicle_type`, `p_min_mileage`, `p_max_mileage`; repair idempotente em `20260527140000_repair_list_public_vehicles_rpc.sql` |
+| **Nav** | Links de estoque apontam para `/estoque` (não `/#estoque`); E2E filtro moto em `/estoque?vehicleType=motocicleta` |
+| **Templates 1 e 2** | Alinhamento unificado via `StorefrontPageContainer` + header/footer `max-w-7xl`; layout 1 editorial; layout 2 performance com carrossel por setas (`home-inventory-carousel.tsx`) |
+| **Notificações lidas** | `useNotificationReadState` + localStorage; marcar ao clicar ou “Marcar todas como lidas”; paridade admin/painel |
+| **Estoque painel** | `/painel/estoque/[vehicleId]` visualização; ficha técnica WebMotors-like; share social via `social_publication_jobs` |
+| **Lista estoque painel** | `VehicleInventoryTable.tsx` — ações só ícones (visualizar, editar, excluir); QR, vitrine e share social apenas em `/painel/estoque/[vehicleId]` |
+| **Nav mobile painel** | `DashboardMobileNav.tsx` — `/painel` ativo só em pathname exato (corrige “Visão geral” sempre destacado) |
+| **Migração catálogo** | `20260527160000_vehicle_detail_catalog_fields.sql` — version, fuel, transmission, color, body, condições, features[] |
+| **Migração specs por tipo** | `20260527180000_vehicle_type_specs_and_storefront_filters.sql` — colunas técnicas (`gear_count`, `displacement_cc`, motor, freios, tração, eixos, lugares, etc.); tipo `onibus`; RPC `list_public_vehicles_filtered` com `p_fuel_type`, `p_transmission`, `p_color`, `p_min/max_displacement_cc`, `p_gear_count` |
+| **Form painel** | `vehicle-type-spec-fields.tsx`, `parse-vehicle-type-spec-form.ts` — campos condicionais por `vehicle_type` (motos WebMotors-like; caminhões; vans/ônibus) |
+| **Integrações classificados** | Popup OAuth OLX/WebMotors com diálogo de confirmação antes do login; mensagens amigáveis (`integration-user-messages.ts`); config plataforma em `platform_classifieds_oauth_providers`; RPC `disconnect_dealership_classifieds_connection`; migração `20260526190000_platform_classifieds_oauth_and_disconnect.sql` |
+| **Shared** | `packages/shared/src/lib/vehicle/vehicle-type-spec-options.ts`, `vehicle-type-labels.ts` (`onibus`), `supabase-rpc.ts` |
+| **Hydration** | `vehicle-filters-panel.tsx` usa `panelId` fixo na página de estoque; filtros duplicados removidos da home |
+
+**Nota Supabase:** se `db push` falhou em `20260527120000` (revoke de overload inexistente), marcar repair conforme CLI e aplicar `20260527140000` no remoto.
 
 ---
 

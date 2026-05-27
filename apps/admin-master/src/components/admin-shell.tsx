@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   BookOpen,
   Building2,
   Command as CommandIcon,
@@ -14,7 +13,6 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -37,6 +35,10 @@ import {
 } from "@autopainel/shared/ui";
 
 import { logoutAction } from "@/actions/auth";
+import {
+  AdminNotificationProvider,
+  AdminNotificationTrigger,
+} from "@/components/admin-notification-provider";
 
 const linkBase =
   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors";
@@ -88,6 +90,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
+    <AdminNotificationProvider>
     <div className="bg-background">
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden h-screen flex-col overflow-y-auto border-r border-zinc-200 bg-white md:flex ${
@@ -95,13 +98,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className="flex h-16 shrink-0 items-center border-b border-zinc-200 bg-white px-4">
-          <Image
+          <img
             src="/autopainel-logo.png"
             alt="AutoPainel"
-            width={260}
-            height={58}
             className="h-8 w-auto bg-transparent"
-            priority
           />
           <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
             Admin
@@ -152,20 +152,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <div className={`flex min-h-screen flex-1 flex-col ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
-        <header className="flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden">
-          <Image
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 md:hidden">
+          <img
             src="/autopainel-logo.png"
             alt="AutoPainel"
-            width={220}
-            height={49}
             className="h-7 w-auto bg-transparent"
-            priority
           />
-          <form action={logoutAction}>
-            <Button type="submit" variant="ghost" size="sm">
-              Sair
-            </Button>
-          </form>
+          <div className="flex items-center gap-1">
+            <AdminNotificationTrigger />
+            <form action={logoutAction}>
+              <Button type="submit" variant="ghost" size="sm">
+                Sair
+              </Button>
+            </form>
+          </div>
         </header>
         <div className="flex gap-2 overflow-x-auto border-b border-zinc-200 bg-white px-2 py-2 md:hidden">
           {nav.map(({ href, label }) => (
@@ -180,30 +180,38 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </Button>
           ))}
         </div>
-        <div className="hidden border-b border-zinc-200 bg-white py-3 md:block">
-          <PageContainer size="xl">
+        <div className="hidden shrink-0 border-b border-zinc-200 bg-white md:block">
+          <PageContainer size="xl" className="py-4">
             <div className="flex items-center justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Painel administrativo
                 </p>
-                <p className="mt-1 text-xl font-semibold tracking-tight">{pageTitle}</p>
+                <p className="mt-1 truncate text-xl font-semibold tracking-tight">{pageTitle}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="min-w-72 justify-start text-muted-foreground"
+                  className="hidden min-w-72 justify-start text-muted-foreground lg:flex"
                   onClick={() => setCommandOpen(true)}
                 >
                   <Search className="size-4" aria-hidden />
                   Buscar concessionária, plano ou página...
                   <span className="ml-auto text-xs text-muted-foreground">⌘K</span>
                 </Button>
-                <Button type="button" variant="ghost" size="icon">
-                  <Bell className="size-4" aria-hidden />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={() => setCommandOpen(true)}
+                  aria-label="Buscar"
+                >
+                  <Search className="size-4" aria-hidden />
                 </Button>
+                <AdminNotificationTrigger />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button type="button" variant="outline" size="sm">
@@ -225,7 +233,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           </PageContainer>
         </div>
-        <main className="flex-1 py-4 md:py-8">
+        <main className="min-w-0 flex-1 py-6 md:py-8">
           <PageContainer size="xl">{children}</PageContainer>
         </main>
       </div>
@@ -250,5 +258,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </CommandList>
       </CommandDialog>
     </div>
+    </AdminNotificationProvider>
   );
 }

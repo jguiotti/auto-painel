@@ -20,7 +20,7 @@ export default async function NewVehiclePage() {
             Novo veículo
           </h1>
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            Não foi possível carregar as unidades da loja. Aplique a migração das unidades no Supabase ou cadastre filiais no admin-master.
+            Não foi possível carregar as unidades da loja. Cadastre filiais no painel administrativo ou fale com nosso suporte.
           </p>
         </div>
       </div>

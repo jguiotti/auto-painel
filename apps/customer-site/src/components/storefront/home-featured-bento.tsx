@@ -1,53 +1,88 @@
-/**
- * Highlights strip used only with storefront layout template 3 (large card grid feel).
- */
+import Image from "next/image";
+import Link from "next/link";
 
-export function HomeFeaturedBento() {
+import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
+import { formatBrl } from "@/lib/format/format-brl";
+
+interface HomeFeaturedBentoProps {
+  vehicles: PublicVehicleCardModel[];
+}
+
+export function HomeFeaturedBento({ vehicles }: HomeFeaturedBentoProps) {
+  const [primary, secondary, tertiary] = vehicles;
+
   return (
     <section
       aria-labelledby="featured-bento-heading"
-      className="border-y border-black/5 bg-[var(--dealer-surface)] px-4 py-14 dark:border-white/10"
+      className="border-y border-[color-mix(in_srgb,var(--dealer-primary)_15%,transparent)] bg-[var(--dealer-surface)] px-4 py-14 sm:px-8 lg:px-20"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8 border-l-4 border-[var(--dealer-primary)] pl-4">
           <h2
             id="featured-bento-heading"
-            className="text-xl font-semibold tracking-tight text-[var(--dealer-fg)]"
+            className="text-2xl font-semibold tracking-tight text-[var(--dealer-fg)]"
+            style={{ fontFamily: "var(--dealer-font-heading)" }}
           >
             Destaques
           </h2>
           <p className="mt-1 text-sm text-[var(--dealer-fg)]/65">
-            Veículos em preparação e novidades da loja — confira também o estoque
-            completo abaixo.
+            Veículos em evidência no estoque da loja.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-12 md:grid-rows-2 md:h-[280px]">
-          <div className="rounded-xl border border-black/10 bg-[var(--dealer-bg)] p-6 md:col-span-7 md:row-span-2 dark:border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--dealer-primary)]">
-              Curadoria
-            </p>
-            <p className="mt-2 text-lg font-medium text-[var(--dealer-fg)]">
-              Cada veículo revisado antes de ir para vitrine.
-            </p>
-          </div>
-          <div className="rounded-xl border border-black/10 bg-[var(--dealer-bg)] p-5 md:col-span-5 dark:border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--dealer-accent)]">
-              Financiamento
-            </p>
-            <p className="mt-2 text-sm text-[var(--dealer-fg)]/80">
-              Simule parcelas e fale com a equipe pelo WhatsApp.
-            </p>
-          </div>
-          <div className="rounded-xl border border-black/10 bg-[var(--dealer-bg)] p-5 md:col-span-5 dark:border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--dealer-accent)]">
-              Visita
-            </p>
-            <p className="mt-2 text-sm text-[var(--dealer-fg)]/80">
-              Agende uma visita para ver o carro ao vivo.
-            </p>
-          </div>
+        <div className="grid gap-4 md:grid-cols-12 md:grid-rows-2 md:min-h-[320px]">
+          {primary ? (
+            <FeaturedTile vehicle={primary} className="md:col-span-7 md:row-span-2" large />
+          ) : null}
+          {secondary ? (
+            <FeaturedTile vehicle={secondary} className="md:col-span-5" />
+          ) : null}
+          {tertiary ? (
+            <FeaturedTile vehicle={tertiary} className="md:col-span-5" />
+          ) : null}
         </div>
       </div>
     </section>
+  );
+}
+
+function FeaturedTile({
+  vehicle,
+  className,
+  large = false,
+}: {
+  vehicle: PublicVehicleCardModel;
+  className?: string;
+  large?: boolean;
+}) {
+  const thumb = vehicle.images?.[0] ?? null;
+
+  return (
+    <Link
+      href={`/veiculo/${vehicle.public_slug}`}
+      className={`group relative block min-h-[220px] overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--dealer-primary)_20%,transparent)] bg-[var(--dealer-bg)] ${className ?? ""}`}
+    >
+      {thumb ? (
+        <Image
+          src={thumb}
+          alt={`${vehicle.brand} ${vehicle.model}`}
+          fill
+          className="object-cover transition duration-700 group-hover:scale-105"
+          sizes={large ? "50vw" : "25vw"}
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--dealer-primary)]">
+          Destaque
+        </p>
+        <p
+          className={`mt-1 font-semibold text-white ${large ? "text-2xl" : "text-lg"}`}
+          style={{ fontFamily: "var(--dealer-font-heading)" }}
+        >
+          {vehicle.brand} {vehicle.model}
+        </p>
+        <p className="mt-1 text-sm text-white/75">{formatBrl(Number(vehicle.price))}</p>
+      </div>
+    </Link>
   );
 }

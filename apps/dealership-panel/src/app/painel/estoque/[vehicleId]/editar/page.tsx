@@ -16,7 +16,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
     supabase
       .from("vehicles")
       .select(
-        "brand, model, vehicle_type, vehicle_type_custom, public_slug, manufacturing_year, model_year, mileage, fipe_price, sale_price, price, description, status, is_featured, is_active, images, dealership_unit_id",
+        "brand, model, vehicle_type, vehicle_type_custom, public_slug, manufacturing_year, model_year, mileage, fipe_price, sale_price, price, description, status, is_featured, is_active, images, dealership_unit_id, version, fuel_type, transmission, color, body_style, accepts_trade, single_owner, all_revisions_done, factory_warranty, ipva_paid, is_licensed, features, gear_count, displacement_cc, engine_type, cooling_type, motorcycle_style, starter_type, brake_front, brake_rear, fuel_system, traction, axle_count, gross_weight_kg, passenger_capacity, cab_type, body_truck_type",
       )
       .eq("id", vehicleId)
       .single(),
@@ -82,6 +82,33 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
           is_active: vehicle.is_active !== false,
           images: (vehicle.images as string[] | null) ?? [],
           dealership_unit_id: dealershipUnitId,
+          version: vehicle.version ?? null,
+          fuel_type: vehicle.fuel_type ?? null,
+          transmission: vehicle.transmission ?? null,
+          color: vehicle.color ?? null,
+          body_style: vehicle.body_style ?? null,
+          accepts_trade: Boolean(vehicle.accepts_trade),
+          single_owner: Boolean(vehicle.single_owner),
+          all_revisions_done: Boolean(vehicle.all_revisions_done),
+          factory_warranty: Boolean(vehicle.factory_warranty),
+          ipva_paid: Boolean(vehicle.ipva_paid),
+          is_licensed: Boolean(vehicle.is_licensed),
+          features: (vehicle.features as string[] | null) ?? [],
+          gear_count: vehicle.gear_count ?? null,
+          displacement_cc: vehicle.displacement_cc ?? null,
+          engine_type: vehicle.engine_type ?? null,
+          cooling_type: vehicle.cooling_type ?? null,
+          motorcycle_style: vehicle.motorcycle_style ?? null,
+          starter_type: vehicle.starter_type ?? null,
+          brake_front: vehicle.brake_front ?? null,
+          brake_rear: vehicle.brake_rear ?? null,
+          fuel_system: vehicle.fuel_system ?? null,
+          traction: vehicle.traction ?? null,
+          axle_count: vehicle.axle_count ?? null,
+          gross_weight_kg: vehicle.gross_weight_kg ?? null,
+          passenger_capacity: vehicle.passenger_capacity ?? null,
+          cab_type: vehicle.cab_type ?? null,
+          body_truck_type: vehicle.body_truck_type ?? null,
         }}
       />
     </div>

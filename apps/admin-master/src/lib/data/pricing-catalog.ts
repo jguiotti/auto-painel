@@ -174,3 +174,53 @@ export async function fetchSaasModuleByIdForAdmin(
 
   return data as SaasModuleListRow;
 }
+
+export async function fetchPlanModulesMapForAdmin(): Promise<
+  Record<string, SaasModuleListRow[]>
+> {
+  const [plans, modules] = await Promise.all([
+    fetchPricingPlansForAdmin(),
+    fetchSaasModulesForAdmin(),
+  ]);
+
+  const moduleById = new Map(modules.map((mod) => [mod.id, mod]));
+  const entries = await Promise.all(
+    plans.map(async (plan) => {
+      const moduleIds = await fetchPricingPlanModuleIdsForAdmin(plan.id);
+      const planModules = moduleIds
+        .map((id) => moduleById.get(id))
+        .filter((mod): mod is SaasModuleListRow => mod !== undefined);
+      return [plan.id, planModules] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries);
+}
+
+export async function fetchPricingPlanModuleCountsForAdmin(): Promise<
+  Record<string, number>
+> {
+  let supabase;
+  try {
+    supabase = createSupabaseServiceRoleClient();
+  } catch {
+    return {};
+  }
+
+  const { data, error } = await supabase
+    .from("pricing_plan_modules")
+    .select("pricing_plan_id");
+
+  if (error || !data) {
+    return {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of data) {
+    const planId = row.pricing_plan_id as string;
+    if (typeof planId === "string" && planId.length > 0) {
+      counts[planId] = (counts[planId] ?? 0) + 1;
+    }
+  }
+  return counts;
+}

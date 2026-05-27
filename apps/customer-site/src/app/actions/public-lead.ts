@@ -23,7 +23,7 @@ function isValidSimulationSnapshot(
     Number.isFinite(Number(value.financedAmount)) &&
     Number.isFinite(Number(value.monthlyRatePercent)) &&
     Number.isFinite(parsedTerm) &&
-    [24, 36, 48, 60].includes(parsedTerm) &&
+    [12, 24, 36, 48, 60].includes(parsedTerm) &&
     Number.isFinite(Number(value.estimatedInstallment)) &&
     Number.isFinite(Number(value.estimatedTotalPayable)) &&
     Number.isFinite(Number(value.estimatedTotalInterest))

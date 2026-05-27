@@ -14,10 +14,19 @@ async function readDealershipVisualContext() {
   const { supabase, dealershipId, profile } = await requireDashboardSession();
   const { data: dealership } = await supabase
     .from("dealerships")
-    .select("name, logo_url, theme_config")
+    .select("name, slug, logo_url, theme_config")
     .eq("id", dealershipId)
     .single();
+
+  const featureRes = await supabase.rpc("effective_feature_keys_for_active_dealership", {
+    p_dealership_id: dealershipId,
+  });
+  const activeFeatureKeys = Array.isArray(featureRes.data)
+    ? featureRes.data.filter((entry): entry is string => typeof entry === "string")
+    : [];
+
   const dealershipName = dealership?.name ?? "Painel";
+  const dealershipSlug = dealership?.slug ?? "";
   const dealershipLogoUrl = resolveDealershipHeaderLogoUrl(
     dealership?.theme_config ?? null,
     dealership?.logo_url ?? null,
@@ -30,8 +39,10 @@ async function readDealershipVisualContext() {
     profile,
     dealershipId,
     dealershipName,
+    dealershipSlug,
     dealershipLogoUrl,
     dealershipFaviconUrl,
+    activeFeatureKeys,
   };
 }
 
@@ -54,14 +65,22 @@ export default async function PainelLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { profile, dealershipId, dealershipName, dealershipLogoUrl } =
-    await readDealershipVisualContext();
+  const {
+    profile,
+    dealershipId,
+    dealershipName,
+    dealershipSlug,
+    dealershipLogoUrl,
+    activeFeatureKeys,
+  } = await readDealershipVisualContext();
 
   return (
     <DashboardShell
       dealershipName={dealershipName}
+      dealershipSlug={dealershipSlug}
       dealershipLogoUrl={dealershipLogoUrl}
       dealershipId={dealershipId}
+      activeFeatureKeys={activeFeatureKeys}
       viewerRole={profile.role}
     >
       {children}

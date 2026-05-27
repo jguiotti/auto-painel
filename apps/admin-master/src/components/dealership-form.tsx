@@ -1,23 +1,25 @@
 "use client";
 
-import { DEALERSHIP_OPTIONAL_FEATURES } from "@autopainel/shared/lib/dealership-features";
 import type {
   BrazilianAddressFields,
   PricingPlanListRow,
+  SaasModuleListRow,
   StorefrontLayoutTemplateId,
   StorefrontThemeMode,
 } from "@autopainel/shared/types";
 import {
+  Badge,
   Button,
   Input,
   Label,
   Textarea,
   toast,
 } from "@autopainel/shared/ui";
+import { cn } from "@autopainel/shared/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import {
   createDealershipAction,
@@ -25,6 +27,7 @@ import {
 } from "@/actions/dealerships";
 import { BrazilianAddressFields as BrazilianAddressFieldsForm } from "@/components/brazilian-address-fields";
 import { DealershipCollaboratorsPanel } from "@/components/dealership-collaborators-panel";
+import { DealershipPlanModulesPreview } from "@/components/dealership-plan-modules-preview";
 import { GoogleFontFamilyCombobox } from "@/components/google-font-family-combobox";
 import { DealershipOperatorFinancePanel } from "@/components/dealership-operator-finance-panel";
 import {
@@ -134,19 +137,22 @@ function storefrontThemeModeFromDealership(
   return mode === "dark" ? "dark" : "light";
 }
 
-function isOptionalFeatureChecked(
-  dealership: DealershipAdminRow | null,
-  key: string,
-): boolean {
-  if (!dealership) {
-    return true;
-  }
-  const ef = dealership.enabled_features;
-  if (!ef || ef.length === 0) {
-    return true;
-  }
-  return ef.includes(key);
-}
+type DealershipEditTab =
+  | "geral"
+  | "vitrine"
+  | "plano"
+  | "unidades"
+  | "equipe"
+  | "financeiro";
+
+const EDIT_TABS: Array<{ id: DealershipEditTab; label: string }> = [
+  { id: "geral", label: "Geral" },
+  { id: "vitrine", label: "Vitrine" },
+  { id: "plano", label: "Plano" },
+  { id: "unidades", label: "Unidades" },
+  { id: "equipe", label: "Equipe" },
+  { id: "financeiro", label: "Financeiro" },
+];
 
 type FormDefaults = {
   name: string;
@@ -255,7 +261,7 @@ export function DealershipForm({
   dealership,
   initialUnits,
   pricingPlans,
-  commercialPlanLabel,
+  planModulesByPlanId,
   collaborators,
   operatorBilling,
   billingHistory,
@@ -265,7 +271,7 @@ export function DealershipForm({
   dealership: DealershipAdminRow | null;
   initialUnits: DealershipUnitAdminRow[];
   pricingPlans: PricingPlanListRow[];
-  commercialPlanLabel?: string;
+  planModulesByPlanId: Record<string, SaasModuleListRow[]>;
   collaborators?: DealershipCollaboratorRow[];
   operatorBilling?: DealershipBillingRow | null;
   billingHistory?: DealershipBillingHistoryRow[];
@@ -278,6 +284,23 @@ export function DealershipForm({
   const [layoutId, setLayoutId] = useState<StorefrontLayoutTemplateId>(
     defaults.layout_id,
   );
+  const [activeTab, setActiveTab] = useState<DealershipEditTab>("geral");
+  const [selectedPlanId, setSelectedPlanId] = useState(defaults.pricing_plan_id);
+
+  const planNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const plan of pricingPlans) {
+      map[plan.id] = plan.name;
+    }
+    return map;
+  }, [pricingPlans]);
+
+  const isFormTab =
+    mode === "create" ||
+    activeTab === "geral" ||
+    activeTab === "vitrine" ||
+    activeTab === "plano" ||
+    activeTab === "unidades";
 
   function finishAfterSuccess() {
     router.push("/painel/concessionarias");
@@ -308,7 +331,7 @@ export function DealershipForm({
   }
 
   const heading =
-    mode === "create" ? "Nova concessionária" : "Editar concessionária";
+    mode === "create" ? "Nova concessionária" : dealership?.name ?? "Concessionária";
 
   return (
     <div
@@ -318,7 +341,7 @@ export function DealershipForm({
           : "mx-auto max-w-3xl pb-12 pt-6"
       }
     >
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <Link
             href="/painel/concessionarias"
@@ -326,17 +349,44 @@ export function DealershipForm({
           >
             ← Voltar à lista
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+            {mode === "edit" && dealership ? (
+              <Badge className="capitalize">{defaults.status.replace("_", " ")}</Badge>
+            ) : null}
+          </div>
           <p className="text-sm text-muted-foreground">
-            O subdomínio define o endereço{" "}
-            <span className="font-medium text-foreground">
-              slug.seudominio.com
-            </span>
-            . Identidade visual e template definem a vitrine multitenant.
+            {mode === "create"
+              ? "Cadastre a loja e escolha o plano comercial. As funcionalidades vêm do plano — não selecione módulos avulsos."
+              : "Gerencie dados, vitrine, plano e equipe em abas separadas."}
           </p>
         </div>
       </div>
 
+      {mode === "edit" ? (
+        <nav
+          className="mb-6 flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1"
+          aria-label="Seções da concessionária"
+        >
+          {EDIT_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                activeTab === tab.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      {isFormTab ? (
       <form
         key={`${mode}-${dealership?.id ?? "new"}`}
         onSubmit={onSubmit}
@@ -383,8 +433,9 @@ export function DealershipForm({
           </div>
         ) : null}
 
+        {(mode === "create" || activeTab === "geral") && (
         <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-          <p className="text-sm font-semibold text-foreground">Dados básicos</p>
+          <p className="text-sm font-semibold text-foreground">Dados gerais</p>
           <div className="space-y-2">
             <Label htmlFor="d-name">Nome da concessionária</Label>
             <Input
@@ -437,32 +488,57 @@ export function DealershipForm({
               <WhatsappMaskedInput defaultValue={defaults.whatsapp_number} disabled={pending} />
             </div>
           </div>
+          {mode === "create" ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="d-pricing-plan">Plano comercial</Label>
+                <select
+                  id="d-pricing-plan"
+                  name="pricing_plan_id"
+                  required
+                  className="flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  defaultValue={defaults.pricing_plan_id}
+                  disabled={pending}
+                  onChange={(event) => setSelectedPlanId(event.target.value)}
+                >
+                  <option value="" disabled>
+                    Selecione um plano
+                  </option>
+                  {pricingPlans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} — {formatPlanPrice(plan.price_amount, plan.currency_code)}
+                      {!plan.is_active ? " (inativo)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <DealershipPlanModulesPreview
+                pricingPlanId={selectedPlanId}
+                planModulesByPlanId={planModulesByPlanId}
+                planNameById={planNameById}
+              />
+            </>
+          ) : null}
           <div className="space-y-2">
-            <Label htmlFor="d-pricing-plan">Plano comercial (opcional)</Label>
+            <Label htmlFor="d-status">Status da conta</Label>
             <select
-              id="d-pricing-plan"
-              name="pricing_plan_id"
-              className="flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              defaultValue={defaults.pricing_plan_id}
+              id="d-status"
+              name="status"
+              className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              defaultValue={defaults.status}
               disabled={pending}
             >
-              <option value="">Legado — sem plano dinâmico</option>
-              {pricingPlans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name} ({plan.slug}) —{" "}
-                  {formatPlanPrice(plan.price_amount, plan.currency_code)}
-                  {!plan.is_active ? " — inativo" : ""}
-                </option>
-              ))}
+              <option value="pending_setup">Configuração pendente</option>
+              <option value="active">Ativa</option>
+              <option value="suspended">Suspensa</option>
+              <option value="churned">Encerrada</option>
             </select>
-            <p className="text-xs text-muted-foreground">
-              Com plano definido, vitrine e site público da loja usam os módulos
-              ligados a esse plano (via servidor). Os toggles em «Módulos no painel
-              da loja» mantêm o campo legado quando não há plano.
-            </p>
           </div>
         </div>
+        )}
 
+        {(mode === "create" || activeTab === "vitrine") && (
+        <>
         <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
           <p className="text-sm font-semibold text-foreground">
             Identidade visual (whitelabel)
@@ -638,7 +714,49 @@ export function DealershipForm({
             </div>
           </div>
         </div>
+        </>
+        )}
 
+        {(mode === "create" || activeTab === "plano") && mode === "edit" ? (
+          <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">Plano comercial</p>
+              <p className="text-xs text-muted-foreground">
+                A loja herda as funcionalidades do plano escolhido. Para mudar módulos,
+                edite o plano em Planos comerciais ou troque o plano desta loja.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="d-pricing-plan-edit">Plano atribuído</Label>
+              <select
+                id="d-pricing-plan-edit"
+                name="pricing_plan_id"
+                required
+                className="flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                defaultValue={defaults.pricing_plan_id}
+                disabled={pending}
+                onChange={(event) => setSelectedPlanId(event.target.value)}
+              >
+                <option value="" disabled>
+                  Selecione um plano
+                </option>
+                {pricingPlans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} — {formatPlanPrice(plan.price_amount, plan.currency_code)}
+                    {!plan.is_active ? " (inativo)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <DealershipPlanModulesPreview
+              pricingPlanId={selectedPlanId}
+              planModulesByPlanId={planModulesByPlanId}
+              planNameById={planNameById}
+            />
+          </div>
+        ) : null}
+
+        {(mode === "create" || activeTab === "unidades") && (
         <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">
@@ -655,52 +773,7 @@ export function DealershipForm({
             disabled={pending}
           />
         </div>
-
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-          <p className="text-sm font-semibold text-foreground">
-            Módulos no painel da loja
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Se nenhum item estiver marcado, o comportamento legado mantém todos
-            os módulos opcionais ativos.
-          </p>
-          <ul className="space-y-2">
-            {DEALERSHIP_OPTIONAL_FEATURES.map(({ key, label: featureLabel }) => (
-              <li key={key} className="flex items-start gap-2">
-                <input
-                  id={`feat-${key}`}
-                  name={`feature_${key}`}
-                  type="checkbox"
-                  defaultChecked={isOptionalFeatureChecked(dealership, key)}
-                  disabled={pending}
-                  className="mt-1 size-4 rounded border border-input"
-                />
-                <label
-                  htmlFor={`feat-${key}`}
-                  className="text-sm leading-tight text-foreground"
-                >
-                  {featureLabel}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="space-y-2 rounded-lg border border-border bg-card p-6 shadow-sm">
-          <Label htmlFor="d-status">Status da conta</Label>
-          <select
-            id="d-status"
-            name="status"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            defaultValue={defaults.status}
-            disabled={pending}
-          >
-            <option value="pending_setup">Configuração pendente</option>
-            <option value="active">Ativa</option>
-            <option value="suspended">Suspensa</option>
-            <option value="churned">Encerrada</option>
-          </select>
-        </div>
+        )}
 
         <div className="flex flex-wrap gap-3 border-t border-border pt-6">
           <Button type="submit" disabled={pending} className="min-w-[9rem]">
@@ -720,21 +793,22 @@ export function DealershipForm({
           </Button>
         </div>
       </form>
+      ) : null}
 
-      {mode === "edit" && dealership ? (
-        <div className="mt-12 space-y-10">
-          <DealershipCollaboratorsPanel
-            dealershipId={dealership.id}
-            collaborators={collaborators ?? []}
-          />
-          <DealershipOperatorFinancePanel
-            dealership={dealership}
-            commercialPlanLabel={commercialPlanLabel ?? "—"}
-            operatorBilling={operatorBilling ?? null}
-            billingHistory={billingHistory ?? []}
-            billingTablesUnavailable={billingTablesUnavailable ?? false}
-          />
-        </div>
+      {mode === "edit" && activeTab === "equipe" && dealership ? (
+        <DealershipCollaboratorsPanel
+          dealershipId={dealership.id}
+          collaborators={collaborators ?? []}
+        />
+      ) : null}
+
+      {mode === "edit" && activeTab === "financeiro" && dealership ? (
+        <DealershipOperatorFinancePanel
+          dealership={dealership}
+          operatorBilling={operatorBilling ?? null}
+          billingHistory={billingHistory ?? []}
+          billingTablesUnavailable={billingTablesUnavailable ?? false}
+        />
       ) : null}
     </div>
   );

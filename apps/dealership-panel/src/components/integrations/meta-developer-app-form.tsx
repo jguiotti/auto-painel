@@ -34,11 +34,10 @@ export function MetaDeveloperAppForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>App Meta da concessionária</CardTitle>
+        <CardTitle>Aplicativo Meta da sua loja</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Use a aplicação criada na sua conta de desenvolvedor Meta (developers.facebook.com).
-          O fluxo de autorização inicia-se aqui no painel; a AutoPainel não utiliza uma app Meta
-          central para substituir a sua app em produção.
+          Informe os dados do aplicativo criado no Meta for Developers. Depois de salvar,
+          use o botão de conectar para autorizar Facebook e Instagram em uma janela segura.
         </p>
       </CardHeader>
       <CardContent>
@@ -88,12 +87,12 @@ export function MetaDeveloperAppForm({
           ) : null}
           {state?.ok === true ? (
             <p className="text-sm text-muted-foreground">
-              Credenciais da aplicação guardadas.
+              Credenciais salvas com sucesso.
             </p>
           ) : null}
 
           <Button type="submit" disabled={isPending}>
-            {isPending ? "A guardar…" : "Guardar credenciais da app"}
+            {isPending ? "Salvando…" : "Salvar credenciais"}
           </Button>
         </form>
       </CardContent>

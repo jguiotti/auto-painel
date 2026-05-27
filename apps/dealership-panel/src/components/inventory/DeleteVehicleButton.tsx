@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -37,18 +38,20 @@ export function DeleteVehicleButton({ vehicleId }: DeleteVehicleButtonProps) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="relative flex flex-col items-center">
       <Button
         type="button"
-        variant="link"
-        className="h-auto p-0 text-destructive hover:text-destructive"
+        variant="ghost"
+        size="icon"
+        className="size-8 text-destructive hover:text-destructive"
         onClick={handleClick}
         disabled={isDeleting}
+        aria-label={isDeleting ? "Excluindo veículo" : "Excluir veículo"}
       >
-        {isDeleting ? "Excluindo…" : "Excluir"}
+        <Trash2 className="size-4" aria-hidden />
       </Button>
       {errorMessage ? (
-        <span className="max-w-xs text-right text-xs text-destructive">
+        <span className="absolute top-full mt-1 max-w-[10rem] text-center text-xs text-destructive">
           {errorMessage}
         </span>
       ) : null}

@@ -1,11 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
-import { Button, Input } from "@autopainel/shared/ui";
+import { Button } from "@autopainel/shared/ui";
 
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
+import { buildStorefrontWhatsAppUrl } from "@/lib/phone/build-storefront-whatsapp-url";
+
+import { StorefrontPageContainer } from "./storefront-page-container";
 
 interface HomeHeroProps {
   layoutId: StorefrontLayoutTemplateId;
@@ -14,120 +18,166 @@ interface HomeHeroProps {
 export function HomeHero({ layoutId }: HomeHeroProps) {
   const dealership = usePublicDealership();
 
-  const titleStyle = { fontFamily: "var(--dealer-font-heading)" } as const;
-  const quickSearch = (
-    <form
-      method="get"
-      action="/"
-      className="mt-8 grid w-full max-w-3xl gap-3 rounded-2xl border border-black/10 bg-[var(--dealer-surface)]/90 p-4 shadow-lg backdrop-blur sm:grid-cols-4"
+  const titleStyle = { fontFamily: "var(--storefront-font-heading, var(--dealer-font-heading))" } as const;
+  const heroImage =
+    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1800&q=80";
+
+  const sellsMotorcycles =
+    dealership?.slug === "guiotti" ||
+    (dealership?.content_config as { sells_motorcycles?: boolean } | null)?.sells_motorcycles ===
+      true;
+
+  const vehicleNoun = sellsMotorcycles ? "veículo" : "carro";
+  const inventoryLabel = sellsMotorcycles ? "automóveis e motocicletas" : "veículos selecionados";
+
+  const testDriveHref =
+    dealership?.whatsapp_number && dealership.slug
+      ? buildStorefrontWhatsAppUrl({
+          phone: dealership.whatsapp_number,
+          message: `Olá! Gostaria de agendar um test drive na ${dealership.name}.`,
+          dealershipSlug: dealership.slug,
+          campaign: "test_drive",
+        })
+      : null;
+
+  const browseStock = (
+    <Button
+      className="mt-8 bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-white hover:opacity-95"
+      asChild
     >
-      <Input name="brand" placeholder="Marca" />
-      <Input name="model" placeholder="Modelo" />
-      <Input name="minPrice" inputMode="decimal" placeholder="Preço mín." />
-      <Button
-        type="submit"
-        className="bg-[var(--dealer-accent)] text-white hover:opacity-95"
-      >
-        Buscar
-      </Button>
-    </form>
+      <Link href="/estoque">Explorar estoque</Link>
+    </Button>
   );
 
   const stockLink = (
     <Button
-      className="bg-[var(--dealer-accent)] text-white hover:opacity-95"
+      className="bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-white hover:opacity-95"
       asChild
     >
-      <Link href="/#estoque">Ver estoque</Link>
+      <Link href="/estoque">{`Encontre seu ${vehicleNoun}`}</Link>
     </Button>
   );
 
+  const testDriveLink = testDriveHref ? (
+    <Button variant="outline" className="px-8" asChild>
+      <a href={testDriveHref} target="_blank" rel="noopener noreferrer">
+        Agendar test drive no WhatsApp
+      </a>
+    </Button>
+  ) : null;
+
   if (layoutId === 2) {
     return (
-      <section className="relative flex min-h-[78vh] flex-col items-center justify-center overflow-hidden px-4 py-16 text-center">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--dealer-bg)_92%,transparent)_0%,color-mix(in_srgb,var(--dealer-primary)_18%,var(--dealer-bg))_55%,var(--dealer-bg)_100%)]"
-        />
-        <div className="relative z-[1] max-w-3xl">
-          <p className="text-sm font-medium uppercase tracking-[0.25em] text-[var(--dealer-primary)]">
-            Seminovos
+      <section className="relative flex min-h-[92vh] flex-col justify-end overflow-hidden pb-16 pt-28">
+        <div aria-hidden className="absolute inset-0">
+          <Image src={heroImage} alt="" fill className="object-cover opacity-35" priority />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--storefront-bg,var(--dealer-bg))] via-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_70%,transparent)] to-[var(--storefront-bg,var(--dealer-bg))]" />
+          <div className="absolute inset-y-0 right-0 w-1/3 skew-x-[-12deg] translate-x-1/4 bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_18%,transparent)]" />
+        </div>
+        <StorefrontPageContainer className="relative z-[1] text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.45em] text-[var(--secondary-color,var(--dealer-accent))]">
+            Performance e procedência
           </p>
           <h1
             style={titleStyle}
-            className="mt-4 text-3xl font-bold tracking-tight text-[var(--dealer-fg)] sm:text-4xl md:text-5xl"
+            className="mx-auto mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-[var(--storefront-fg,var(--dealer-fg))] sm:text-5xl md:text-6xl lg:text-7xl"
           >
             {dealership?.name ?? "Nossa loja"}
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-[var(--dealer-fg)]/85">
-            Curadoria transparente: filtre o estoque, simule financiamento e fale com
-            a equipe quando quiser.
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-[var(--storefront-fg,var(--dealer-fg))]/80">
+            {sellsMotorcycles
+              ? "Automóveis premium e motocicletas selecionadas — atendimento consultivo, revisão completa e condições transparentes."
+              : `Encontre o ${vehicleNoun} ideal com atendimento próximo, revisão completa e condições transparentes de compra.`}
           </p>
-          <div className="mt-8 flex justify-center">{stockLink}</div>
-          <div className="flex justify-center">{quickSearch}</div>
-        </div>
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            {stockLink}
+            {testDriveLink}
+          </div>
+          <div className="flex justify-center">{browseStock}</div>
+        </StorefrontPageContainer>
       </section>
     );
   }
 
   if (layoutId === 3) {
     return (
-      <section className="relative overflow-hidden px-4 py-16 sm:py-24">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(360deg,var(--dealer-bg)_0%,color-mix(in_srgb,var(--dealer-primary)_12%,transparent)_45%,transparent_100%)]"
-        />
-        <div className="relative z-[1] mx-auto max-w-4xl text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-[var(--dealer-primary)]">
-            Seminovos
+      <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden px-4 py-20">
+        <div aria-hidden className="absolute inset-0">
+          <Image src={heroImage} alt="" fill className="object-cover" priority />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--storefront-bg,var(--dealer-bg))] via-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_35%,transparent)] to-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_40%,transparent)]" />
+        </div>
+        <div className="relative z-[1] max-w-4xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--primary-color,var(--dealer-primary))]">
+            Seminovos com procedência
           </p>
           <h1
             style={titleStyle}
-            className="mt-5 text-3xl font-bold tracking-tight text-[var(--dealer-fg)] sm:text-4xl md:text-5xl"
+            className="mt-6 text-4xl font-semibold tracking-tight text-[var(--storefront-fg,var(--dealer-fg))] sm:text-5xl md:text-6xl"
           >
-            {dealership?.name ?? "Nossa loja"}
+            {`Seu próximo ${vehicleNoun} está aqui`}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[var(--dealer-fg)]/85">
-            Veículos selecionados com histórico claro e atendimento próximo. Explore o
-            estoque em grade ampla logo abaixo.
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[var(--storefront-fg,var(--dealer-fg))]/80">
+            {dealership?.name ?? "Nossa loja"} — estoque atualizado, {inventoryLabel} revisados e equipe
+            pronta para ajudar você a decidir com segurança.
           </p>
-          <div className="mt-10 flex justify-center gap-4">{stockLink}</div>
-          <div className="flex justify-center">{quickSearch}</div>
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            {stockLink}
+            {testDriveLink}
+          </div>
+          <div className="flex justify-center">{browseStock}</div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="border-b border-black/5 px-4 py-12 dark:border-white/10 sm:py-16">
-      <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2 md:items-center">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-[var(--dealer-primary)]">
-            Seminovos
-          </p>
-          <h1
-            style={titleStyle}
-            className="mt-2 text-3xl font-bold tracking-tight text-[var(--dealer-fg)] sm:text-4xl"
-          >
-            {dealership?.name ?? "Nossa loja"}
-          </h1>
-          <p className="mt-3 max-w-xl text-lg text-[var(--dealer-fg)]/85">
-            Transparência no estoque e no financiamento. Encontre o próximo carro e
-            fale com a equipe em poucos cliques.
-          </p>
-          <div className="mt-6">{stockLink}</div>
-          {quickSearch}
-        </div>
-        <div
-          aria-hidden
-          className="relative hidden min-h-[220px] rounded-2xl md:block md:min-h-[280px]"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--dealer-primary) 55%, var(--dealer-bg)) 0%, var(--dealer-accent) 100%)`,
-          }}
-        >
-          <div className="absolute inset-3 rounded-xl bg-[var(--dealer-surface)]/25 backdrop-blur-sm" />
-        </div>
+    <section className="relative flex min-h-[82vh] items-center overflow-hidden py-16 lg:min-h-[88vh]">
+      <div aria-hidden className="absolute inset-0">
+        <Image src={heroImage} alt="" fill className="object-cover brightness-[0.4]" priority />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--storefront-bg,var(--dealer-bg))] via-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_55%,transparent)] to-transparent lg:via-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_35%,transparent)]" />
       </div>
+      <StorefrontPageContainer className="relative z-[1]">
+        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-12">
+          <div className="lg:col-span-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--primary-color,var(--dealer-primary))]">
+              Compra com confiança
+            </p>
+            <h1
+              style={titleStyle}
+              className="mt-4 text-4xl font-semibold tracking-tight text-[var(--storefront-fg,var(--dealer-fg))] sm:text-5xl lg:text-6xl"
+            >
+              {sellsMotorcycles
+                ? "Automóveis e motocicletas com quem entende do mercado."
+                : `Encontre seu ${vehicleNoun} com quem entende do mercado.`}
+            </h1>
+            <p className="mt-5 max-w-xl text-lg text-[var(--storefront-fg,var(--dealer-fg))]/80">
+              {dealership?.name ?? "Nossa loja"} — {inventoryLabel} com garantia e atendimento
+              personalizado do primeiro contato à entrega.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              {stockLink}
+              {testDriveLink}
+            </div>
+            {browseStock}
+          </div>
+          <div className="hidden lg:col-span-5 lg:block">
+            <div className="space-y-4 border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_25%,transparent)] bg-[color-mix(in_srgb,var(--storefront-surface,var(--dealer-surface))_85%,black)] p-8 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--primary-color,var(--dealer-primary))]">
+                Experiência premium
+              </p>
+              <ul className="space-y-4 text-sm text-[var(--storefront-fg,var(--dealer-fg))]/75">
+                <li className="border-b border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_15%,transparent)] pb-3">
+                  Curadoria rigorosa de cada unidade do estoque
+                </li>
+                <li className="border-b border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_15%,transparent)] pb-3">
+                  Financiamento com simulação rápida e transparente
+                </li>
+                <li>Atendimento consultivo do primeiro contato à entrega</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </StorefrontPageContainer>
     </section>
   );
 }

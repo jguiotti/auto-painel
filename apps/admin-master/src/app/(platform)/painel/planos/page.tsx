@@ -19,6 +19,7 @@ import {
 
 import { PricingCatalogSchemaWarning } from "@/components/pricing-catalog-schema-warning";
 import {
+  fetchPricingPlanModuleCountsForAdmin,
   fetchPricingPlansForAdmin,
   getPricingCatalogSchemaState,
 } from "@/lib/data/pricing-catalog";
@@ -42,7 +43,10 @@ function formatMoney(amount: string, currency: string): string {
 
 export default async function PlanosComerciaisPage() {
   const schema = await getPricingCatalogSchemaState();
-  const plans = await fetchPricingPlansForAdmin();
+  const [plans, moduleCounts] = await Promise.all([
+    fetchPricingPlansForAdmin(),
+    fetchPricingPlanModuleCountsForAdmin(),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12 pt-6">
@@ -60,8 +64,8 @@ export default async function PlanosComerciaisPage() {
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Planos comerciais</h1>
           <p className="text-sm text-muted-foreground">
-            Crie planos com preço e checklist de módulos; associe cada um às
-            concessionárias no formulário da loja.
+            Defina preço e quais funcionalidades cada plano inclui. Depois, atribua
+            um plano a cada concessionária — nunca módulos avulsos por loja.
           </p>
         </div>
         {schema.kind === "ok" ? (
@@ -96,6 +100,7 @@ export default async function PlanosComerciaisPage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Slug</TableHead>
                   <TableHead>Preço</TableHead>
+                  <TableHead>Módulos</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="w-[120px]" />
                 </TableRow>
@@ -109,6 +114,9 @@ export default async function PlanosComerciaisPage() {
                     </TableCell>
                     <TableCell>
                       {formatMoney(plan.price_amount, plan.currency_code)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {moduleCounts[plan.id] ?? 0}
                     </TableCell>
                     <TableCell>
                       {plan.is_active ? (

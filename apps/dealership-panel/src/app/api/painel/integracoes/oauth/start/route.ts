@@ -1,6 +1,8 @@
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
+import { classifiedsProviderUnavailableMessage } from "@/lib/integrations/integration-user-messages";
 import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
 import { resolveClassifiedsOAuthProviderConfigForDealership } from "@/lib/classifieds/resolve-classifieds-oauth-config";
 import {
@@ -78,12 +80,19 @@ export async function POST(request: NextRequest) {
       provider,
     });
   } catch (error) {
+    if (error instanceof ClassifiedsOAuthNotConfiguredError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          provider: error.provider,
+          error: classifiedsProviderUnavailableMessage(error.provider),
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Configuração OAuth2 ausente para o provedor.",
+        error: "Não foi possível iniciar a conexão. Tente novamente em instantes.",
       },
       { status: 500 },
     );
@@ -109,7 +118,7 @@ export async function POST(request: NextRequest) {
 
   if (sessionError) {
     return NextResponse.json(
-      { error: `Falha ao iniciar sessão OAuth2: ${sessionError.message}` },
+      { error: "Não foi possível iniciar a conexão. Tente novamente." },
       { status: 500 },
     );
   }
@@ -128,7 +137,7 @@ export async function POST(request: NextRequest) {
 
   if (connectionError) {
     return NextResponse.json(
-      { error: `Falha ao preparar status de conexão: ${connectionError.message}` },
+      { error: "Não foi possível preparar a conexão. Tente novamente." },
       { status: 500 },
     );
   }

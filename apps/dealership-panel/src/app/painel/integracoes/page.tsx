@@ -1,9 +1,11 @@
+import { redirect } from "next/navigation";
+
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
-import { Card, CardContent, CardHeader, CardTitle } from "@autopainel/shared/ui";
 
 import { ClassifiedsIntegrationCards } from "@/components/integrations/classifieds-integration-cards";
 import { MetaDeveloperAppForm } from "@/components/integrations/meta-developer-app-form";
 import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta-integration-card";
+import { getClassifiedsProviderAvailability } from "@/lib/classifieds/get-classifieds-provider-availability";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { getDealershipMetaOauthAppPublic } from "@/lib/data/dealership-meta-oauth-app";
 
@@ -38,6 +40,10 @@ export default async function IntegracoesPage() {
     activeFeatures,
     "social_media_kit",
   );
+
+  if (!isClassifiedsSyncEnabled && !isSocialMediaKitEnabled) {
+    redirect("/painel");
+  }
 
   const connectionRows = (connectionsRes.data ?? []).filter(
     (row): row is {
@@ -92,33 +98,28 @@ export default async function IntegracoesPage() {
         }
       : null;
 
+  const classifiedsProviderAvailability = isClassifiedsSyncEnabled
+    ? await getClassifiedsProviderAvailability({ dealershipId })
+    : { olx: false, webmotors: false };
+
   return (
     <div className="space-y-10">
       <section>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Integrações
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ligações OAuth com portais externos: redes Meta (Instagram / Facebook) e
-          classificados quando incluídos no plano da loja.
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Conecte sua loja aos canais de divulgação: redes sociais e portais de
+          classificados. O login é feito em uma janela segura — você não precisa
+          configurar nada técnico.
         </p>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Meta (Instagram e Facebook)
-        </h2>
-        {!isSocialMediaKitEnabled ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Módulo indisponível no plano atual</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              O kit de redes sociais (Meta) ainda não está habilitado para esta
-              concessionária.
-            </CardContent>
-          </Card>
-        ) : (
+      {isSocialMediaKitEnabled ? (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Instagram e Facebook
+          </h2>
           <div className="space-y-6">
             <MetaDeveloperAppForm
               initialMetaAppId={metaAppRow?.meta_app_id ?? ""}
@@ -132,30 +133,21 @@ export default async function IntegracoesPage() {
               canStartOAuth={hasMetaAppForOAuth}
             />
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Classificados
-        </h2>
-        {!isClassifiedsSyncEnabled ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Módulo indisponível no plano atual</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              O módulo de integrações com classificados ainda não está habilitado para
-              esta concessionária.
-            </CardContent>
-          </Card>
-        ) : (
+      {isClassifiedsSyncEnabled ? (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            OLX e Webmotors
+          </h2>
           <ClassifiedsIntegrationCards
             isEnabled={isClassifiedsSyncEnabled}
             connections={connectionRows}
+            providerAvailability={classifiedsProviderAvailability}
           />
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

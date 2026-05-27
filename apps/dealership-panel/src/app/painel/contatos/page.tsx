@@ -1,4 +1,5 @@
-import { LeadList, type LeadListItem } from "@/components/leads/LeadList";
+import { LeadInbox } from "@/components/leads/LeadInbox";
+import type { LeadListItem } from "@/components/leads/LeadList";
 import type { LeadAssigneeOption } from "@/components/leads/lead-assignee-select";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
@@ -64,21 +65,19 @@ export default async function LeadsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Contatos
         </h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Interessados vindos da vitrine. Abra o WhatsApp com um clique.
+        <p className="mt-1 text-sm text-muted-foreground">
+          Interessados vindos da vitrine. Responda rápido para não perder a venda.
         </p>
         {canManageAssignments ? (
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-500 dark:text-zinc-400">
-            Atribua cada contato a um vendedor para que ele apareça no painel
-            dessa pessoa. Contatos sem responsável ficam visíveis apenas para o
-            gestor da loja.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Atribua cada contato a um vendedor para organizar o atendimento do dia a dia.
           </p>
         ) : null}
       </div>
-      <LeadList
+      <LeadInbox
         leads={leads}
         viewerRole={profile.role}
         canManageAssignments={canManageAssignments}

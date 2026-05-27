@@ -1,4 +1,3 @@
-import type { PricingPlanListRow } from "@autopainel/shared/types";
 import { notFound } from "next/navigation";
 
 import { DealershipOperatorSurfaceLinks } from "@/components/dealership-operator-surface-links";
@@ -9,27 +8,10 @@ import { fetchDealershipCollaborators } from "@/lib/data/dealership-collaborator
 import { fetchDealershipUnits } from "@/lib/data/dealership-units";
 import { fetchDealershipOperatorBillingSuite } from "@/lib/data/dealership-operator-billing";
 import {
+  fetchPlanModulesMapForAdmin,
   fetchPricingPlansForAdmin,
   getPricingCatalogSchemaState,
 } from "@/lib/data/pricing-catalog";
-import type { DealershipAdminRow } from "@/types/dealership-admin";
-
-function resolveCommercialPlanLabel(
-  plans: PricingPlanListRow[],
-  dealership: DealershipAdminRow,
-): string {
-  if (dealership.pricing_plan_id) {
-    const hit = plans.find((p) => p.id === dealership.pricing_plan_id);
-    if (hit?.name.trim()) {
-      return hit.name.trim();
-    }
-  }
-  const legacy = dealership.subscription_plan?.trim();
-  if (legacy && legacy.length > 0) {
-    return legacy;
-  }
-  return "—";
-}
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +28,11 @@ export default async function EditarConcessionariaPage({
     notFound();
   }
   const schema = await getPricingCatalogSchemaState();
-  const [units, pricingPlans, collaborators, billingSuite] = await Promise.all([
+  const [units, pricingPlans, planModulesByPlanId, collaborators, billingSuite] =
+    await Promise.all([
     fetchDealershipUnits(id),
     fetchPricingPlansForAdmin(),
+    fetchPlanModulesMapForAdmin(),
     fetchDealershipCollaborators(id),
     fetchDealershipOperatorBillingSuite(id),
   ]);
@@ -64,7 +48,7 @@ export default async function EditarConcessionariaPage({
         dealership={row}
         initialUnits={units}
         pricingPlans={pricingPlans}
-        commercialPlanLabel={resolveCommercialPlanLabel(pricingPlans, row)}
+        planModulesByPlanId={planModulesByPlanId}
         collaborators={collaborators}
         operatorBilling={billingSuite.billing}
         billingHistory={billingSuite.history}

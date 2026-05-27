@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { VehicleEngagementSection } from "@/components/public/VehicleEngagementSection";
 
-import { formatBrl } from "@/lib/format/format-brl";
+import { getPlatformFinanceMonthlyRatePercent } from "@/lib/finance/get-platform-finance-rate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
 
@@ -50,6 +50,7 @@ export default async function VehicleDetailPage({ params }: VehicleDetailPagePro
 
   const images = vehicle.images?.filter(Boolean) ?? [];
   const priceNum = Number(vehicle.price);
+  const monthlyRatePercent = await getPlatformFinanceMonthlyRatePercent();
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
@@ -108,7 +109,11 @@ export default async function VehicleDetailPage({ params }: VehicleDetailPagePro
       </div>
 
       <div className="mt-12">
-        <VehicleEngagementSection vehicleId={vehicle.id} vehiclePrice={priceNum} />
+        <VehicleEngagementSection
+          vehicleId={vehicle.id}
+          vehiclePrice={priceNum}
+          monthlyRatePercent={monthlyRatePercent}
+        />
       </div>
     </article>
   );

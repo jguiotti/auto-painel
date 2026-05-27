@@ -3,158 +3,147 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  calculateFinanceInstallment,
-  calculateTotalFinancedAmount,
-} from "@/lib/finance/calculate-finance-installment";
-import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
+  calculateFinanceSimulation,
+  FINANCE_TERM_MONTHS_OPTIONS,
+  type FinanceTermMonths,
+} from "@autopainel/shared/lib/finance/calculate-finance-simulation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@autopainel/shared/ui";
 
 import { formatBrl } from "@/lib/format/format-brl";
+import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
 
 interface FinanceSimulatorProps {
   vehiclePrice: number;
+  monthlyRatePercent: number;
   onSnapshotChange?: (snapshot: FinanceSimulationSnapshot) => void;
 }
 
 export function FinanceSimulator({
   vehiclePrice,
+  monthlyRatePercent,
   onSnapshotChange,
 }: FinanceSimulatorProps) {
   const [downPayment, setDownPayment] = useState(() =>
     Math.min(5000, Math.round(vehiclePrice * 0.1)),
   );
-  const [annualRatePercent, setAnnualRatePercent] = useState(11.99);
-  const [termMonths, setTermMonths] = useState(48);
+  const [termMonths, setTermMonths] = useState<FinanceTermMonths>(48);
 
-  const financedAmount = Math.max(0, vehiclePrice - downPayment);
+  const maxDown = useMemo(
+    () => Math.max(0, Math.floor(vehiclePrice)),
+    [vehiclePrice],
+  );
+  const effectiveDown = Math.min(downPayment, maxDown, vehiclePrice);
 
-  const installment = useMemo(
+  const simulationResult = useMemo(
     () =>
-      calculateFinanceInstallment(
-        financedAmount,
-        annualRatePercent,
+      calculateFinanceSimulation({
+        vehiclePrice,
+        downPayment: effectiveDown,
+        monthlyInterestRatePercent: monthlyRatePercent,
         termMonths,
-      ),
-    [financedAmount, annualRatePercent, termMonths],
+      }),
+    [vehiclePrice, effectiveDown, monthlyRatePercent, termMonths],
   );
 
-  const totalPayable = useMemo(
-    () => calculateTotalFinancedAmount(installment, termMonths),
-    [installment, termMonths],
-  );
+  const isValidSimulation = simulationResult.financedAmount > 0;
 
   useEffect(() => {
-    if (!onSnapshotChange) {
+    if (!onSnapshotChange || !isValidSimulation) {
       return;
     }
+
     onSnapshotChange({
-      vehiclePrice,
-      downPayment,
-      financedAmount,
-      annualRatePercent,
-      termMonths,
-      estimatedInstallment: installment,
-      estimatedTotalPayable: totalPayable,
+      vehiclePrice: simulationResult.vehiclePrice,
+      downPayment: simulationResult.downPayment,
+      financedAmount: simulationResult.financedAmount,
+      estimatedIofAmount: simulationResult.estimatedIofAmount,
+      principalWithIof: simulationResult.principalWithIof,
+      monthlyRatePercent: simulationResult.monthlyRatePercent,
+      termMonths: simulationResult.termMonths,
+      estimatedInstallment: simulationResult.estimatedInstallment,
+      estimatedTotalPayable: simulationResult.estimatedTotalPayable,
+      estimatedTotalInterest: simulationResult.estimatedTotalInterest,
     });
-  }, [
-    vehiclePrice,
-    downPayment,
-    financedAmount,
-    annualRatePercent,
-    termMonths,
-    installment,
-    totalPayable,
-    onSnapshotChange,
-  ]);
+  }, [isValidSimulation, onSnapshotChange, simulationResult]);
 
   return (
-    <section
-      className="rounded-xl border border-black/5 bg-[var(--dealer-surface)] p-5 shadow-sm dark:border-white/10"
-      aria-labelledby="finance-simulator-title"
-    >
-      <h2
-        id="finance-simulator-title"
-        className="text-lg font-semibold text-[var(--dealer-primary)]"
-      >
-        Simulação de financiamento
-      </h2>
-      <p className="mt-1 text-sm text-[var(--dealer-fg)]/70">
-        Valores estimados para planejamento. A taxa efetiva depende da análise de
-        crédito e da instituição financeira.
-      </p>
-
-      <div className="mt-4 space-y-4">
-        <div>
-          <label
-            htmlFor="down-payment"
-            className="text-sm font-medium text-[var(--dealer-fg)]"
-          >
-            Entrada (R$)
-          </label>
+    <Card aria-labelledby="finance-simulator-title">
+      <CardHeader>
+        <CardTitle id="finance-simulator-title" className="text-[var(--dealer-primary)]">
+          Simule seu financiamento
+        </CardTitle>
+        <CardDescription>
+          Ajuste a entrada e o prazo para ver uma estimativa da parcela mensal.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="down-payment">Valor da entrada</Label>
+            <span className="text-sm font-medium tabular-nums">{formatBrl(effectiveDown)}</span>
+          </div>
           <input
             id="down-payment"
             type="range"
             min={0}
-            max={Math.max(0, Math.floor(vehiclePrice * 0.5))}
+            max={maxDown}
             step={500}
-            value={Math.min(downPayment, vehiclePrice)}
-            onChange={(e) => setDownPayment(Number(e.target.value))}
-            className="mt-2 w-full accent-[var(--dealer-accent)]"
+            value={effectiveDown}
+            onChange={(event) => setDownPayment(Number(event.target.value))}
+            className="w-full accent-[var(--dealer-accent)]"
           />
-          <p className="mt-1 text-sm tabular-nums text-[var(--dealer-fg)]/80">
-            {formatBrl(downPayment)} · Financiado: {formatBrl(financedAmount)}
+          <p className="text-xs text-muted-foreground">
+            Valor financiado: {formatBrl(simulationResult.financedAmount)}
           </p>
         </div>
 
-        <div>
-          <label
-            htmlFor="annual-rate"
-            className="text-sm font-medium text-[var(--dealer-fg)]"
+        <div className="space-y-2">
+          <Label htmlFor="term-months">Quantidade de parcelas</Label>
+          <Select
+            value={String(termMonths)}
+            onValueChange={(value) => setTermMonths(Number(value) as FinanceTermMonths)}
           >
-            Taxa a.a. estimada (%)
-          </label>
-          <input
-            id="annual-rate"
-            type="number"
-            inputMode="decimal"
-            step={0.01}
-            min={0}
-            value={annualRatePercent}
-            onChange={(e) => setAnnualRatePercent(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900"
-          />
+            <SelectTrigger id="term-months" className="w-full">
+              <SelectValue placeholder="Selecione o prazo" />
+            </SelectTrigger>
+            <SelectContent>
+              {FINANCE_TERM_MONTHS_OPTIONS.map((months: FinanceTermMonths) => (
+                <SelectItem key={months} value={String(months)}>
+                  {months}x
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label
-            htmlFor="term-months"
-            className="text-sm font-medium text-[var(--dealer-fg)]"
-          >
-            Prazo (meses)
-          </label>
-          <select
-            id="term-months"
-            value={termMonths}
-            onChange={(e) => setTermMonths(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900"
-          >
-            {[12, 24, 36, 48, 60, 72].map((m) => (
-              <option key={m} value={m}>
-                {m}x
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-lg bg-[var(--dealer-bg)] p-4 dark:bg-black/20">
-        <p className="text-sm text-[var(--dealer-fg)]/70">Parcela estimada</p>
-        <p className="text-2xl font-bold tabular-nums text-[var(--dealer-accent)]">
-          {formatBrl(installment)}
-        </p>
-        <p className="mt-2 text-xs text-[var(--dealer-fg)]/60">
-          Total aproximado no período: {formatBrl(totalPayable)}
-        </p>
-      </div>
-    </section>
+        {isValidSimulation ? (
+          <div className="rounded-xl border border-border bg-muted/40 p-5">
+            <p className="text-sm text-muted-foreground">Parcela estimada</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-[var(--dealer-accent)]">
+              {formatBrl(simulationResult.estimatedInstallment)}
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Inclui estimativa de IOF ({formatBrl(simulationResult.estimatedIofAmount)}). Total
+              aproximado: {formatBrl(simulationResult.estimatedTotalPayable)}.
+            </p>
+            <p className="mt-4 rounded-lg border border-border bg-background px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              Valores sujeitos a análise de crédito e condições da instituição financeira.
+            </p>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

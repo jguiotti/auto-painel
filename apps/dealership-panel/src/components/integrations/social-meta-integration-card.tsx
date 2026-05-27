@@ -192,7 +192,7 @@ export function SocialMetaIntegrationCard({
       setInlineFeedback(
         error instanceof Error
           ? error.message
-          : "Erro inesperado ao iniciar OAuth Meta.",
+          : "Não foi possível iniciar a conexão com Facebook e Instagram.",
       );
     }
   }
@@ -239,11 +239,10 @@ export function SocialMetaIntegrationCard({
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle>Facebook Page e Instagram</CardTitle>
+              <CardTitle>Facebook e Instagram</CardTitle>
               <CardDescription>
-                A sua aplicação Meta (developers.facebook.com) liga a página e o
-                Instagram Business. Fluxo iniciado no painel; futuras chamadas à Graph
-                API na AutoPainel usam apenas tokens desta loja.
+                Conecte a página do Facebook e o Instagram Business da sua loja. O login
+                abre em uma janela segura e a conexão é concluída automaticamente.
               </CardDescription>
             </div>
             <Badge
@@ -286,16 +285,15 @@ export function SocialMetaIntegrationCard({
             <p className="text-xs text-destructive">{connection.last_error}</p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Conceda as permissões de página e Instagram Business pedidas no diálogo
-              Meta.
+              Ao conectar, autorize o acesso à página e ao Instagram Business quando
+              solicitado.
             </p>
           )}
 
           {!canStartOAuth ? (
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              Guarde primeiro o App ID (e o App Secret) da sua aplicação Meta na secção
-              acima, ou configure META_APP_CLIENT_ID no servidor apenas para
-              desenvolvimento.
+              Salve primeiro o App ID e o App Secret do Meta na seção acima para
+              habilitar a conexão.
             </p>
           ) : null}
 

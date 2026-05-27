@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Configure o App ID (e App Secret) da sua aplicação Meta acima ou peça ajuda à equipa. Para desenvolvimento local, defina também META_APP_CLIENT_ID no servidor.",
+          "Salve o App ID e o App Secret do Meta na seção de integrações para habilitar a conexão.",
       },
       { status: 503 },
     );

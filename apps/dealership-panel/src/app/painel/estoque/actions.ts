@@ -4,6 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { normalizePublicSlug } from "@/lib/inventory/normalize-public-slug";
+import {
+  parseVehicleCatalogForm,
+  vehicleCatalogToDbPayload,
+} from "@/lib/inventory/parse-vehicle-catalog-form";
+import {
+  parseVehicleTypeSpecForm,
+  vehicleTypeSpecToDbPayload,
+} from "@/lib/inventory/parse-vehicle-type-spec-form";
 
 const BUCKET = "vehicle-images";
 
@@ -67,6 +75,7 @@ function parseVehicleType(value: string): string | null {
     "suv",
     "utilitario",
     "caminhao",
+    "onibus",
     "outro",
   ]);
   return allowed.has(value) ? value : null;
@@ -91,6 +100,8 @@ export async function createVehicleAction(formData: FormData) {
   const mileage = parseIntSafe(String(formData.get("mileage") ?? ""));
   const salePrice = parsePrice(String(formData.get("sale_price") ?? ""));
   const fipePrice = parseOptionalPrice(String(formData.get("fipe_price") ?? ""));
+  const catalog = vehicleCatalogToDbPayload(parseVehicleCatalogForm(formData));
+  const typeSpecs = vehicleTypeSpecToDbPayload(parseVehicleTypeSpecForm(formData));
 
   if (!brand || !model || !publicSlug) {
     return { error: "Preencha marca, modelo e slug público." };
@@ -153,6 +164,8 @@ export async function createVehicleAction(formData: FormData) {
       status,
       public_slug: publicSlug,
       images: [],
+      ...catalog,
+      ...typeSpecs,
     })
     .select("id")
     .single();
@@ -243,6 +256,8 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   const mileage = parseIntSafe(String(formData.get("mileage") ?? ""));
   const salePrice = parsePrice(String(formData.get("sale_price") ?? ""));
   const fipePrice = parseOptionalPrice(String(formData.get("fipe_price") ?? ""));
+  const catalog = vehicleCatalogToDbPayload(parseVehicleCatalogForm(formData));
+  const typeSpecs = vehicleTypeSpecToDbPayload(parseVehicleTypeSpecForm(formData));
 
   if (!brand || !model || !publicSlug) {
     return { error: "Preencha marca, modelo e slug público." };
@@ -304,6 +319,8 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       public_slug: publicSlug,
       dealership_unit_id: dealershipUnitId,
       updated_at: new Date().toISOString(),
+      ...catalog,
+      ...typeSpecs,
     })
     .eq("id", vehicleId)
     .eq("dealership_id", dealershipId);

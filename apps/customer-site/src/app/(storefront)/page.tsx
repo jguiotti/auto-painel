@@ -1,71 +1,31 @@
-import { HomeHero } from "@/components/storefront/home-hero";
-import { HomeFeaturedBento } from "@/components/storefront/home-featured-bento";
-import type { VehicleFilterValues } from "@/components/storefront/vehicle-filters-form";
-import { VehicleFiltersForm } from "@/components/storefront/vehicle-filters-form";
+import { StorefrontHomeLayout } from "@/components/storefront/storefront-home-layout";
 import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
-import { VehicleListingGrid } from "@/components/storefront/vehicle-listing-grid";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipPublicRecord } from "@/lib/tenant/get-dealership-public-record";
 
-interface HomePageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
-
-function parseOptionalNumber(value: string | undefined): number | null {
-  if (value === undefined || value.trim() === "") {
-    return null;
-  }
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return null;
-  }
-  return n;
-}
-
-function parseOptionalInt(value: string | undefined): number | null {
-  const n = parseOptionalNumber(value);
-  if (n === null) {
-    return null;
-  }
-  return Math.trunc(n);
-}
-
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const sp = await searchParams;
-  const str = (k: string) => {
-    const v = sp[k];
-    return typeof v === "string" ? v : undefined;
-  };
-
+export default async function HomePage() {
   const dealership = await getDealershipPublicRecord();
   if (!dealership) {
     return null;
   }
 
-  const dealershipId = dealership.id;
-
   const supabase = await createSupabaseServerClient();
-
-  const brand = str("brand")?.trim() || null;
-  const model = str("model")?.trim() || null;
-  const minPrice = parseOptionalNumber(str("minPrice"));
-  const maxPrice = parseOptionalNumber(str("maxPrice"));
-  const minYear = parseOptionalInt(str("minYear"));
-  const maxYear = parseOptionalInt(str("maxYear"));
-
   const { data, error } = await supabase.rpc("list_public_vehicles_filtered", {
-    p_dealership_id: dealershipId,
-    p_brand: brand,
-    p_model: model,
-    p_min_price: minPrice,
-    p_max_price: maxPrice,
-    p_min_year: minYear,
-    p_max_year: maxYear,
+    p_dealership_id: dealership.id,
+    p_brand: null,
+    p_model: null,
+    p_min_price: null,
+    p_max_price: null,
+    p_min_year: null,
+    p_max_year: null,
+    p_vehicle_type: null,
+    p_min_mileage: null,
+    p_max_mileage: null,
   });
 
   if (error) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12">
         <p className="text-red-600 dark:text-red-400">
           Não foi possível carregar o estoque: {error.message}
         </p>
@@ -75,27 +35,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const vehicles = (data ?? []) as PublicVehicleCardModel[];
 
-  const filterDefaults: VehicleFilterValues = {
-    brand: str("brand") ?? "",
-    model: str("model") ?? "",
-    minPrice: str("minPrice") ?? "",
-    maxPrice: str("maxPrice") ?? "",
-    minYear: str("minYear") ?? "",
-    maxYear: str("maxYear") ?? "",
-  };
-
-  const layoutId = dealership.layout_id;
-
   return (
-    <>
-      <HomeHero layoutId={layoutId} />
-      {layoutId === 3 ? <HomeFeaturedBento /> : null}
-      <div id="estoque" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-10 sm:py-12">
-        <VehicleFiltersForm defaults={filterDefaults} />
-        <div className="mt-8">
-          <VehicleListingGrid vehicles={vehicles} layoutId={layoutId} />
-        </div>
-      </div>
-    </>
+    <StorefrontHomeLayout
+      layoutId={dealership.layout_id}
+      vehicles={vehicles}
+      totalCount={vehicles.length}
+    />
   );
 }

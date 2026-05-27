@@ -46,7 +46,7 @@ export function LeadCaptureForm({
 
     if (effectiveType === "simulation" && !simulationSnapshot) {
       setIsSubmitting(false);
-      setErrorMessage("Faça a simulação antes de enviar seus dados.");
+      setErrorMessage("Ajuste a simulação acima para recebermos sua proposta.");
       return;
     }
 
@@ -68,24 +68,26 @@ export function LeadCaptureForm({
     }
 
     if (result && "success" in result && result.success) {
-      setSuccessMessage("Recebemos seu contato! Em breve a loja retorna.");
+      setSuccessMessage(
+        "Perfeito! Nossa equipe vai entrar em contato em breve com as melhores condições para você.",
+      );
       form.reset();
     }
   }
 
   return (
-    <Card aria-labelledby="lead-form-title">
+    <Card aria-labelledby="lead-form-title" className="border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_15%,transparent)]">
       <CardHeader>
         <CardTitle
           id="lead-form-title"
-          className="text-[var(--dealer-primary)]"
+          className="text-[var(--primary-color,var(--dealer-primary))]"
         >
-          Fale com a loja
+          {requireSimulation ? "Garanta sua proposta de financiamento" : "Quero saber mais sobre este carro"}
         </CardTitle>
         <CardDescription>
           {requireSimulation
-            ? "Conclua a simulação e envie seus dados para receber retorno da loja."
-            : "Deixe seus dados para retorno por telefone ou WhatsApp."}
+            ? "Envie seus dados e receba retorno rápido com condições pensadas para você."
+            : "Deixe seu contato e fale direto com um consultor da loja."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -93,22 +95,25 @@ export function LeadCaptureForm({
           <input type="hidden" name="vehicle_id" value={vehicleId} />
 
           {requireSimulation ? (
-            <div className="rounded-md border border-[var(--dealer-primary)]/20 bg-[var(--dealer-bg)] p-3 text-sm text-[var(--dealer-fg)]/80">
-              Envio de lead qualificado por simulação.
+            <div className="rounded-lg border border-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_35%,transparent)] bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_8%,transparent)] p-4 text-sm leading-relaxed text-[var(--storefront-fg,var(--dealer-fg))]/85">
+              Você está a um passo de levar este carro para casa. Confirmamos sua simulação e
+              preparamos uma proposta sem compromisso.
             </div>
           ) : (
-            <fieldset className="flex flex-wrap gap-4">
-              <legend className="sr-only">Tipo de interesse</legend>
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <fieldset className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <legend className="mb-1 text-sm font-medium text-[var(--storefront-fg,var(--dealer-fg))]">
+                Como podemos ajudar?
+              </legend>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_15%,transparent)] px-3 py-2 text-sm has-[:checked]:border-[var(--secondary-color,var(--dealer-accent))] has-[:checked]:bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_10%,transparent)]">
                 <input
                   type="radio"
                   name="lead_type_ui"
                   checked={leadType === "contact"}
                   onChange={() => setLeadType("contact")}
                 />
-                Tenho interesse neste veículo
+                Quero comprar este veículo
               </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_15%,transparent)] px-3 py-2 text-sm has-[:checked]:border-[var(--secondary-color,var(--dealer-accent))] has-[:checked]:bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_10%,transparent)]">
                 <input
                   type="radio"
                   name="lead_type_ui"
@@ -121,12 +126,13 @@ export function LeadCaptureForm({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="lead-name">Nome</Label>
+            <Label htmlFor="lead-name">Seu nome</Label>
             <Input
               id="lead-name"
               name="client_name"
               required
               autoComplete="name"
+              placeholder="Como podemos te chamar?"
             />
           </div>
 
@@ -156,13 +162,14 @@ export function LeadCaptureForm({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-[var(--dealer-primary)] text-white hover:opacity-95"
+            size="lg"
+            className="bg-[var(--secondary-color,var(--dealer-accent))] text-base font-semibold text-white hover:opacity-95"
           >
             {isSubmitting
               ? "Enviando…"
               : requireSimulation
-                ? "Enviar simulação"
-                : "Enviar"}
+                ? "Quero minha proposta agora"
+                : "Falar com a loja agora"}
           </Button>
         </form>
       </CardContent>

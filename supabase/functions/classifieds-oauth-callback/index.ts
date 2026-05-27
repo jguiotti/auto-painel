@@ -77,12 +77,71 @@ function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig 
   };
 }
 
+function tryGetProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig | null {
+  try {
+    return getProviderConfigFromEnv(provider);
+  } catch {
+    return null;
+  }
+}
+
+async function tryResolvePlatformProviderConfig(
+  admin: SupabaseClient,
+  provider: ProviderKey,
+): Promise<ProviderRuntimeConfig | null> {
+  const { data, error } = await admin
+    .from("platform_classifieds_oauth_providers")
+    .select(
+      "is_enabled, token_url, oauth_client_id, oauth_client_secret_encrypted, redirect_uri",
+    )
+    .eq("provider", provider)
+    .maybeSingle();
+
+  if (error || !data?.is_enabled || !data.token_url?.trim() || !data.oauth_client_id?.trim()) {
+    return null;
+  }
+
+  if (!data.oauth_client_secret_encrypted?.trim()) {
+    return null;
+  }
+
+  const cryptoSecret = requireEnvVar("CLASSIFIEDS_TOKENS_CRYPTO_SECRET");
+  let clientSecretPlain: string;
+  try {
+    clientSecretPlain = await decryptSecretValue(
+      data.oauth_client_secret_encrypted,
+      cryptoSecret,
+    );
+  } catch {
+    return null;
+  }
+
+  const envFallback = tryGetProviderConfigFromEnv(provider);
+  const supabaseUrl = requireEnvVar("SUPABASE_URL");
+  const defaultRedirectUri = `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
+
+  return {
+    provider,
+    tokenUrl: data.token_url.trim(),
+    clientId: data.oauth_client_id.trim(),
+    clientSecret: clientSecretPlain.trim(),
+    redirectUri:
+      data.redirect_uri?.trim() || envFallback?.redirectUri || defaultRedirectUri,
+  };
+}
+
 async function resolveProviderRuntimeConfig(
   admin: SupabaseClient,
   provider: ProviderKey,
   dealershipId: string,
 ): Promise<ProviderRuntimeConfig> {
-  const envConfig = getProviderConfigFromEnv(provider);
+  const platformConfig = await tryResolvePlatformProviderConfig(admin, provider);
+  const envConfig = tryGetProviderConfigFromEnv(provider);
+  const baseConfig = platformConfig ?? envConfig;
+
+  if (!baseConfig) {
+    throw new Error("Canal de classificados indisponível para conexão.");
+  }
 
   const { data: appRow, error } = await admin
     .from("dealership_classifieds_oauth_apps")
@@ -94,7 +153,7 @@ async function resolveProviderRuntimeConfig(
     .maybeSingle();
 
   if (error || !appRow?.oauth_client_id?.trim()) {
-    return envConfig;
+    return baseConfig;
   }
 
   const row = appRow as OauthAppRow;
@@ -107,16 +166,16 @@ async function resolveProviderRuntimeConfig(
     );
   } catch {
     throw new Error(
-      "Não foi possível descriptografar o segredo OAuth da concessionária. Confirme CLASSIFIEDS_TOKENS_CRYPTO_SECRET ou guarde as credenciais novamente.",
+      "Não foi possível validar as credenciais da loja. Fale com nosso suporte.",
     );
   }
 
   return {
     provider,
-    tokenUrl: row.token_url_override?.trim() || envConfig.tokenUrl,
+    tokenUrl: row.token_url_override?.trim() || baseConfig.tokenUrl,
     clientId: row.oauth_client_id.trim(),
     clientSecret: clientSecretPlain.trim(),
-    redirectUri: envConfig.redirectUri,
+    redirectUri: baseConfig.redirectUri,
   };
 }
 
@@ -141,7 +200,7 @@ function popupHtml(params: {
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <title>AutoPainel OAuth2</title>
+    <title>Conexão concluída</title>
   </head>
   <body>
     <script>
@@ -156,7 +215,7 @@ function popupHtml(params: {
         window.close();
       })();
     </script>
-    <p>Conexão processada. Você já pode fechar esta janela.</p>
+    <p>Login processado. Esta janela pode ser fechada.</p>
   </body>
 </html>`;
 }
@@ -240,7 +299,7 @@ Deno.serve(async (req: Request) => {
         error:
           error instanceof Error
             ? error.message
-            : "Ambiente não configurado para OAuth2.",
+            : "Não foi possível concluir a conexão.",
       }),
       { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 500 },
     );

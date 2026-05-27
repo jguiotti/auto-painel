@@ -25,8 +25,92 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Subdomínios por loja + OAuth por concessionária (OLX / WebMotors / Meta) | `classifieds_sync`, `social_media_kit`, resolução de host | **PRD/BZ** em `packages/shared/docs/TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md` §7 + **BZ-TERR-***; jornada operador — alinhar com **`tenant_operator_journey`** | Esta página + doc partilhado |
 | Acesso multi-tenant (Admin + painel + vitrine) | `tenant_operator_journey` | **PRD aprovado** (2026-05-08); handoff UX **Fase 2** registrado abaixo; refinamento técnico / QA multi-tenant após **aprovação UX** | Esta página |
 | Templates dinâmicos da vitrine | `layout_id` | Implementado e registrado | Esta página + `documentacao-tecnica.md` |
+| Ambiente demo E2E (3 lojas) | `demo_seed_e2e` | **Implementado (2026-05-26)** | Secção abaixo + `documentacao-tecnica.md` |
 
 ---
+
+### 2026-05-26 — Ambiente demo E2E: 3 concessionárias + templates 1/2/3
+
+| Campo | Valor |
+| --- | --- |
+| **Nome** | Seed de dados fictícios + amarração de templates da vitrine para validação ponta a ponta |
+| **Status** | Implementado no repositório e aplicado no Supabase remoto ligado ao `.env.local` |
+| **Objetivo** | Permitir navegação completa em 3 lojas distintas (painel + vitrine) com whitelabel, estoque mockado e layouts diferentes |
+
+**Concessionárias demo**
+
+| Loja | Slug | Template (`layout_id`) | Cor primária | Gestor (login painel) |
+| --- | --- | --- | --- | --- |
+| Guiotti Multimarcas | `guiotti` | 1 (sidebar + hero premium) | Dourado `#C5A059` | `gestor.guiotti@autopainel.demo` |
+| AutoPrime Motors | `autoprime` | 2 (hero fullscreen + herança) | Vermelho escuro `#7F1D1D` | `gestor.autoprime@autopainel.demo` |
+| EcoDrive Seminovos | `ecodrive` | 3 (hero cinematográfico + grid 4 colunas) | Azul elétrico `#2563EB` | `gestor.ecodrive@autopainel.demo` |
+
+| Concessionárias demo | `guiotti` | `autoprime` | `ecodrive` |
+| --- | --- | --- | --- |
+| Plano comercial | enterprise | business | starter |
+| Simulador vitrine | sim | sim | sim |
+| QR Code estoque | sim | sim | não |
+| Integrações (menu) | sim | não | não |
+| Métricas avançadas | sim | não | não |
+
+**Senha padrão demo (todas):** `LojaDemo123!`
+
+#### Regras de negócio (BZ)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-DEMO-001** | Cada loja demo deve ter `status = active`, `layout_id` fixo (1/2/3) e whitelabel em `theme_config` (cores, modo escuro, fontes). |
+| **BZ-DEMO-002** | Cada loja demo deve possuir **≥ 5 veículos** ativos (`is_active = true`, `status = available`) com imagem, preço, ano e slug público `demo-*`. |
+| **BZ-DEMO-003** | A vitrine (`customer-site`) deve renderizar o layout conforme `dealerships.layout_id` e listar estoque via RPC pública filtrada por tenant. |
+| **BZ-DEMO-004** | O painel (`dealership-panel`) deve isolar estoque por tenant (RLS + cookie/host); gestor demo só vê veículos da própria loja. |
+| **BZ-DEMO-005** | Alterações de veículo/whitelabel no painel refletem imediatamente no Supabase e na vitrine após refresh. |
+
+| **BZ-DEMO-006** | Lojas demo usam planos distintos para validar gating: `guiotti` → enterprise, `autoprime` → business, `ecodrive` → starter. |
+| **BZ-DEMO-007** | CTAs de contato na vitrine abrem WhatsApp (`wa.me`) com mensagem pré-preenchida e parâmetros UTM (`utm_source=vitrine`, `utm_medium=whatsapp`, `utm_campaign`, `utm_content={slug}`) — não existe rota `/contato` no `customer-site`. |
+| **BZ-DEMO-008** | Filtro público de estoque inclui `vehicle_type` conforme tipos cadastrados no painel da loja (automóvel, motocicleta, van, etc.). Guiotti demo inclui automóveis e motocicletas. |
+| **BZ-DEMO-009** | A home da vitrine (3 templates) exibe apenas teaser de destaques; o estoque completo com filtros avançados fica em `/estoque` (marca, modelo, preço, ano, tipo, km, combustível, câmbio, cor, cilindrada, marchas, ordenação). |
+| **BZ-DEMO-010** | Cadastro de veículos no painel da loja inclui **especificações técnicas por tipo** (motos: marchas, cilindrada, motor, refrigeração, estilo, partida, freios, alimentação; caminhões: tração, eixos, peso, cabine, carroceria; vans/ônibus: lugares e campos complementares). Dados persistidos em `vehicles`, exibidos na vitrine e nos filtros — **sem mock em TS**. |
+| **BZ-DEMO-011** | Na **lista** de estoque do painel, ações limitadas a visualizar (ícone olho), editar (lápis) e excluir (lixeira). QR Code, link da vitrine e compartilhamento social ficam na tela **visualizar** (`/painel/estoque/[vehicleId]`). |
+| **BZ-DEMO-012** | Integrações OLX/WebMotors: usuário clica **Conectar** → diálogo explicativo → janela de login do portal → conexão automática. Se o canal não estiver liberado, mensagem clara pedindo contato com suporte (sem jargão técnico). |
+
+#### Catálogo comercial — módulos, planos e lojas (2026-05-27)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-CAT-001** | O catálogo mestre de funcionalidades vive em `/painel/modulos` (`saas_modules`). Operadores editam nome e descrição; a chave técnica não muda após criação. |
+| **BZ-CAT-002** | Cada plano comercial (`pricing_plans` + `pricing_plan_modules`) define **quais módulos** estão incluídos. A composição é editada só em `/painel/planos/*/editar`. |
+| **BZ-CAT-003** | Cada concessionária recebe **exatamente um** `pricing_plan_id`. **Proibido** atribuir módulos avulsos por loja na UI do admin (sem checkboxes `enabled_features`). |
+| **BZ-CAT-004** | Na ficha da loja, a aba **Plano** mostra select do plano + preview read-only dos módulos herdados; alterar funcionalidades exige editar o plano ou trocar o plano da loja. |
+| **BZ-CAT-005** | O gating runtime (painel, vitrine) usa chaves efetivas do plano via RPC — não o array legado `dealerships.enabled_features`. |
+| **BZ-CAT-006** | Integrações com portais classificados (OLX, WebMotors) partilham **uma única** chave de módulo: `classifieds_sync`. Não existem módulos separados `olx_sync` / `webmotors_sync` no catálogo. |
+
+| ID | Cenário |
+| --- | --- |
+| **CA-CAT-001** | Given operador em `/painel/concessionarias/[id]/editar` — When abre aba Plano — Then vê select de plano e lista read-only de módulos **sem** checkboxes por módulo. |
+| **CA-CAT-002** | Given plano «Starter» com N módulos — When operador atribui plano a nova loja — Then preview mostra exactamente os N módulos antes de criar. |
+| **CA-CAT-003** | Given lista `/painel/planos` — When visualiza tabela — Then coluna «Módulos» reflecte contagem de `pricing_plan_modules`. |
+| **CA-CAT-004** | Given catálogo `/painel/modulos` — When lista módulos — Then existe **apenas** «Integração com classificados» (`classifieds_sync`) e **não** «Integração OLX» (`olx_sync`). |
+
+#### Cenários de aceite (CA)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-DEMO-001** | Given loja `guiotti` ativa — When abrir `http://guiotti.localhost:3003` — Then layout 1 (sidebar de filtros + hero premium) e ≥ 5 veículos visíveis. |
+| **CA-DEMO-002** | Given loja `autoprime` — When abrir vitrine — Then layout 2 (hero central + secção herança + grid 2 colunas). |
+| **CA-DEMO-003** | Given loja `ecodrive` — When abrir vitrine — Then layout 3 (bento de destaques + grid 4 colunas). |
+| **CA-DEMO-004** | Given gestor da loja — When login no painel pelo host correto — Then estoque da loja listado; outra loja não aparece. |
+| **CA-DEMO-005** | Given veículo editado no painel — When recarregar vitrine — Then dados atualizados (preço/título/slug). |
+
+| **CA-DEMO-006** | Given login como gestor `ecodrive` — When abrir painel — Then menu **Integrações** não aparece; simulador na vitrine sim; QR no estoque não. |
+| **CA-DEMO-007** | Given login como gestor `autoprime` — When abrir estoque — Then ação **Gerar QR** visível; integrações Meta/classificados ausentes no menu. |
+| **CA-DEMO-008** | Given login como gestor `guiotti` — When abrir painel — Then integrações e métricas avançadas disponíveis conforme plano enterprise. |
+
+#### Fora de escopo
+
+- DNS/TLS de produção para subdomínios demo.
+- Importação automática dos HTML estáticos pixel-perfect (implementação React adaptada com mesma estrutura visual).
+- Provisionamento de logos finais de marca (usa placeholders Unsplash).
+
 
 ### 2026-05-08 — Iniciativa: subdomínios por loja + credenciais OAuth por concessionária (síntese PM)
 

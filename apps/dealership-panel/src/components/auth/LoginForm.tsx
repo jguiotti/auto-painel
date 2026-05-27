@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button, Input, Label } from "@autopainel/shared/ui";
+
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface LoginFormProps {
@@ -29,7 +31,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(
+        "Não foi possível entrar. Verifique e-mail e senha ou use recuperação de senha.",
+      );
       setIsSubmitting(false);
       return;
     }
@@ -40,18 +44,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
-          E-mail
-        </label>
-        <input
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email">E-mail</Label>
+        <Input
           id="email"
           name="email"
           type="email"
@@ -59,17 +55,13 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          disabled={isSubmitting}
+          placeholder="seu@email.com"
         />
       </div>
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
-          Senha
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="password">Senha</Label>
+        <Input
           id="password"
           name="password"
           type="password"
@@ -77,39 +69,28 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          disabled={isSubmitting}
         />
       </div>
       {errorMessage ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p
+          className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="flex h-11 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
-      >
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Entrando…" : "Entrar"}
-      </button>
-      <div className="flex flex-col gap-2 text-center text-sm text-zinc-600 dark:text-zinc-400">
-        <Link
-          href="/recuperar-senha"
-          className="font-medium text-zinc-800 underline dark:text-zinc-200"
-        >
-          Esqueci minha senha / primeiro acesso (receber link por e-mail)
-        </Link>
-        <p>
-          Se a equipa AutoPainel criou o seu acesso, pode usar a senha provisória
-          ou pedir aqui um link para definir uma senha nova.
+      </Button>
+      <div className="space-y-2 pt-2 text-center text-sm">
+        <Button variant="link" className="h-auto p-0 text-sm" asChild>
+          <Link href="/recuperar-senha">Esqueci minha senha</Link>
+        </Button>
+        <p className="text-muted-foreground">
+          Primeiro acesso? Peça um link por e-mail para definir sua senha.
         </p>
       </div>
-      <Link
-        href="/"
-        className="text-center text-sm font-medium text-zinc-600 underline dark:text-zinc-400"
-      >
-        Voltar ao início
-      </Link>
     </form>
   );
 }

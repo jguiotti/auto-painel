@@ -31,6 +31,15 @@ export interface ListPublicVehiclesFilteredArgs {
   p_max_price?: number | null;
   p_min_year?: number | null;
   p_max_year?: number | null;
+  p_vehicle_type?: string | null;
+  p_min_mileage?: number | null;
+  p_max_mileage?: number | null;
+  p_fuel_type?: string | null;
+  p_transmission?: string | null;
+  p_color?: string | null;
+  p_min_displacement_cc?: number | null;
+  p_max_displacement_cc?: number | null;
+  p_gear_count?: number | null;
 }
 
 /** Row shape for public.platform_internal_documents (admin-master internal docs). */

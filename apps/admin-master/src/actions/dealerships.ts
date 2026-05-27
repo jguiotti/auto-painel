@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 
-import { DEALERSHIP_OPTIONAL_FEATURES } from "@autopainel/shared/lib/dealership-features";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 import type {
   StorefrontLayoutTemplateId,
@@ -171,17 +170,6 @@ function mergeBrandColors(
     primary,
     primaryForeground,
   };
-}
-
-function parseEnabledFeaturesFromForm(formData: FormData): string[] {
-  const keys: string[] = [];
-  for (const { key } of DEALERSHIP_OPTIONAL_FEATURES) {
-    const v = formData.get(`feature_${key}`);
-    if (v === "on" || v === "true" || v === "1") {
-      keys.push(key);
-    }
-  }
-  return keys;
 }
 
 function hqAddressFromForm(formData: FormData): Record<string, string> {
@@ -628,9 +616,12 @@ export async function createDealershipAction(
   theme_config.storefront_theme_mode = storefront_theme_mode;
 
   const content_config = buildContentConfig(formData, {});
-  const enabled_features = parseEnabledFeaturesFromForm(formData);
   const layout_id = parseLayoutIdFromForm(formData);
   const pricing_plan_id = parsePricingPlanIdFromForm(formData);
+
+  if (!pricing_plan_id) {
+    return { error: "Selecione um plano comercial para a concessionária." };
+  }
 
   const headerLogoFileRaw = formData.get("header_logo_file");
   const footerLogoFileRaw = formData.get("footer_logo_file");
@@ -674,7 +665,7 @@ export async function createDealershipAction(
       theme_settings,
       theme_config,
       content_config,
-      enabled_features,
+      enabled_features: [],
       status,
       layout_id,
       pricing_plan_id,
@@ -959,9 +950,12 @@ export async function updateDealershipAction(
     parseRecord(existing.content_config),
   );
 
-  const enabled_features = parseEnabledFeaturesFromForm(formData);
   const layout_id = parseLayoutIdFromForm(formData);
   const pricing_plan_id = parsePricingPlanIdFromForm(formData);
+
+  if (!pricing_plan_id) {
+    return { error: "Selecione um plano comercial para a concessionária." };
+  }
 
   const subscription_patch: { subscription_plan?: string } = {};
   const slugSync = await subscriptionPlanSlugForPricingPlan(
@@ -985,7 +979,7 @@ export async function updateDealershipAction(
       theme_settings,
       theme_config,
       content_config,
-      enabled_features,
+      enabled_features: [],
       status,
       layout_id,
       pricing_plan_id,

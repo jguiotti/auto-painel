@@ -20,6 +20,8 @@
 
 Adjust the `@config` path to match the depth of your entry CSS file.
 
+Each app’s `postcss.config.mjs` must set Tailwind `base` to the **monorepo root** (see `packages/shared/postcss-tailwind-config.mjs`). Without it, the first dev compile can hang for minutes or never finish in this repo.
+
 ## Product-specific themes
 
 - **Admin / default**: after the shared import, override fonts (e.g. Geist) in `@theme inline`.

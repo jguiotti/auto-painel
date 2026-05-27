@@ -13,6 +13,13 @@
   --dealer-bg: #fafafa;
   --dealer-fg: #171717;
   --dealer-surface: #ffffff;
+  --primary-color: var(--dealer-primary);
+  --secondary-color: var(--dealer-accent);
+  --storefront-bg: var(--dealer-bg);
+  --storefront-fg: var(--dealer-fg);
+  --storefront-surface: var(--dealer-surface);
+  --storefront-font-heading: var(--dealer-font-heading);
+  --storefront-font-body: var(--dealer-font-body);
 }
 
 @theme inline {

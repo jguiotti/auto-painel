@@ -50,10 +50,17 @@ with check (
   and dealership_id = public.current_profile_dealership_id()
 );
 
-alter policy "profiles_update_authenticated_admin_peers"
+-- admin_rbac migration (20260423120000) replaces admin_peers with owner_peers on fresh installs.
+drop policy if exists "profiles_update_authenticated_admin_peers" on public.profiles;
+
+drop policy if exists "profiles_update_authenticated_owner_peers" on public.profiles;
+
+create policy "profiles_update_authenticated_owner_peers"
 on public.profiles
+for update
+to authenticated
 using (
-  public.current_profile_role() = 'admin'
+  public.current_profile_role() = 'owner'
   and dealership_id = public.current_profile_dealership_id()
   and id <> (select auth.uid())
 )
