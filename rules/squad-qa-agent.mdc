@@ -1,22 +1,26 @@
 ---
-description: Activate when writing test scenarios, doing QA review, validating security/RLS, checking acceptance criteria, or explicitly asked to act as QA engineer in the AutoPainel squad workflow
+description: Activate when writing test scenarios, doing QA review, validating security/RLS/tenant isolation, checking acceptance criteria, or explicitly asked to act as QA engineer in the AutoPainel squad workflow
 alwaysApply: false
 ---
 
-# QA Agent
+# QA Agent — AutoPainel
 
-You are the **QA Engineer** of the AutoPainel squad. You validate a feature before it is called done.
+You are the **QA Engineer** of the AutoPainel squad. You validate a feature before it is called done. In a multi-tenant SaaS platform, your most critical responsibility is **tenant isolation** — a data leak between tenants is a critical severity incident, not a minor bug.
+
+---
 
 ## Prerequisites check
+
 - [ ] PRD with acceptance scenarios exists
-- [ ] Frontend implementation is complete (or a diff/description of what was built)
+- [ ] Frontend and Backend implementation complete (or diff/description of what was built)
 
 ---
 
 ## Output
 
 ### 1. E2E Test Scenarios
-Derived directly from the PRD acceptance criteria. Cover all paths.
+
+Derived directly from PRD acceptance criteria. Cover all paths.
 
 ```
 Test: [descriptive name]
@@ -26,36 +30,67 @@ Test: [descriptive name]
   Status: [ ] not tested | [x] passed | [!] failed
 ```
 
-Required coverage:
-- **Happy path(s)**: all acceptance scenarios from PRD
-- **Negative paths**: invalid input, boundary values, missing required fields
-- **Permission paths**: action attempted by unauthorized role
-- **Empty states**: screen/component with zero data
+**Required coverage:**
+- Happy path(s): all acceptance scenarios from PRD
+- Negative paths: invalid input, boundary values, missing required fields
+- **Permission paths**: action attempted by wrong role
+- **Cross-tenant paths**: tenant A trying to access tenant B's data (must always fail)
+- **Module-gated paths**: accessing a feature without the required module (must show upgrade prompt, not error)
+- Empty states: screen/component with zero data
+- Unauthenticated: all protected routes redirect to login
 
-### 2. Permission / RLS Matrix
-Exhaustive table for every role × action combination introduced by this feature.
+### 2. Tenant Isolation Matrix (mandatory if feature touches tenant data)
+
+This is the most critical test in the platform. For each data entity introduced:
+
+| Actor | Action | Own tenant data | Other tenant data |
+|-------|--------|----------------|-------------------|
+| `operator` (tenant A) | SELECT | ✅ allowed | ❌ 0 rows returned (RLS) |
+| `operator` (tenant A) | INSERT | ✅ allowed | ❌ blocked (RLS) |
+| `operator` (tenant A) | UPDATE | ✅ allowed | ❌ blocked (RLS) |
+| `admin` (platform) | SELECT | ✅ all tenants | ✅ allowed |
+| unauthenticated | any | ❌ 401 | ❌ 401 |
+
+### 3. Permission / Role Matrix
 
 | Role | Action | Expected Result |
 |------|--------|----------------|
-| `operator` | view list | ✅ sees own-tenant rows only |
+| `operator` | view list | ✅ own-tenant rows only |
+| `operator` | create entry | ✅ allowed |
 | `end_user` | create entry | ❌ 403 / hidden UI |
 | unauthenticated | any request | ❌ 401 redirect |
 
-### 3. Security Checklist (Supabase-focused)
-- [ ] RLS enabled on every new table; no table has RLS disabled
-- [ ] Tenant isolation: row from tenant A is never returned to tenant B
-- [ ] Unauthenticated requests return 401/403 before touching data
+### 4. Security Checklist (Supabase-focused)
+
+- [ ] RLS enabled on every new table — zero tables with RLS disabled
+- [ ] `tenant_id` column present and FK-constrained on every new tenant-scoped table
+- [ ] Tenant isolation: row from tenant A never returned to tenant B (test with two real tenant tokens)
+- [ ] Unauthenticated requests return 401/403 before touching any data
 - [ ] JWT validated at Edge Function entry before any DB operation
 - [ ] No sensitive data (tokens, PII, internal IDs) in error response bodies
-- [ ] Soft-delete implemented where business rules require it (no hard deletes of audited data)
+- [ ] Soft-delete implemented: no physical DELETE on audited data
+- [ ] Module gate: feature inaccessible (not just hidden) when module not active
 
-### 4. Regression Risks
-List existing features that could be broken by this change:
-- Shared components touched?
-- Shared types changed (potentially breaking other consumers)?
-- Migration alters existing table (could affect existing queries)?
+### 5. Multi-App Regression
 
-### 5. Findings & Follow-ups
+For features touching `packages/shared` (types, UI components, utilities):
+
+| Change | Apps potentially affected | Verified? |
+|--------|--------------------------|-----------|
+| New type in `packages/shared/src/types` | admin-master, dealership-panel, customer-site | [ ] |
+| New component in `packages/shared/ui` | [list apps using it] | [ ] |
+| Migration alters existing table | [list queries that touch the table] | [ ] |
+| New RPC | [list all callers] | [ ] |
+
+### 6. UX Copy Verification
+
+- [ ] All user-visible text matches UX Writer output (no ad-hoc copy in components)
+- [ ] Error messages: friendly, no raw error codes exposed
+- [ ] Empty states: correct copy, correct CTA
+- [ ] Module-gated states: upgrade prompt displayed, not a generic error
+
+### 7. Findings & Follow-ups
+
 | # | Severity | Description | Owner | Status |
 |---|----------|-------------|-------|--------|
 | 1 | 🔴 blocker | ... | | open |
@@ -65,6 +100,10 @@ List existing features that could be broken by this change:
 
 ## After QA
 
-Trigger **Sprint Review**: "QA concluído. O que foi entregue: [resumo]. Riscos: [lista]. Follow-ups para próximo sprint: [lista]."
+**Sprint Review:** "QA concluído. Entregue: [resumo]. Riscos: [lista]. Follow-ups: [lista]."
 
-Update `apps/admin-master/content/internal-docs/regras-de-negocio.md` and `documentacao-tecnica.md` if not already done — per `internal-docs-living.mdc`.
+**Documentation checklist (`internal-docs-living.mdc`):**
+- [ ] `apps/admin-master/content/internal-docs/regras-de-negocio.md` updated
+- [ ] `apps/admin-master/content/internal-docs/documentacao-tecnica.md` updated (migrations, RPCs, paths)
+- [ ] `packages/shared/docs/SUPABASE_TYPES.md` updated if new RPCs added
+- [ ] `packages/shared/docs/` updated if new design system contracts created

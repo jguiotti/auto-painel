@@ -26,6 +26,10 @@ Stack de desenvolvimento via **Supabase CLI** (`supabase start`), com Postgres, 
 
 Projeto remoto linkado: `wcgevmvystdhqpzwuyig` (AutoPainel). Alternar `.env.local` entre remoto e `http://127.0.0.1:54321` conforme cenário (ver guia).
 
+**Keep-alive hosted (2026-05-27):** RPC `platform_health_ping`, tabela `platform_health_ping_log`, Edge Function `platform-health-ping`, script `npm run supabase:ping`, workflow `.github/workflows/supabase-health-ping.yml` (cron diário). Guia: `packages/shared/docs/SUPABASE_HEALTH_PING.md`. Migração: `supabase/migrations/20260527210000_platform_health_ping.sql`.
+
+**Deploy automatizado (2026-05-27):** `npm run supabase:deploy` + workflows `.github/workflows/supabase-deploy.yml` (push `main` em `supabase/migrations/**`) e `supabase-migrations-check.yml` (PR dry-run). Manifesto: `supabase/deploy.manifest.json`. Guia: `packages/shared/docs/SUPABASE_DEPLOY.md`. Secrets GitHub: `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`, `SUPABASE_ACCESS_TOKEN`.
+
 ---
 
 ## Iniciativa — módulos da plataforma (2026)

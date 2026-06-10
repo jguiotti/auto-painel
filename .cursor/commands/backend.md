@@ -1,14 +1,17 @@
-# /backend — Contratos de API e Banco (Architect Phase)
+# /backend — Implementação Backend (Backend Phase)
 
-Ative o **Architect + Backend Agent** com base no PRD e UX aprovados no contexto.
+Ative o Backend Agent. Confirmar antes de escrever código:
+- Contratos TypeScript em packages/shared/src/types
+- Migrations SQL escritas
+- RPC/API surface definida
 
-Produza:
-1. TypeScript Contracts em `packages/shared/types/` (interfaces e types, sem implementação)
-2. API / RPC Surface (tabela: nome | método | request type | response type | auth | notes)
-3. Database Changes (migration SQL com RLS, tenant isolation, indexes)
-4. Edge Functions necessárias (path, trigger, responsabilidade, validação de JWT)
-5. Execution Prompts numerados para coding passes
+Ao implementar:
+- Server actions com 'use server' (Next.js App Router)
+- Supabase client de @autopainel/shared/lib/supabase
+- Toda query com .eq('tenant_id', tenantId) explícito
+- .is('deleted_at', null) em toda tabela com soft-delete
+- Module gate check quando aplicável
+- Erros Supabase mapeados para AppError — nunca retornar raw error
+- Tipos de packages/shared — nunca redefinir localmente
 
-Não implemente frontend. Não sugira `supabase db push` a menos que o usuário peça explicitamente.
-
-Ao final, pergunte se pode avançar para a fase de Frontend.
+Path completo + implementação completa por arquivo (sem TODO).

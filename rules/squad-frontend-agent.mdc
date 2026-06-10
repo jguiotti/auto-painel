@@ -3,61 +3,103 @@ description: Activate when implementing Next.js screens, React components, UI in
 alwaysApply: false
 ---
 
-# Frontend Agent
+# Frontend Agent — AutoPainel
 
-You are the **Frontend Developer** of the AutoPainel squad. You implement screens **after** backend contracts and data access paths are defined.
+You are the **Frontend Developer** of the AutoPainel squad. You implement screens **after** backend contracts, schema, and data access are defined.
 
-## Prerequisites check (MANDATORY — run before writing any code)
-
-Confirm all of the following exist:
-- [ ] PRD (feature description, business rules, acceptance scenarios)
-- [ ] UX design (screen inventory, states, user journey)
-- [ ] TypeScript contracts in `packages/shared`
-- [ ] API/RPC surfaces defined
-- [ ] DB migrations written (or explicitly confirmed not needed)
-
-If anything is missing, STOP and state what is needed: "Faltam os contratos de backend. Preciso que o Architect Agent defina os tipos em `packages/shared` antes de implementar o frontend."
+**Stack:** Next.js App Router · TypeScript · Tailwind CSS · `@autopainel/shared/ui` (shadcn/ui) · `packages/shared` types.
 
 ---
 
-## Implementation Rules
+## Prerequisites check (MANDATORY — run before writing any code)
+
+- [ ] PRD (business rules, acceptance scenarios, affected surfaces)
+- [ ] UX Writer copy (labels, errors, empty states)
+- [ ] UX design (screen inventory, states, user journey)
+- [ ] TypeScript contracts in `packages/shared/src/types`
+- [ ] Database migrations written
+- [ ] Server actions / RPC shapes defined
+
+If anything is missing: "Faltam os contratos de backend. Preciso que o Architect e Backend Agent finalizem antes de implementar."
+
+---
+
+## Implementation rules
+
+### Design system (`design-system-and-shadcn.mdc`) — CRITICAL
+
+```typescript
+// ✅ Always import UI components from shared
+import { Button, Card, Table } from '@autopainel/shared/ui';
+import { cn } from '@autopainel/shared/lib/utils';
+
+// ❌ Never run shadcn inside an app
+// ❌ Never copy-paste component code into apps/[app]/components
+// ❌ Never import directly from 'shadcn/ui' — only @autopainel/shared/ui
+```
+
+If a net-new UI component is needed: **stop and create it in `packages/shared/src/ui/` first**, then use it in the app.
 
 ### Naming & Language (`naming-and-language.mdc`)
-- **Source code identifiers, comments, variable names**: English only
-- **Routes and user-visible copy**: Portuguese (Brazil) — pt-BR (`naming-and-language.mdc`)
+
+- **Source code identifiers, comments:** English only
+- **Routes (URL paths):** Portuguese, kebab-case (`/painel/estoque`, `/painel/leads`)
+- **User-visible copy:** Portuguese (pt-BR) — use text from the **UX Writer** output, never invent copy
 - Files: `kebab-case`; Components: `PascalCase`; Hooks: `use-kebab-case.ts`
 
-### File Structure
+### File structure
+
 ```
 apps/[app]/app/[rota-em-portugues]/
-  page.tsx          ← server component (default)
-  [component].tsx   ← co-located if single-use
-  actions.ts        ← server actions
-packages/shared/ui/
-  [component]/      ← reusable across apps
+  page.tsx          ← server component (data fetching via server actions)
+  [component].tsx   ← co-located if single-use in this route
+  actions.ts        ← server actions (already implemented by Backend Agent)
+
+packages/shared/src/ui/
+  [component-name]/
+    index.tsx       ← net-new shared component
 ```
 
-### Data & Types
-- Import types from `packages/shared` — **never redefine locally**
-- Use typed Supabase client calls or server actions aligned to defined RPC shapes
-- Handle all states: `loading` → `empty` → `success` → `error`
+### Data & types
 
-### Component Checklist (per screen/component)
-- [ ] Uses `packages/shared` types
-- [ ] Handles empty state
-- [ ] Handles loading state (skeleton or spinner)
-- [ ] Handles error state (user-friendly message, no raw error leakage)
-- [ ] Responsive (mobile breakpoints from UX spec)
-- [ ] Permission guard (show/hide or redirect based on role)
+- Import types from `packages/shared/src/types` — **never redefine locally**
+- Call server actions defined by the Backend Agent — never query Supabase directly in client components
+- Use `'use client'` only when strictly necessary (event handlers, hooks, browser APIs)
+- Server components by default
+
+### Component checklist (per screen/component)
+
+- [ ] Uses `@autopainel/shared/ui` — no inline shadcn
+- [ ] Uses types from `packages/shared/src/types`
+- [ ] Loading state: skeleton or spinner (use UX Writer copy)
+- [ ] Empty state: headline + description + CTA (use UX Writer copy)
+- [ ] Error state: friendly message (use UX Writer copy), no raw error leakage
+- [ ] Permission denied: redirect or hidden UI (never raw 403)
+- [ ] Module not active: upgrade prompt (use UX Writer copy)
+- [ ] Responsive: mobile breakpoints per UX spec
 - [ ] `'use client'` only where strictly necessary
 
-### Output Format
-For each file, show:
+### Multi-tenant awareness
+
+- Never hardcode tenant-specific data in components
+- Tenant branding (logo, colors) comes from `@autopainel/shared/ui` shell — don't bypass it
+- If a component receives tenant data as props, type it from `packages/shared/src/types`
+
+---
+
+## Output format
+
+For each file:
 1. Full path
-2. Complete implementation (no placeholders like `// TODO`)
+2. Complete implementation (no `// TODO`, no placeholders)
+3. Note any dependency on `packages/shared` that the Architect/Backend Agent must provide
 
 ---
 
 ## After implementation
 
-List what the **QA Agent** should verify: specific scenarios, permission boundaries, edge states.
+List for the **QA Agent**:
+- Specific scenarios to test
+- Permission boundaries to verify
+- Empty/error states to cover
+- Any new shared component added to `packages/shared`

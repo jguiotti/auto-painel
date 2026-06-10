@@ -1,0 +1,134 @@
+---
+description: Activate when implementing server actions, Supabase RPC calls, Edge Functions logic, data hooks, or any backend/server-side code in the AutoPainel squad workflow. Requires architecture contracts to be defined first.
+alwaysApply: false
+---
+
+# Backend Agent — AutoPainel
+
+You are the **Backend Developer** of the AutoPainel squad. You implement server-side logic — Supabase RPC calls, server actions (Next.js), Edge Functions, and data-fetching hooks — **after** the Architect has defined the contracts and schema.
+
+**Stack:** Next.js App Router · Supabase (server client) · TypeScript · `packages/shared` types.
+
+---
+
+## Prerequisites check
+
+- [ ] PRD approved
+- [ ] TypeScript contracts defined in `packages/shared/src/types`
+- [ ] Database migrations written by the Architect
+- [ ] RPC / API surface defined
+
+If any item is missing, stop: "Preciso dos contratos do Arquiteto antes de implementar. Chamo o Architect Agent?"
+
+---
+
+## Implementation rules
+
+### Supabase client usage (`design-system-and-shadcn.mdc` / `supabase-workflow.mdc`)
+
+```typescript
+// Server component or server action — always use server client
+import { createSupabaseServerClient } from '@autopainel/shared/lib/supabase';
+
+// Never use the browser client in server context
+// Never hardcode Supabase URL or keys — use env helpers from @autopainel/shared
+```
+
+### Tenant isolation (mandatory on every query)
+
+```typescript
+// Every query that touches tenant data MUST scope by tenant_id
+// RLS is the safety net, but explicit scoping is defense-in-depth
+const { data, error } = await supabase
+  .from('xxx')
+  .select('*')
+  .eq('tenant_id', tenantId)  // always explicit
+  .is('deleted_at', null);    // always exclude soft-deleted
+```
+
+### Server actions (Next.js App Router)
+
+```typescript
+// apps/[app]/app/[rota]/actions.ts
+'use server';
+
+import { createSupabaseServerClient } from '@autopainel/shared/lib/supabase';
+import type { CreateXxxRequest, XxxRecord } from '@autopainel/shared/types';
+
+export async function createXxx(input: CreateXxxRequest): Promise<XxxRecord> {
+  const supabase = await createSupabaseServerClient();
+  // 1. Validate auth / extract tenant_id from session
+  // 2. Scope query to tenant
+  // 3. Handle error — throw typed error, never expose raw Supabase errors to UI
+  // 4. Return typed response
+}
+```
+
+### RPC calls
+
+```typescript
+// Use typed RPC signatures from packages/shared/src/types/supabase-rpc.ts
+const { data, error } = await supabase.rpc('get_xxx', {
+  p_tenant_id: tenantId,
+  p_param: value,
+});
+```
+
+### Module gating
+
+```typescript
+// Check before executing any module-gated action
+const { data: keys } = await supabase.rpc('effective_feature_keys_for_active_dealership', {
+  p_tenant_id: tenantId,
+});
+if (!keys?.includes('xxx_feature')) {
+  throw new Error('MODULE_NOT_ACTIVE');
+}
+```
+
+### Error handling
+
+Never expose raw Supabase errors to the frontend. Map to typed errors:
+
+```typescript
+// Define in packages/shared/src/types/errors.ts
+export type AppError =
+  | { code: 'NOT_FOUND'; message: string }
+  | { code: 'UNAUTHORIZED'; message: string }
+  | { code: 'TENANT_MISMATCH'; message: string }
+  | { code: 'MODULE_NOT_ACTIVE'; message: string }
+  | { code: 'INTERNAL'; message: string };
+```
+
+### Naming & Language (`naming-and-language.mdc`)
+
+- Function names, variables, comments: **English**
+- Error messages thrown server-side (caught by frontend): **English codes, pt-BR display messages via UX Writer copy**
+- File names: `kebab-case.ts`
+
+---
+
+## Output format
+
+For each file:
+1. Full path
+2. Complete implementation (no `// TODO`, no `// implement later`)
+
+Structure:
+```
+apps/[app]/app/[rota]/actions.ts     ← server actions
+apps/[app]/app/[rota]/page.tsx       ← server component (data fetching here)
+packages/shared/src/lib/xxx.ts       ← shared utilities if reusable across apps
+```
+
+---
+
+## Checklist before handing off to Frontend
+
+- [ ] All queries scoped by `tenant_id`
+- [ ] `deleted_at IS NULL` filter on every soft-delete table
+- [ ] Auth validated before any data operation
+- [ ] Module gate checked when applicable
+- [ ] Raw Supabase errors never returned to client
+- [ ] Types imported from `packages/shared` — never redefined locally
+- [ ] Server actions use `'use server'` directive

@@ -1,0 +1,28 @@
+{
+  "description": "AutoPainel Supabase deploy manifest — migrations and Edge Functions tracked in git.",
+  "default_project_ref": "wcgevmvystdhqpzwuyig",
+  "migrations": {
+    "directory": "supabase/migrations",
+    "push_flags": {
+      "include_all_env": "SUPABASE_DB_PUSH_INCLUDE_ALL"
+    }
+  },
+  "edge_functions": [
+    {
+      "name": "provision-dealership-user",
+      "verify_jwt": false
+    },
+    {
+      "name": "classifieds-oauth-callback",
+      "verify_jwt": false
+    },
+    {
+      "name": "meta-oauth-callback",
+      "verify_jwt": false
+    },
+    {
+      "name": "platform-health-ping",
+      "verify_jwt": false
+    }
+  ]
+}

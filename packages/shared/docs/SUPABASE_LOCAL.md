@@ -15,8 +15,10 @@ Guia para subir Postgres + Auth + Storage + Studio via **Supabase CLI** neste mo
 | `npm run supabase:stop` | `supabase stop` | Para a stack local |
 | `npm run supabase:status` | `supabase status` | URLs, chaves e saúde |
 | `npm run supabase:reset` | `supabase db reset` | Recria o banco e reaplica `supabase/migrations/` |
+| `npm run supabase:deploy` | script + CI | Aplica migrações e Edge Functions no projeto **remoto** linkado |
+| `npm run supabase:migrations:status` | script | Compara migrações git vs remoto (`--dry-run` para pré-visualizar push) |
 
-Configuração versionada: **`supabase/config.toml`** (portas, redirects Auth para dev multi-loja).
+Deploy remoto: **`packages/shared/docs/SUPABASE_DEPLOY.md`** (secrets GitHub + `.env.local` com `SUPABASE_PROJECT_REF` / `SUPABASE_DB_PASSWORD`).
 
 ## Portas padrão
 

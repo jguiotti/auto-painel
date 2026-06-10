@@ -1,0 +1,56 @@
+name: Supabase deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/deploy.manifest.json"
+      - "scripts/supabase-deploy.mjs"
+      - ".github/workflows/supabase-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      include_all:
+        description: "Pass --include-all to db push (repair migrations)"
+        type: boolean
+        default: false
+      skip_functions:
+        description: "Skip Edge Functions deploy"
+        type: boolean
+        default: false
+
+concurrency:
+  group: supabase-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy migrations and Edge Functions
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PUSH_INCLUDE_ALL: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.include_all == 'true' && 'true' || '' }}
+          SUPABASE_DEPLOY_SKIP_FUNCTIONS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_functions == 'true' && 'true' || '' }}
+        run: node scripts/supabase-deploy.mjs
+
+      - name: Health ping
+        if: success()
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_PING_MODE: rpc
+        run: node scripts/ping-supabase-health.mjs

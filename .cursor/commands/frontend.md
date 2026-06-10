@@ -1,23 +1,18 @@
-# /frontend — Implementação de UI (Frontend Phase)
+# /frontend — Implementação Frontend (Frontend Phase)
 
-Ative o **Frontend Agent** com base nos contratos e design aprovados no contexto.
-
-Antes de escrever qualquer código, confirme que existem:
-- PRD com acceptance criteria
-- UX design com inventory de screens/componentes
-- TypeScript contracts em `packages/shared`
-- API/RPC surfaces definidas
-- Migrations escritas (ou confirmadas como desnecessárias)
-
-Se algum item faltar, pare e informe.
+Ative o Frontend Agent. Confirmar antes de escrever código:
+- PRD + UX Writer copy + UX design aprovados
+- TypeScript contracts em packages/shared/src/types
+- Server actions implementadas pelo Backend
+- Migrations escritas
 
 Ao implementar:
-- Identificadores e comentários em **inglês**
-- Rotas e copy visível ao usuário em **português**
-- Importar tipos de `packages/shared` — nunca redefinir localmente
-- Tratar todos os estados: loading, empty, success, error
-- `'use client'` apenas onde estritamente necessário
+- UI de @autopainel/shared/ui APENAS — nunca shadcn direto em apps
+- Copy do UX Writer — nunca inventar textos
+- Tipos de packages/shared/src/types — nunca redefinir localmente
+- Identificadores e comentários em inglês; rotas e copy em pt-BR
+- Todos os estados: loading (skeleton), empty, error, success, permission-denied, module-inactive
+- 'use client' apenas onde estritamente necessário
 
-Para cada arquivo: mostrar o path completo e a implementação completa (sem placeholders).
-
+Path completo + implementação completa por arquivo.
 Ao final, listar o que o QA Agent deve verificar.

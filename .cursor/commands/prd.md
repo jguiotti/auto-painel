@@ -1,19 +1,16 @@
 # /prd — Gerar PRD (PM Phase)
 
-Ative o **PM Agent** e produza um PRD completo para a funcionalidade descrita abaixo.
-
-Siga rigorosamente a estrutura do `squad-pm-agent.mdc`:
-1. Feature Description
+Ative o PM Agent. Produza:
+1. Feature Description (quais apps são afetados)
 2. Problem Statement
-3. Business Rules (numeradas e testáveis)
-4. Acceptance Scenarios (Given/When/Then — 1 happy path + mínimo 2 negativos)
-5. Out of Scope
-6. Open Questions
+3. Affected Surfaces (tabela: admin-master | dealership-panel | customer-site | marketing-site)
+4. Business Rules numeradas (tenant isolation + module gating se aplicável)
+5. Acceptance Scenarios (happy + 2 negativos + 1 cross-tenant se dados de tenant)
+6. Out of Scope
+7. Open Questions
 
-Não escreva código. Não projete schema. Apenas o PRD.
-
-Ao final, pergunte se pode avançar para a fase de UX.
+Não escreva código. Não projete schema.
+Ao final, perguntar se avança para UX Writer.
 
 ---
-
 **Funcionalidade:** $[FEATURE_DESCRIPTION]

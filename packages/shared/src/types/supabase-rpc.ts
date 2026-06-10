@@ -49,3 +49,10 @@ export interface PlatformInternalDocumentRow {
   updated_at: string;
   updated_by: string | null;
 }
+
+/** `public.platform_health_ping` — harmless keep-alive for scheduled cron. */
+export interface PlatformHealthPingResult {
+  ok: boolean;
+  pinged_at: string;
+  database: string;
+}
