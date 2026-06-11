@@ -6,6 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AutoPainel monorepo
 
+- **Onboarding:** [`README.md`](README.md) — setup, apps, portas, Supabase e scripts npm.
 - **Cursor rules**: `rules/*.mdc` (`.cursor/rules` is a symlink to `rules/`). Read applicable rules when touching UI, Supabase, or shared code.
 - **Locale copy**: user-visible strings and Portuguese squad/operator docs use **Brazilian Portuguese (pt-BR)** — see `rules/naming-and-language.mdc`. For the **Cursor UI** in pt-BR, install the **Portuguese (Brazil) Language Pack** and run **Configure Display Language** → `pt-br` (see `.vscode/extensions.json` in this repo).
 - **Internal docs (mandatory with code changes):** `rules/internal-docs-living.mdc` — keep `apps/admin-master/content/internal-docs/*.md` (and `packages/shared/docs/` when shared contracts change) aligned with what ships.

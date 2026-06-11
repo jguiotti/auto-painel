@@ -36,8 +36,6 @@
     "git:purge-secrets": "bash scripts/git-purge-secrets-from-history.sh",
     "git:repair-index": "bash scripts/git-repair-index.sh",
     "clean:caches": "bash scripts/clean-caches.sh",
-    "git:recover-clone": "bash scripts/git-recover-outside-icloud.sh",
-    "git:sync-changed": "bash scripts/git-sync-changed-files.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

@@ -1,36 +1,166 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AutoPainel
 
-## Getting Started
+Monorepo da plataforma AutoPainel: apps Next.js, pacote compartilhado (`packages/shared`), banco Supabase e automações de deploy/CI.
 
-First, run the development server:
+## Estrutura
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+apps/
+  marketing-site/     Site institucional
+  admin-master/         Painel interno da plataforma
+  dealership-panel/     Painel da concessionária (lojista)
+  customer-site/        Vitrine pública da loja
+packages/
+  shared/               UI (shadcn), utilitários, tipos Supabase, docs técnicas
+supabase/
+  migrations/           Schema versionado (fonte de verdade)
+  functions/            Edge Functions
+scripts/                Seeds, deploy Supabase, utilitários de env
+e2e/                    Testes Playwright
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pré-requisitos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Node.js** 20+ e **npm** 10+ (ver `packageManager` em `package.json`)
+- **Docker Desktop** — para Supabase local
+- **[Supabase CLI](https://supabase.com/docs/guides/cli)** — `supabase --version`
+- **Git** — clone fora de pastas sincronizadas pelo iCloud/Google Drive (evita corrupção do índice `.git`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Primeiro setup
 
-## Learn More
+```bash
+git clone https://github.com/jguiotti/auto-painel.git
+cd auto-painel
+npm install
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Variáveis de ambiente
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Copie o modelo na raiz do monorepo:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   cp .env.example .env.local
+   ```
 
-## Deploy on Vercel
+2. Preencha `.env.local` com as credenciais do seu ambiente (Supabase, URLs locais, etc.). **Nunca commite** `.env.local` — só `.env.example` (sem valores reais) vai para o git.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Propague a raiz para cada app:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run sync:env
+   ```
+
+4. Verifique se nenhum arquivo de env está versionado:
+
+   ```bash
+   npm run env:check-tracked
+   ```
+
+Detalhes por variável: comentários em `.env.example`. Segurança e purge de histórico: [`packages/shared/docs/SECURITY_SECRETS.md`](packages/shared/docs/SECURITY_SECRETS.md).
+
+## Desenvolvimento
+
+### Subir todos os apps
+
+```bash
+npm run dev:all
+```
+
+| App | Pacote npm | Porta local | URL |
+| --- | --- | ---: | --- |
+| Marketing | `@autopainel/marketing-site` | 3000 | http://localhost:3000 |
+| Admin plataforma | `@autopainel/admin-master` | 3001 | http://localhost:3001 |
+| Painel lojista | `@autopainel/dealership-panel` | 3002 | http://localhost:3002 |
+| Vitrine | `@autopainel/customer-site` | 3003 | http://localhost:3003 |
+
+### Subir apps individualmente
+
+```bash
+npm run dev:marketing-site
+npm run dev:admin-master
+npm run dev:dealership-panel
+npm run dev:customer-site
+```
+
+Menos carga na máquina (3 apps, concurrency limitada):
+
+```bash
+npm run dev:lite
+```
+
+Build e lint de todo o monorepo:
+
+```bash
+npm run build
+npm run lint
+npm run format
+```
+
+## Supabase
+
+| Comando | Descrição |
+| --- | --- |
+| `npm run supabase:start` | Sobe Postgres, Auth, Storage e Studio via Docker |
+| `npm run supabase:stop` | Para a stack local |
+| `npm run supabase:status` | URLs, chaves e saúde (`supabase status -o env` para copiar keys) |
+| `npm run supabase:reset` | Recria o banco e reaplica `supabase/migrations/` |
+| `npm run supabase:migrations:status` | Compara migrações git vs remoto |
+| `npm run supabase:deploy` | Aplica migrações e Edge Functions no projeto remoto |
+| `npm run supabase:ping` / `supabase:ping:remote` | Keep-alive da instância |
+
+Guia completo local: [`packages/shared/docs/SUPABASE_LOCAL.md`](packages/shared/docs/SUPABASE_LOCAL.md).  
+Deploy remoto e CI: [`packages/shared/docs/SUPABASE_DEPLOY.md`](packages/shared/docs/SUPABASE_DEPLOY.md).
+
+### Dados demo (opcional)
+
+Após `supabase start` ou `supabase db reset`:
+
+```bash
+npm run seed:demo-users      # usuários Auth das lojas demo
+npm run seed:admin-user      # super-usuário admin (requer config no script/.env)
+```
+
+## Testes E2E
+
+Com servidores dev rodando e `.env.local` configurado:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Ver [`e2e/README.md`](e2e/README.md) para variáveis opcionais e escopo dos testes.
+
+## Design system e UI
+
+Componentes shadcn e tokens ficam **somente** em `packages/shared`. Apps importam via `@autopainel/shared/ui`.
+
+- [`packages/shared/docs/DESIGN_SYSTEM.md`](packages/shared/docs/DESIGN_SYSTEM.md)
+- [`packages/shared/docs/SHADCN.md`](packages/shared/docs/SHADCN.md)
+- Adicionar componente: `npm run ui:add -- <nome>` a partir de `packages/shared`
+
+## Documentação para o time
+
+| Recurso | Conteúdo |
+| --- | --- |
+| [`AGENTS.md`](AGENTS.md) | Visão geral do monorepo, regras Cursor, links principais |
+| [`packages/shared/docs/`](packages/shared/docs/) | Contratos técnicos (Supabase, tipos, tenant/OAuth, etc.) |
+| [`rules/`](rules/) | Convenções de código, idioma, workflow de squad |
+| `apps/admin-master/content/internal-docs/` | PRD e rastreabilidade técnica (acesso via painel admin) |
+
+## Utilitários npm
+
+| Script | Uso |
+| --- | --- |
+| `npm run sync:env` | Copia `.env.local` da raiz para `apps/*/` |
+| `npm run env:check-tracked` | Falha se `.env.local` estiver no git |
+| `npm run git:untrack-env` | Remove env files do índice git |
+| `npm run git:repair-index` | Repara `.git/index` corrompido ou com timeout |
+| `npm run clean:caches` | Limpa caches Next/Turbo locais |
+
+## Contribuição
+
+1. Branch a partir de `main`
+2. Migrações SQL novas em `supabase/migrations/` (timestamp UTC)
+3. Tipos compartilhados em `packages/shared/src/types` quando alterar RPCs/contratos
+4. Não commitar segredos — rodar `npm run env:check-tracked` antes do push
