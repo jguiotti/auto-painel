@@ -1,10 +1,14 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
+import type { SocialCarouselArtifactTemplate } from "@autopainel/shared/types/social-carousel";
 
 import { encryptTextWithSecret } from "@/lib/crypto/aes-gcm-text-secret";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import { finalizeMetaPageSelectionForDealership } from "@/lib/integrations/finalize-meta-page-selection";
 
 function resolveMetaTokensCryptoSecret(): string {
   const s = process.env.META_TOKENS_CRYPTO_SECRET?.trim();
@@ -102,4 +106,68 @@ export async function saveDealershipMetaOauthAppAction(
           : "Não foi possível guardar as credenciais Meta.",
     };
   }
+}
+
+export async function saveCarouselAppearanceAction(
+  artifactTemplate: SocialCarouselArtifactTemplate,
+  watermarkEnabled: boolean,
+) {
+  const { supabase, dealershipId } = await requireDashboardSession("/painel/integracoes");
+
+  const featuresRes = await supabase.rpc("effective_feature_keys_for_active_dealership", {
+    p_dealership_id: dealershipId,
+  });
+  const activeFeatures = Array.isArray(featuresRes.data)
+    ? featuresRes.data.filter((entry): entry is string => typeof entry === "string")
+    : [];
+
+  if (!isDealershipFeatureEnabled(activeFeatures, "social_media_kit")) {
+    return { error: "Módulo de redes sociais não está ativo no plano da loja." };
+  }
+
+  const { error } = await supabase.rpc("upsert_dealership_social_carousel_settings", {
+    p_artifact_template: artifactTemplate,
+    p_watermark_enabled: watermarkEnabled,
+  });
+
+  if (error) {
+    return { error: "Não foi possível salvar a aparência do carrossel." };
+  }
+
+  revalidatePath("/painel/integracoes");
+  return { success: true as const };
+}
+
+export async function finalizeMetaPageSelectionAction(pageId: string) {
+  const { dealershipId } = await requireDashboardSession("/painel/integracoes");
+
+  try {
+    const result = await finalizeMetaPageSelectionForDealership({
+      dealershipId,
+      pageId,
+    });
+    revalidatePath("/painel/integracoes");
+    return {
+      success: true as const,
+      pageName: result.pageName,
+      instagramUsername: result.instagramUsername,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Não foi possível concluir a seleção da página.",
+    };
+  }
+}
+
+export async function dismissIntegrationsOnboardingAction() {
+  const { supabase } = await requireDashboardSession("/painel/integracoes");
+  const { error } = await supabase.rpc("dismiss_integrations_onboarding");
+  if (error) {
+    return { error: "Não foi possível dispensar o aviso." };
+  }
+  revalidatePath("/painel/integracoes");
+  return { success: true as const };
 }

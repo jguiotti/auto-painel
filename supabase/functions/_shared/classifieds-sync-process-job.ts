@@ -222,6 +222,7 @@ async function upsertListingPublished(
   job: ClassifiedsSyncJobRow,
   externalListingId: string,
   mode: "live" | "dry_run",
+  externalListingUrl?: string | null,
 ) {
   await admin.from("vehicle_classifieds_listings").upsert(
     {
@@ -229,6 +230,7 @@ async function upsertListingPublished(
       vehicle_id: job.vehicle_id,
       provider: job.provider,
       external_listing_id: externalListingId,
+      external_listing_url: externalListingUrl ?? null,
       sync_status: "published",
       last_error: null,
       last_synced_at: new Date().toISOString(),
@@ -281,7 +283,13 @@ export async function processClassifiedsSyncJob(
       listing?.external_listing_id ?? null,
     );
 
-    await upsertListingPublished(admin, job, result.externalListingId, result.mode);
+    await upsertListingPublished(
+      admin,
+      job,
+      result.externalListingId,
+      result.mode,
+      result.externalListingUrl,
+    );
     return;
   }
 

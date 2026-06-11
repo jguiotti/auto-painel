@@ -297,6 +297,7 @@ async function markJobPublished(
       status: "published",
       result_payload: result,
       error_detail: null,
+      published_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", job.id);

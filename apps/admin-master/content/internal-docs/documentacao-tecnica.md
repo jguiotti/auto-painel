@@ -61,9 +61,71 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | **E2-M3** | Render carrossel Sharp (Route Handler Next, não Edge Deno) | ✅ `render-social-carousel-slides.ts`, bucket `social-carousel-artifacts` |
 | **E2-M5** | Instagram carrossel Graph API (≥2 slides) | ✅ `social-publish-process-job.ts` |
 | **E2-C4** | Cron GitHub Actions workers (15 min) | ✅ `.github/workflows/integration-workers-cron.yml` |
+| **E2-UX1** | Hub Integrações facilitado (wizard Meta, aparência carrossel, onboarding) | ✅ `integracoes/page.tsx`, `carousel-appearance-card.tsx`, `meta-page-picker-dialog.tsx` |
+| **E2-UX2** | Carrossel com watermark + slide CTA + preview na ficha veículo | ✅ `render-social-carousel-slides.ts`, `vehicle-social-share-panel.tsx`, `previewVehicleCarouselAction` |
+| **E2-UX3** | Classificados granulares (OLX/WM toggles) + `external_listing_url` | ✅ `vehicle-classifieds-panel.tsx`, migração `20260610160000_integrations_ux_facilitated.sql` |
+| **E2-UX4** | «Salvar e divulgar» no formulário de veículo | ✅ `vehicle-promotion-section.tsx`, `runVehicleSavePromotions` em `estoque/actions.ts` |
 | **E2-S** | Secrets OLX/WM/Meta + homologação portais | DevOps / `.env.example` |
 
-Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RENDER.md`, `TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md`.
+Migração `20260610160000_integrations_ux_facilitated.sql` **aplicada no remoto** (2026-06-11).
+
+### Épico 2 — DevOps integrações (2026-06-11)
+
+| Passo | Comando / doc |
+| --- | --- |
+| Status migrações | `npm run supabase:migrations:status` |
+| Deploy migração + Edge | `npm run supabase:deploy` |
+| Secrets workers cron | `npm run github:secrets:workers:manual` |
+| Secrets render + Meta plataforma | `npm run integration:secrets:configure:manual` |
+| Checklist completo | `packages/shared/docs/INTEGRATIONS_DEPLOY.md` |
+
+Scripts novos: `scripts/configure-integration-secrets.mjs` (Edge `SOCIAL_CAROUSEL_*`, `META_PLATFORM_APP_ONLY` + lista Vercel).
+
+Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RENDER.md`, `INTEGRATIONS_DEPLOY.md`, `TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md`.
+
+### Épico 2 — QA integrações UX facilitada (2026-06-11)
+
+| ID | Entrega | Artefactos |
+| --- | --- | --- |
+| **E2-QA1** | E2E hub + gating plano + ficha/formulário veículo | ✅ `e2e/specs/dealership-panel-integrations-ux.spec.ts` |
+| **E2-QA2** | E2E OAuth classificados (canal indisponível) | ✅ `e2e/specs/dealership-panel-integrations-oauth.spec.ts` (existente) |
+| **E2-QA3** | Matriz isolamento cross-tenant estoque | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` (regressão) |
+| **E2-QA4** | Revisão RLS + RPCs migração `20260610160000` | ✅ code review (policies `dealership_social_carousel_settings`, RPCs com `auth.uid()`) |
+
+**Pré-requisito E2E:** `dealership-panel` em `3002`, seed demo (`guiotti` enterprise, `autoprime` business), migração `20260610160000` aplicada no Supabase usado pelo painel.
+
+**Cenários E2E (Given / When / Then)**
+
+| # | Cenário | Status |
+| --- | --- | --- |
+| 1 | Given gestor `guiotti` — When abre `/painel/integracoes` — Then vê Meta, aparência carrossel e OLX/WM | automatizado `integrations-ux.spec.ts` |
+| 2 | Given gestor `ecodrive`/`autoprime` (starter/business) — When tenta `/painel/integracoes` — Then redirect `/painel` e menu sem link | automatizado `integrations-ux.spec.ts` |
+| 3 | Given Ferrari demo — When abre ficha — Then painéis social + classificados visíveis | automatizado `integrations-ux.spec.ts` |
+| 4 | Given `guiotti` sem Meta/portais conectados — When abre `/painel/estoque/novo` — Then «Salvar e divulgar» oculto (fix QA 2026-06-11) | automatizado `integrations-ux.spec.ts` |
+| 5 | Given OAuth OLX/WM sem credenciais — When POST start — Then 503 `oauth_not_configured` + copy PT | automatizado `integrations-oauth.spec.ts` |
+| 6 | Given loja A vs B — When lista estoque — Then zero vazamento cross-tenant | automatizado `cross-tenant-isolation.spec.ts` |
+| 7 | Given Meta conectada multi-página — When OAuth conclui — Then `page_selection_required` + diálogo escolha | manual (requer app Meta + migração remota) |
+| 8 | Given preview carrossel — When clica «Ver preview» na ficha — Then modal com slides | manual (requer `SOCIAL_CAROUSEL_RENDER_SECRET` + Sharp) |
+| 9 | Given `SOCIAL_PUBLISH_DRY_RUN=false` — When publica job social — Then IG+FB reais | manual homologação Meta |
+| 10 | Given credenciais OLX/WM reais — When publica veículo — Then `external_listing_url` preenchido | manual homologação portais |
+
+**Findings QA (2026-06-11)**
+
+| # | Severidade | Descrição | Owner | Status |
+| --- | --- | --- | --- | --- |
+| 1 | 🔴 blocker | Migração `20260610160000` pendente no remoto — RPCs carousel/onboarding e status `page_selection_required` indisponíveis em produção | DevOps | open |
+| 2 | 🔴 blocker | Publicação social real e OAuth Meta multi-página não validados E2E (depende deploy + App Meta + `SOCIAL_PUBLISH_DRY_RUN=false`) | DevOps + QA manual | open |
+| 3 | 🟡 minor | `list_dealership_meta_page_candidates` sem gate `social_media_kit` (baixo risco: só retorna dados com `page_selection_required`) | Backend | deferred |
+| 4 | 🟡 minor | Credenciais OLX/WebMotors reais ausentes — fluxo feliz publish/delist bloqueado | DevOps | open |
+| 5 | 🟡 minor | «Salvar e divulgar» aparecia sem checkboxes quando Meta/portais desconectados — corrigido em `VehicleForm` + `isVehiclePromotionActionAvailable` | Frontend | fixed |
+| 6 | 🟡 minor | Seed demo: confirmar migração `20260526153000` aplicada (autoprime=business, ecodrive=starter) antes de E2E gating | DevOps | open |
+
+**Comando E2E focado:**
+
+```bash
+npm run dev:all   # ou só dealership-panel :3002
+npx playwright test e2e/specs/dealership-panel-integrations-ux.spec.ts e2e/specs/dealership-panel-integrations-oauth.spec.ts
+```
 
 ### Épico 3 — produção multitenant (2026-06-10)
 

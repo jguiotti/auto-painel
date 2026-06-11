@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { Badge, Button } from "@autopainel/shared/ui";
@@ -14,12 +15,13 @@ export interface VehicleClassifiedListingStatus {
   syncStatus: "pending" | "published" | "delisted" | "error";
   lastSyncedAt: string | null;
   lastError: string | null;
+  externalListingUrl: string | null;
 }
 
 interface VehicleClassifiedsPanelProps {
   vehicleId: string;
   enabled: boolean;
-  hasConnectedProvider: boolean;
+  connectedProviders: Array<"olx" | "webmotors">;
   listings: VehicleClassifiedListingStatus[];
   recentJobs: Array<{
     provider: "olx" | "webmotors";
@@ -27,11 +29,12 @@ interface VehicleClassifiedsPanelProps {
     status: string;
     lastError: string | null;
   }>;
+  showAutoDelistHint?: boolean;
 }
 
 const PROVIDER_LABEL: Record<"olx" | "webmotors", string> = {
   olx: "OLX",
-  webmotors: "Webmotors",
+  webmotors: "WebMotors",
 };
 
 function listingStatusLabel(status: VehicleClassifiedListingStatus["syncStatus"]): string {
@@ -66,10 +69,15 @@ function jobStatusLabel(status: string): string {
 export function VehicleClassifiedsPanel({
   vehicleId,
   enabled,
-  hasConnectedProvider,
+  connectedProviders,
   listings,
   recentJobs,
+  showAutoDelistHint = false,
 }: VehicleClassifiedsPanelProps) {
+  const [publishOlx, setPublishOlx] = useState(connectedProviders.includes("olx"));
+  const [publishWebmotors, setPublishWebmotors] = useState(
+    connectedProviders.includes("webmotors"),
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -81,17 +89,30 @@ export function VehicleClassifiedsPanel({
     );
   }
 
+  const hasConnectedProvider = connectedProviders.length > 0;
+
   function handlePublish() {
     setMessage(null);
+    const providers: Array<"olx" | "webmotors"> = [];
+    if (publishOlx && connectedProviders.includes("olx")) {
+      providers.push("olx");
+    }
+    if (publishWebmotors && connectedProviders.includes("webmotors")) {
+      providers.push("webmotors");
+    }
+
+    if (providers.length === 0) {
+      setMessage("Selecione ao menos um portal conectado para publicar.");
+      return;
+    }
+
     startTransition(async () => {
-      const result = await publishVehicleToClassifiedsAction(vehicleId);
+      const result = await publishVehicleToClassifiedsAction(vehicleId, providers);
       if ("error" in result && result.error) {
         setMessage(result.error);
         return;
       }
-      setMessage(
-        "Publicação enfileirada. Em instantes o anúncio aparecerá nos portais conectados.",
-      );
+      setMessage("Publicação iniciada. Acompanhe o status abaixo.");
     });
   }
 
@@ -103,7 +124,7 @@ export function VehicleClassifiedsPanel({
         setMessage(result.error);
         return;
       }
-      setMessage("Remoção enfileirada nos portais onde o veículo estava publicado.");
+      setMessage("Remoção iniciada nos portais onde o veículo estava publicado.");
     });
   }
 
@@ -113,55 +134,97 @@ export function VehicleClassifiedsPanel({
     <div className="rounded-lg border border-border bg-card p-5">
       <p className="text-sm font-medium">Portais classificados</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Publique ou remova este veículo na OLX e Webmotors sem sair do painel.
+        Publique ou remova este veículo na OLX e WebMotors sem sair do painel.
       </p>
 
+      {showAutoDelistHint ? (
+        <p className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          Quando você marcar este veículo como vendido ou inativo, o anúncio será removido
+          automaticamente dos portais conectados.
+        </p>
+      ) : null}
+
       {!hasConnectedProvider ? (
-        <p className="mt-3 text-sm text-amber-700">
-          Conecte OLX ou Webmotors em Integrações para publicar anúncios.
+        <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">
+          <Link href="/painel/integracoes" className="underline">
+            Conecte os portais em Integrações
+          </Link>{" "}
+          antes de publicar.
         </p>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button type="button" disabled={isPending} onClick={handlePublish}>
-            {isPending ? "Enfileirando…" : "Publicar nos portais"}
-          </Button>
-          {hasPublishedListing ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending}
-              onClick={handleDelist}
-            >
-              Remover dos portais
-            </Button>
+        <div className="mt-4 space-y-3">
+          {connectedProviders.includes("olx") ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={publishOlx}
+                onChange={(event) => setPublishOlx(event.target.checked)}
+                className="size-4 rounded border-input"
+              />
+              Publicar na OLX
+            </label>
           ) : null}
+          {connectedProviders.includes("webmotors") ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={publishWebmotors}
+                onChange={(event) => setPublishWebmotors(event.target.checked)}
+                className="size-4 rounded border-input"
+              />
+              Publicar na WebMotors
+            </label>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled={isPending} onClick={handlePublish}>
+              {isPending ? "Publicando…" : "Publicar nos portais selecionados"}
+            </Button>
+            {hasPublishedListing ? (
+              <Button type="button" variant="outline" disabled={isPending} onClick={handleDelist}>
+                Remover dos portais
+              </Button>
+            ) : null}
+          </div>
         </div>
       )}
 
       {listings.length > 0 ? (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 space-y-2 border-t border-border pt-4 text-xs">
           {listings.map((listing) => (
-            <li
-              key={listing.provider}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm"
-            >
-              <span>{PROVIDER_LABEL[listing.provider]}</span>
-              <Badge variant={listing.syncStatus === "published" ? "default" : "secondary"}>
-                {listingStatusLabel(listing.syncStatus)}
-              </Badge>
+            <li key={listing.provider} className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{PROVIDER_LABEL[listing.provider]}</span>
+              <Badge variant="outline">{listingStatusLabel(listing.syncStatus)}</Badge>
+              {listing.externalListingUrl && listing.syncStatus === "published" ? (
+                <a
+                  href={listing.externalListingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Ver anúncio na {PROVIDER_LABEL[listing.provider]}
+                </a>
+              ) : null}
+              {listing.lastError ? (
+                <span className="text-destructive">{listing.lastError}</span>
+              ) : null}
             </li>
           ))}
         </ul>
-      ) : null}
+      ) : (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Este veículo ainda não foi publicado em nenhum portal.
+        </p>
+      )}
 
       {recentJobs.length > 0 ? (
-        <div className="mt-4 space-y-1 text-xs text-muted-foreground">
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
           <p className="font-medium text-foreground">Últimas sincronizações</p>
-          {recentJobs.slice(0, 4).map((job, index) => (
+          {recentJobs.map((job, index) => (
             <p key={`${job.provider}-${job.action}-${index}`}>
-              {PROVIDER_LABEL[job.provider]} —{" "}
-              {job.action === "publish" ? "Publicar" : "Remover"}: {jobStatusLabel(job.status)}
-              {job.lastError ? ` (${job.lastError})` : ""}
+              {PROVIDER_LABEL[job.provider]} · {job.action === "publish" ? "Publicar" : "Remover"}{" "}
+              · {jobStatusLabel(job.status)}
+              {job.lastError ? ` · ${job.lastError}` : ""}
             </p>
           ))}
         </div>

@@ -25,6 +25,11 @@ import {
 } from "@/app/painel/estoque/actions";
 
 import { RemoveImageButton } from "@/components/inventory/RemoveImageButton";
+import {
+  VehiclePromotionSection,
+  isVehiclePromotionActionAvailable,
+  type VehiclePromotionConfig,
+} from "@/components/inventory/vehicle-promotion-section";
 import { VehicleCatalogFields } from "@/components/inventory/vehicle-catalog-fields";
 import { VehicleImageUploadPreview } from "@/components/inventory/vehicle-image-upload-preview";
 import { VehicleTypeSpecFields } from "@/components/inventory/vehicle-type-spec-fields";
@@ -94,6 +99,7 @@ interface VehicleFormProps {
   vehicleId?: string;
   defaultValues?: VehicleFormDefaultValues;
   units: { id: string; name: string }[];
+  promotionConfig?: VehiclePromotionConfig;
 }
 
 interface VehicleQualityScore {
@@ -141,10 +147,18 @@ export function VehicleForm({
   vehicleId,
   defaultValues,
   units,
+  promotionConfig,
 }: VehicleFormProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promoteInstagram, setPromoteInstagram] = useState(true);
+  const [promoteFacebook, setPromoteFacebook] = useState(true);
+  const [promoteOlx, setPromoteOlx] = useState(true);
+  const [promoteWebmotors, setPromoteWebmotors] = useState(true);
+  const promotionActionAvailable = promotionConfig
+    ? isVehiclePromotionActionAvailable(promotionConfig)
+    : false;
   const [vehicleTypeInput, setVehicleTypeInput] = useState<
     VehicleFormDefaultValues["vehicle_type"]
   >(defaultValues?.vehicle_type ?? "automovel");
@@ -567,6 +581,20 @@ export function VehicleForm({
             onFilesChange={setUploadedImageCount}
           />
 
+          {promotionActionAvailable && promotionConfig ? (
+            <VehiclePromotionSection
+              config={promotionConfig}
+              instagram={promoteInstagram}
+              facebook={promoteFacebook}
+              olx={promoteOlx}
+              webmotors={promoteWebmotors}
+              onInstagramChange={setPromoteInstagram}
+              onFacebookChange={setPromoteFacebook}
+              onOlxChange={setPromoteOlx}
+              onWebmotorsChange={setPromoteWebmotors}
+            />
+          ) : null}
+
           {errorMessage ? (
             <p className="text-sm text-destructive" role="alert">
               {errorMessage}
@@ -574,13 +602,29 @@ export function VehicleForm({
           ) : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-3 border-t pt-6">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            name="submit_intent"
+            value="save"
+            disabled={isSubmitting}
+          >
             {isSubmitting
               ? "Salvando…"
               : mode === "create"
                 ? "Cadastrar veículo"
-                : "Salvar alterações"}
+                : "Salvar veículo"}
           </Button>
+          {promotionActionAvailable ? (
+            <Button
+              type="submit"
+              name="submit_intent"
+              value="save_and_promote"
+              variant="secondary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Salvando…" : "Salvar e divulgar"}
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" asChild disabled={isSubmitting}>
             <Link href="/painel/estoque">Cancelar</Link>
           </Button>

@@ -9,11 +9,14 @@ import { Badge, Button, Separator } from "@autopainel/shared/ui";
 
 import { formatBrl } from "@/lib/format/format-brl";
 
-import { VehicleSocialSharePanel } from "./vehicle-social-share-panel";
 import {
   VehicleClassifiedsPanel,
   type VehicleClassifiedListingStatus,
 } from "./vehicle-classifieds-panel";
+import {
+  VehicleSocialSharePanel,
+  type SocialPublicationJobSummary,
+} from "./vehicle-social-share-panel";
 
 export interface VehicleDetailRecord {
   id: string;
@@ -68,10 +71,12 @@ interface VehicleDetailPanelProps {
   storefrontUrl: string;
   socialShareEnabled: boolean;
   metaConnected: boolean;
+  hasInstagramBusiness: boolean;
   artifactTemplateLabel: string;
+  socialRecentJobs?: SocialPublicationJobSummary[];
   isQrGeneratorEnabled?: boolean;
   classifiedsSyncEnabled?: boolean;
-  classifiedsHasConnectedProvider?: boolean;
+  classifiedsConnectedProviders?: Array<"olx" | "webmotors">;
   classifiedsListings?: VehicleClassifiedListingStatus[];
   classifiedsRecentJobs?: Array<{
     provider: "olx" | "webmotors";
@@ -93,10 +98,12 @@ export function VehicleDetailPanel({
   storefrontUrl,
   socialShareEnabled,
   metaConnected,
+  hasInstagramBusiness = false,
   artifactTemplateLabel,
+  socialRecentJobs = [],
   isQrGeneratorEnabled = false,
   classifiedsSyncEnabled = false,
-  classifiedsHasConnectedProvider = false,
+  classifiedsConnectedProviders = [],
   classifiedsListings = [],
   classifiedsRecentJobs = [],
 }: VehicleDetailPanelProps) {
@@ -240,16 +247,20 @@ export function VehicleDetailPanel({
         <VehicleClassifiedsPanel
           vehicleId={vehicle.id}
           enabled={classifiedsSyncEnabled}
-          hasConnectedProvider={classifiedsHasConnectedProvider}
+          connectedProviders={classifiedsConnectedProviders}
           listings={classifiedsListings}
           recentJobs={classifiedsRecentJobs}
+          showAutoDelistHint={vehicle.status === "available" && vehicle.is_active}
         />
 
         <VehicleSocialSharePanel
           vehicleId={vehicle.id}
           enabled={socialShareEnabled}
           metaConnected={metaConnected}
+          hasInstagramBusiness={hasInstagramBusiness}
           artifactTemplateLabel={artifactTemplateLabel}
+          imageCount={images.length}
+          recentJobs={socialRecentJobs}
         />
 
         {isQrGeneratorEnabled && vehicle.status === "available" && vehicle.is_active ? (

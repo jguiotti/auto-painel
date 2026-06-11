@@ -33,6 +33,8 @@
     "supabase:deploy": "node scripts/supabase-deploy.mjs",
     "github:secrets:workers": "node scripts/configure-github-worker-secrets.mjs",
     "github:secrets:workers:manual": "node scripts/configure-github-worker-secrets.mjs --manual",
+    "integration:secrets:configure": "node scripts/configure-integration-secrets.mjs",
+    "integration:secrets:configure:manual": "node scripts/configure-integration-secrets.mjs --manual",
     "env:check-tracked": "node scripts/check-env-not-tracked.mjs",
     "git:untrack-env": "bash scripts/untrack-env-from-git.sh",
     "git:purge-secrets": "bash scripts/git-purge-secrets-from-history.sh",

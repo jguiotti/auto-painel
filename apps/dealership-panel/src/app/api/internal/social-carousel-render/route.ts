@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { renderSocialCarouselSlides } from "@/lib/social/render-social-carousel-slides";
@@ -7,6 +9,8 @@ interface RenderRequestBody {
   dealershipId?: string;
   artifactTemplate?: string;
   payloadSnapshot?: Record<string, unknown>;
+  previewOnly?: boolean;
+  watermarkEnabled?: boolean;
 }
 
 function authorizeRenderRequest(req: Request): boolean {
@@ -37,26 +41,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const jobId = body.jobId?.trim();
   const dealershipId = body.dealershipId?.trim();
   const payloadSnapshot = body.payloadSnapshot;
+  const previewOnly = body.previewOnly === true;
 
-  if (!jobId || !dealershipId || !payloadSnapshot) {
+  if (!dealershipId || !payloadSnapshot) {
     return NextResponse.json(
-      { error: "jobId, dealershipId and payloadSnapshot are required." },
+      { error: "dealershipId and payloadSnapshot are required." },
       { status: 400 },
     );
   }
 
+  const jobId = body.jobId?.trim() || (previewOnly ? `preview-${randomUUID()}` : "");
+  if (!jobId) {
+    return NextResponse.json({ error: "jobId is required." }, { status: 400 });
+  }
+
   try {
-    const imageUrls = await renderSocialCarouselSlides({
+    const result = await renderSocialCarouselSlides({
       jobId,
       dealershipId,
       artifactTemplate: parseArtifactTemplate(body.artifactTemplate),
       payloadSnapshot,
+      previewOnly,
+      watermarkEnabled: body.watermarkEnabled,
     });
 
-    return NextResponse.json({ imageUrls });
+    return NextResponse.json({
+      imageUrls: result.imageUrls,
+      slideCount: result.slideCount,
+      includesCtaSlide: result.includesCtaSlide,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Render failed.";
     return NextResponse.json({ error: message }, { status: 500 });

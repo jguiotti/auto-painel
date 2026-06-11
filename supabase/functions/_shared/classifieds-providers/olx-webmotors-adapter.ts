@@ -56,8 +56,14 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
       const publishUrl = resolvePublishUrl(provider);
       if (isDryRunEnabled() || !publishUrl) {
         const suffix = existingExternalId ?? crypto.randomUUID();
+        const dryRunId = `dry_run_${provider}_${suffix}`;
+        const dryRunUrl =
+          provider === "olx"
+            ? `https://www.olx.com.br/vi/${encodeURIComponent(dryRunId)}`
+            : `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(dryRunId)}`;
         return {
-          externalListingId: `dry_run_${provider}_${suffix}`,
+          externalListingId: dryRunId,
+          externalListingUrl: dryRunUrl,
           mode: "dry_run",
         };
       }
@@ -92,8 +98,16 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
         throw new Error(`${provider} publish response missing listing id.`);
       }
 
+      const externalListingUrl =
+        (typeof payload.url === "string" && payload.url) ||
+        (typeof payload.listing_url === "string" && payload.listing_url) ||
+        (provider === "olx"
+          ? `https://www.olx.com.br/vi/${encodeURIComponent(externalListingId)}`
+          : `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(externalListingId)}`);
+
       return {
         externalListingId,
+        externalListingUrl,
         mode: "live",
         raw: payload,
       };

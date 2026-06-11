@@ -13,5 +13,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **New features**: follow the mandatory squad workflow in `rules/squad-agent-workflow.mdc` (PM → UX → architect/backend → frontend → QA). At end of substantial work, apply `rules/squad-delivery-gates.mdc` (checkpoint + ask user next squad step).
 - **Design system & shadcn**: `packages/shared` only; see `packages/shared/docs/`.
 - **Dynamic pricing plans & modules (PRD + DB blueprint):** `packages/shared/docs/PRD_DYNAMIC_PRICING_PLANS_AND_MODULES.md`.
-- **Supabase**: keep migrations in `supabase/migrations/`; deploy remoto automatizado: `packages/shared/docs/SUPABASE_DEPLOY.md` — `npm run supabase:deploy` + GitHub Actions em push `main`. Local: `packages/shared/docs/SUPABASE_LOCAL.md` — `npm run supabase:start`. Keep-alive: `packages/shared/docs/SUPABASE_HEALTH_PING.md`.
+- **Supabase**: keep migrations in `supabase/migrations/`; deploy remoto automatizado: `packages/shared/docs/SUPABASE_DEPLOY.md` — `npm run supabase:deploy` + GitHub Actions em push `main`. Local: `packages/shared/docs/SUPABASE_LOCAL.md` — `npm run supabase:start`. Keep-alive: `packages/shared/docs/SUPABASE_HEALTH_PING.md`. Integrações Meta/classificados: `packages/shared/docs/INTEGRATIONS_DEPLOY.md`.
 - **E2E**: Playwright na raiz — `npm run test:e2e` (servidores dev ligados); ver `e2e/README.md`.

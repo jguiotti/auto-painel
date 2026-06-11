@@ -24,6 +24,8 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 - **Painel:** página `/erro/concessionaria` renderiza; slug inexistente → erro ao pedir `/`. Com **`E2E_DEALERSHIP_SLUG`**, `/painel` → `/login` (resolver dashboard). **Fase 5:** `h1` unificado, sem «404» no título; `<details>` técnico fechado por padrão em `development` (skip se `next start` em produção).
 - **Vitrine:** slug inventado → `/erro/concessionaria` com o mesmo `h1`; rota directa `/erro/concessionaria` no `127.0.0.1`; bare loopback → erro (salvo variáveis de dev tenant). Com **`E2E_DEALERSHIP_SLUG`** e loja **`active`**, a home carrega; se a loja não for `active`, o teste é **skipped** (ver ponto 3).
 - **Cross-tenant:** `e2e/specs/cross-tenant-isolation.spec.ts` — estoque guiotti vs autoprime + nome no shell (requer seed demo).
+- **Integrações UX (Épico 2):** `e2e/specs/dealership-panel-integrations-ux.spec.ts` — gating plano (`autoprime` vs `guiotti`), hub `/painel/integracoes`, ficha Ferrari, formulário «Salvar e divulgar».
+- **Integrações OAuth:** `e2e/specs/dealership-panel-integrations-oauth.spec.ts` — hub enterprise + 503 canal indisponível OLX/WM.
 - **QR:** `e2e/specs/vehicle-qr-print.spec.ts` — lâmina QR do Ferrari demo (skip se módulo `qr_generator` off).
 
 Os testes **não** gravam dados por padrão — verificam resolução de host, middleware e fluxos de leitura.

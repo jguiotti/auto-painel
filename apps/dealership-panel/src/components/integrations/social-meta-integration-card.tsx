@@ -15,12 +15,15 @@ import {
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+import { MetaPagePickerDialog } from "./meta-page-picker-dialog";
+
 type ConnectionStatus =
   | "disconnected"
   | "connecting"
   | "connected"
   | "error"
-  | "reauth_required";
+  | "reauth_required"
+  | "page_selection_required";
 
 export interface MetaConnectionRow {
   status: ConnectionStatus;
@@ -35,12 +38,13 @@ interface OAuthMessagePayload {
   source: "autopainel_meta_oauth";
   success: boolean;
   error?: string;
+  requiresPageSelection?: boolean;
+  pageCount?: number;
 }
 
 interface SocialMetaIntegrationCardProps {
   isEnabled: boolean;
   connection: MetaConnectionRow | null;
-  /** False until the dealership saved Meta App ID (or env fallback exists for dev). */
   canStartOAuth?: boolean;
 }
 
@@ -48,8 +52,9 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: "Desconectado",
   connecting: "Conectando",
   connected: "Conectado",
-  error: "Erro",
+  error: "Erro na conexão",
   reauth_required: "Reconexão necessária",
+  page_selection_required: "Escolha a página",
 };
 
 function resolveStatusVariant(
@@ -61,7 +66,7 @@ function resolveStatusVariant(
   if (status === "error" || status === "reauth_required") {
     return "outline";
   }
-  if (status === "connecting") {
+  if (status === "connecting" || status === "page_selection_required") {
     return "secondary";
   }
   return "outline";
@@ -72,12 +77,25 @@ function resolveActionLabel(status: ConnectionStatus): string {
     return "Conectado";
   }
   if (status === "connecting") {
-    return "Conectando...";
+    return "Conectando…";
+  }
+  if (status === "page_selection_required") {
+    return "Escolher página";
   }
   if (status === "error" || status === "reauth_required") {
-    return "Reconectar";
+    return "Reconectar conta";
   }
-  return "Conectar Facebook / Instagram";
+  return "Conectar com Facebook";
+}
+
+function resolveWizardStep(status: ConnectionStatus): number {
+  if (status === "connected") {
+    return 3;
+  }
+  if (status === "page_selection_required" || status === "connecting") {
+    return 2;
+  }
+  return 1;
 }
 
 export function SocialMetaIntegrationCard({
@@ -87,6 +105,7 @@ export function SocialMetaIntegrationCard({
 }: SocialMetaIntegrationCardProps) {
   const router = useRouter();
   const status = connection?.status ?? "disconnected";
+  const wizardStep = resolveWizardStep(status);
   const [pendingOAuth, setPendingOAuth] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
@@ -123,11 +142,15 @@ export function SocialMetaIntegrationCard({
       popupRef.current = null;
       setPendingOAuth(false);
       if (payload.success) {
-        setInlineFeedback("Conexão com Meta concluída.");
+        if (payload.requiresPageSelection) {
+          setInlineFeedback("Login concluído. Escolha qual página da sua loja usar.");
+        } else {
+          setInlineFeedback("Conta conectada com sucesso.");
+        }
       } else {
         setInlineFeedback(
           payload.error ??
-            "Não foi possível concluir a autorização Meta (Facebook / Instagram).",
+            "Não foi possível concluir a conexão com Facebook e Instagram.",
         );
       }
       router.refresh();
@@ -170,7 +193,7 @@ export function SocialMetaIntegrationCard({
       if (!popup) {
         setPendingOAuth(false);
         setInlineFeedback(
-          "O navegador bloqueou a popup. Permita popups para continuar.",
+          "Seu navegador bloqueou a janela de login. Permita pop-ups para este site e tente novamente.",
         );
         return;
       }
@@ -229,6 +252,12 @@ export function SocialMetaIntegrationCard({
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <Badge variant={wizardStep >= 1 ? "default" : "outline"}>1. Conectar conta</Badge>
+        <Badge variant={wizardStep >= 2 ? "default" : "outline"}>2. Escolher página</Badge>
+        <Badge variant={wizardStep >= 3 ? "default" : "outline"}>3. Pronto</Badge>
+      </div>
+
       {inlineFeedback ? (
         <p className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground">
           {inlineFeedback}
@@ -241,8 +270,8 @@ export function SocialMetaIntegrationCard({
             <div>
               <CardTitle>Facebook e Instagram</CardTitle>
               <CardDescription>
-                Conecte a página do Facebook e o Instagram Business da sua loja. O login
-                abre em uma janela segura e a conexão é concluída automaticamente.
+                Faça login com a conta Facebook da sua loja e autorize o acesso à Página e ao
+                Instagram.
               </CardDescription>
             </div>
             <Badge
@@ -258,8 +287,7 @@ export function SocialMetaIntegrationCard({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {connection?.page_name ||
-          connection?.instagram_username ? (
+          {connection?.page_name || connection?.instagram_username ? (
             <div className="text-xs text-muted-foreground">
               {connection.page_name ? (
                 <p>
@@ -269,13 +297,13 @@ export function SocialMetaIntegrationCard({
               ) : null}
               {connection.instagram_username ? (
                 <p>
-                  <span className="font-medium text-foreground">Instagram:</span>{" "}
-                  @{connection.instagram_username}
+                  <span className="font-medium text-foreground">Instagram:</span> @
+                  {connection.instagram_username}
                 </p>
               ) : (
                 <p>
-                  Instagram Business não detectado para a página escolhida (ainda pode
-                  publicar na página Facebook).
+                  Instagram Business não encontrado. Você ainda pode publicar na Página do
+                  Facebook.
                 </p>
               )}
             </div>
@@ -285,15 +313,13 @@ export function SocialMetaIntegrationCard({
             <p className="text-xs text-destructive">{connection.last_error}</p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Ao conectar, autorize o acesso à página e ao Instagram Business quando
-              solicitado.
+              O login abre em uma janela segura — você não precisa configurar nada técnico.
             </p>
           )}
 
           {!canStartOAuth ? (
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              Salve primeiro o App ID e o App Secret do Meta na seção acima para
-              habilitar a conexão.
+              A conexão Meta da plataforma ainda não está configurada no servidor.
             </p>
           ) : null}
 
@@ -301,7 +327,11 @@ export function SocialMetaIntegrationCard({
             <Button
               type="button"
               disabled={
-                !isEnabled || isBusy || status === "connected" || !canStartOAuth
+                !isEnabled ||
+                isBusy ||
+                status === "connected" ||
+                status === "page_selection_required" ||
+                !canStartOAuth
               }
               onClick={() => {
                 void startMetaOAuth();
@@ -324,6 +354,15 @@ export function SocialMetaIntegrationCard({
           </div>
         </CardContent>
       </Card>
+
+      <MetaPagePickerDialog
+        open={status === "page_selection_required"}
+        onOpenChange={() => {}}
+        onCompleted={() => {
+          setInlineFeedback("Conta conectada com sucesso.");
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

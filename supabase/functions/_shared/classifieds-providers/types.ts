@@ -22,6 +22,7 @@ export interface VehicleListingPayload {
 
 export interface ProviderSyncResult {
   externalListingId: string;
+  externalListingUrl?: string | null;
   mode: "live" | "dry_run";
   raw?: Record<string, unknown>;
 }

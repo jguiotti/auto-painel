@@ -1,11 +1,15 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 
+import { CarouselAppearanceCard } from "@/components/integrations/carousel-appearance-card";
 import { ClassifiedsIntegrationCards } from "@/components/integrations/classifieds-integration-cards";
+import { IntegrationOnboardingBanner } from "@/components/integrations/integration-onboarding-banner";
 import { MetaDeveloperAppForm } from "@/components/integrations/meta-developer-app-form";
 import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta-integration-card";
 import { getClassifiedsProviderAvailability } from "@/lib/classifieds/get-classifieds-provider-availability";
+import { getDealershipSocialCarouselSettings } from "@/lib/data/dealership-social-carousel-settings";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { getDealershipMetaOauthAppPublic } from "@/lib/data/dealership-meta-oauth-app";
 import {
@@ -16,22 +20,25 @@ import {
 export default async function IntegracoesPage() {
   const { supabase, dealershipId } = await requireDashboardSession();
 
-  const [featuresRes, connectionsRes, metaConnectionRes] = await Promise.all([
-    supabase.rpc("effective_feature_keys_for_active_dealership", {
-      p_dealership_id: dealershipId,
-    }),
-    supabase
-      .from("dealership_classifieds_connections")
-      .select("provider, status, token_expires_at, connected_at, last_error")
-      .eq("dealership_id", dealershipId),
-    supabase
-      .from("dealership_meta_connections")
-      .select(
-        "status, page_name, instagram_username, token_expires_at, connected_at, last_error",
-      )
-      .eq("dealership_id", dealershipId)
-      .maybeSingle(),
-  ]);
+  const [featuresRes, connectionsRes, metaConnectionRes, dealershipRes, carouselSettings] =
+    await Promise.all([
+      supabase.rpc("effective_feature_keys_for_active_dealership", {
+        p_dealership_id: dealershipId,
+      }),
+      supabase
+        .from("dealership_classifieds_connections")
+        .select("provider, status, token_expires_at, connected_at, last_error")
+        .eq("dealership_id", dealershipId),
+      supabase
+        .from("dealership_meta_connections")
+        .select(
+          "status, page_name, instagram_username, token_expires_at, connected_at, last_error",
+        )
+        .eq("dealership_id", dealershipId)
+        .maybeSingle(),
+      supabase.from("dealerships").select("logo_url").eq("id", dealershipId).maybeSingle(),
+      getDealershipSocialCarouselSettings(dealershipId),
+    ]);
 
   const activeFeatures = Array.isArray(featuresRes.data)
     ? featuresRes.data.filter((entry): entry is string => typeof entry === "string")
@@ -82,13 +89,15 @@ export default async function IntegracoesPage() {
     | "connecting"
     | "connected"
     | "error"
-    | "reauth_required" {
+    | "reauth_required"
+    | "page_selection_required" {
     return (
       value === "disconnected" ||
       value === "connecting" ||
       value === "connected" ||
       value === "error" ||
-      value === "reauth_required"
+      value === "reauth_required" ||
+      value === "page_selection_required"
     );
   }
 
@@ -108,6 +117,10 @@ export default async function IntegracoesPage() {
     ? await getClassifiedsProviderAvailability({ dealershipId })
     : { olx: false, webmotors: false };
 
+  const showOnboarding =
+    !carouselSettings.integrationsOnboardingDismissedAt &&
+    normalizedMetaConnection?.status !== "connected";
+
   return (
     <div className="space-y-10">
       <section>
@@ -115,17 +128,23 @@ export default async function IntegracoesPage() {
           Integrações
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Conecte sua loja aos canais de divulgação: redes sociais e portais de
-          classificados. O login é feito em uma janela segura — você não precisa
-          configurar nada técnico.
+          Conecte sua loja ao Instagram, Facebook, OLX e WebMotors. O login abre em uma janela
+          segura — sem códigos nem configuração técnica.
         </p>
       </section>
 
+      <IntegrationOnboardingBanner visible={showOnboarding} />
+
       {isSocialMediaKitEnabled ? (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Instagram e Facebook
-          </h2>
+        <section id="redes-sociais" className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              Instagram e Facebook
+            </h2>
+            <Link href="#aparencia-carrossel" className="text-sm text-primary hover:underline">
+              Aparência do carrossel
+            </Link>
+          </div>
           <div className="space-y-6">
             {!metaPlatformConnect ? (
               <MetaDeveloperAppForm
@@ -134,13 +153,7 @@ export default async function IntegracoesPage() {
                   metaAppRow?.graph_api_version_override ?? ""
                 }
               />
-            ) : (
-              <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                Clique em <strong className="font-medium text-foreground">Conectar</strong> abaixo
-                e faça login com a conta Facebook da sua loja. Não é necessário configurar App ID
-                ou chaves técnicas.
-              </p>
-            )}
+            ) : null}
             <SocialMetaIntegrationCard
               isEnabled={isSocialMediaKitEnabled}
               connection={normalizedMetaConnection}
@@ -150,10 +163,20 @@ export default async function IntegracoesPage() {
         </section>
       ) : null}
 
+      {isSocialMediaKitEnabled ? (
+        <section id="aparencia-carrossel">
+          <CarouselAppearanceCard
+            initialTemplate={carouselSettings.artifactTemplate}
+            initialWatermarkEnabled={carouselSettings.watermarkEnabled}
+            hasLogo={Boolean(dealershipRes.data?.logo_url)}
+          />
+        </section>
+      ) : null}
+
       {isClassifiedsSyncEnabled ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            OLX e Webmotors
+            OLX e WebMotors
           </h2>
           <ClassifiedsIntegrationCards
             isEnabled={isClassifiedsSyncEnabled}

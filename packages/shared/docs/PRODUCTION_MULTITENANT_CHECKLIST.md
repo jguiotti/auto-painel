@@ -48,9 +48,12 @@ Após alterar domínio raiz, **revalidar** todos os redirect URLs — login queb
 
 ## Workers assíncronos (pós Épico 2)
 
-- [ ] Edge Functions `classifieds-sync-worker` e `social-publish-worker` deployadas
-- [ ] Secrets: `CLASSIFIEDS_TOKENS_CRYPTO_SECRET`, `META_TOKENS_CRYPTO_SECRET`
-- [x] Cron GitHub Actions `integration-workers-cron.yml` (15 min) — secrets `SUPABASE_URL` + `INTEGRATION_WORKERS_CRON_SECRET` (headers `x-*-worker-key`; ver `npm run github:secrets:workers:manual`)
+- [ ] Migração `20260610160000_integrations_ux_facilitated.sql` aplicada no remoto
+- [ ] Edge Functions deployadas (`meta-oauth-callback`, `classifieds-sync-worker`, `social-publish-worker`)
+- [ ] Secrets Edge: `META_TOKENS_CRYPTO_SECRET`, `CLASSIFIEDS_TOKENS_CRYPTO_SECRET`, `SOCIAL_CAROUSEL_RENDER_URL`, `SOCIAL_CAROUSEL_RENDER_SECRET`
+- [ ] Vercel `dealership-panel`: `META_PLATFORM_APP_ONLY=true`, `SOCIAL_CAROUSEL_RENDER_SECRET`, `META_TOKENS_CRYPTO_SECRET`
+- [x] Cron GitHub Actions `integration-workers-cron.yml` (15 min) — `npm run github:secrets:workers:manual`
+- [ ] Smoke: preview carrossel + enqueue job — ver `packages/shared/docs/INTEGRATIONS_DEPLOY.md` §8
 
 ## Referências
 

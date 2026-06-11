@@ -1,9 +1,11 @@
 import { VehicleForm } from "@/components/inventory/VehicleForm";
 
+import { getVehicleFormPromotionConfig } from "@/lib/data/vehicle-form-promotion-config";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 export default async function NewVehiclePage() {
   const { supabase, dealershipId } = await requireDashboardSession();
+  const promotionConfig = await getVehicleFormPromotionConfig({ supabase, dealershipId });
 
   const { data: units, error } = await supabase
     .from("dealership_units")
@@ -39,7 +41,7 @@ export default async function NewVehiclePage() {
           /veiculo/seu-slug.
         </p>
       </div>
-      <VehicleForm mode="create" units={units} />
+      <VehicleForm mode="create" units={units} promotionConfig={promotionConfig} />
     </div>
   );
 }

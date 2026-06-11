@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import type { SocialPublicationChannel } from "@autopainel/shared/types/social-carousel";
+
+import { publishVehicleToClassifiedsAction } from "@/app/painel/estoque/classified-actions";
+import { enqueueVehicleSocialShareAction } from "@/app/painel/estoque/social-actions";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { dispatchClassifiedsSyncWorker } from "@/lib/integrations/dispatch-classifieds-sync-worker";
 import { normalizePublicSlug } from "@/lib/inventory/normalize-public-slug";
@@ -15,6 +19,34 @@ import {
 } from "@/lib/inventory/parse-vehicle-type-spec-form";
 
 const BUCKET = "vehicle-images";
+
+async function runVehicleSavePromotions(vehicleId: string, formData: FormData) {
+  if (formData.get("submit_intent") !== "save_and_promote") {
+    return;
+  }
+
+  const socialChannels: SocialPublicationChannel[] = [];
+  if (formData.get("promote_instagram") === "true") {
+    socialChannels.push("instagram_feed");
+  }
+  if (formData.get("promote_facebook") === "true") {
+    socialChannels.push("facebook_page");
+  }
+  if (socialChannels.length > 0) {
+    await enqueueVehicleSocialShareAction(vehicleId, socialChannels, "vehicle_save");
+  }
+
+  const providers: Array<"olx" | "webmotors"> = [];
+  if (formData.get("promote_olx") === "true") {
+    providers.push("olx");
+  }
+  if (formData.get("promote_webmotors") === "true") {
+    providers.push("webmotors");
+  }
+  if (providers.length > 0) {
+    await publishVehicleToClassifiedsAction(vehicleId, providers);
+  }
+}
 
 function storageObjectPathFromPublicUrl(publicUrl: string): string | null {
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -220,6 +252,8 @@ export async function createVehicleAction(formData: FormData) {
       .eq("id", vehicleId);
   }
 
+  await runVehicleSavePromotions(vehicleId, formData);
+
   revalidatePath("/painel");
   revalidatePath("/painel/estoque");
   return { success: true as const, vehicleId };
@@ -375,6 +409,8 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   if (shouldDispatchClassifiedsDelist) {
     await dispatchClassifiedsSyncWorker(3);
   }
+
+  await runVehicleSavePromotions(vehicleId, formData);
 
   revalidatePath("/painel");
   revalidatePath("/painel/estoque");

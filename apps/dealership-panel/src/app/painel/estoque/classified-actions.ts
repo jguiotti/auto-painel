@@ -38,7 +38,10 @@ async function assertClassifiedsEnabled(
   return { activeFeatures };
 }
 
-export async function publishVehicleToClassifiedsAction(vehicleId: string) {
+export async function publishVehicleToClassifiedsAction(
+  vehicleId: string,
+  providers?: ClassifiedsProvider[],
+) {
   const { supabase, dealershipId } = await requireDashboardSession(
     `/painel/estoque/${vehicleId}`,
   );
@@ -70,7 +73,7 @@ export async function publishVehicleToClassifiedsAction(vehicleId: string) {
   const { data, error } = await supabase.rpc("enqueue_classifieds_sync_jobs", {
     p_vehicle_id: vehicleId,
     p_action: "publish",
-    p_providers: null,
+    p_providers: providers?.length ? providers : null,
   });
 
   if (error) {

@@ -136,11 +136,15 @@ function popupHtml(params: {
   targetOrigin: string;
   success: boolean;
   error?: string;
+  requiresPageSelection?: boolean;
+  pageCount?: number;
 }): string {
   const payload = {
     source: "autopainel_meta_oauth",
     success: params.success,
     error: params.error ?? null,
+    requiresPageSelection: params.requiresPageSelection ?? false,
+    pageCount: params.pageCount ?? 0,
   };
 
   return `<!doctype html>
@@ -260,12 +264,16 @@ Deno.serve(async (req: Request) => {
     success: boolean;
     error?: string;
     status: number;
+    requiresPageSelection?: boolean;
+    pageCount?: number;
   }): Promise<Response> {
     return new Response(
       popupHtml({
         targetOrigin: params.targetOrigin,
         success: params.success,
         error: params.error,
+        requiresPageSelection: params.requiresPageSelection,
+        pageCount: params.pageCount,
       }),
       { headers: { "Content-Type": "text/html; charset=utf-8" }, status: params.status },
     );
@@ -405,12 +413,11 @@ Deno.serve(async (req: Request) => {
       userAccessToken: longLived.access_token,
     });
 
-    const chosen = pickPrimaryPage(accounts);
-    if (
-      !chosen?.id ||
-      !chosen.access_token ||
-      typeof chosen.access_token !== "string"
-    ) {
+    const eligiblePages = accounts.filter(
+      (page) => page.id && typeof page.access_token === "string",
+    );
+
+    if (eligiblePages.length === 0) {
       throw new Error(
         "Nenhuma página Facebook com token foi encontrada. Confirme se você gerencia páginas e repetiu o login com todas as permissões.",
       );
@@ -420,6 +427,82 @@ Deno.serve(async (req: Request) => {
       longLived.access_token,
       tokenCryptoSecret,
     );
+
+    if (eligiblePages.length > 1) {
+      const pageCandidates = eligiblePages.map((page) => ({
+        page_id: page.id,
+        page_name: page.name ?? "Página sem nome",
+        instagram_business_account_id:
+          page.instagram_business_account?.id ?? null,
+        instagram_username: page.instagram_business_account?.username ?? null,
+      }));
+
+      const placeholderPageToken = await encryptSecretValue(
+        longLived.access_token,
+        tokenCryptoSecret,
+      );
+
+      const { data: connectionRow, error: connectionError } = await admin
+        .from("dealership_meta_connections")
+        .upsert(
+          {
+            dealership_id: oauthSession.dealership_id,
+            status: "page_selection_required",
+            page_id: null,
+            page_name: null,
+            instagram_business_account_id: null,
+            instagram_username: null,
+            pending_page_candidates: pageCandidates,
+            token_expires_at: userTokenExpiresAt,
+            connected_at: null,
+            last_error: null,
+          },
+          { onConflict: "dealership_id" },
+        )
+        .select("id")
+        .single();
+
+      if (connectionError || !connectionRow) {
+        throw new Error(connectionError?.message ?? "Erro ao guardar conexão.");
+      }
+
+      const { error: credentialsError } = await admin
+        .from("dealership_meta_credentials")
+        .upsert(
+          {
+            connection_id: connectionRow.id,
+            dealership_id: oauthSession.dealership_id,
+            user_access_token_encrypted: userTokenEncrypted,
+            page_access_token_encrypted: placeholderPageToken,
+            expires_at: userTokenExpiresAt,
+          },
+          { onConflict: "connection_id" },
+        );
+
+      if (credentialsError) {
+        throw new Error(credentialsError.message);
+      }
+
+      await admin.from("dealership_meta_oauth_sessions").update({
+        status: "consumed",
+        consumed_at: new Date().toISOString(),
+        error_reason: null,
+      }).eq("id", oauthSession.id);
+
+      return await reply({
+        targetOrigin,
+        success: true,
+        requiresPageSelection: true,
+        pageCount: eligiblePages.length,
+        status: 200,
+      });
+    }
+
+    const chosen = pickPrimaryPage(eligiblePages);
+    if (!chosen?.id || !chosen.access_token) {
+      throw new Error("Não foi possível selecionar a página Facebook.");
+    }
+
     const pageTokenEncrypted = await encryptSecretValue(
       chosen.access_token,
       tokenCryptoSecret,
@@ -437,6 +520,7 @@ Deno.serve(async (req: Request) => {
             chosen.instagram_business_account?.id ?? null,
           instagram_username:
             chosen.instagram_business_account?.username ?? null,
+          pending_page_candidates: null,
           token_expires_at: userTokenExpiresAt,
           connected_at: new Date().toISOString(),
           last_error: null,

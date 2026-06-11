@@ -138,6 +138,16 @@
       "import": "./src/types/index.ts",
       "default": "./src/types/index.ts"
     },
+    "./types/social-carousel": {
+      "types": "./src/types/social-carousel.ts",
+      "import": "./src/types/social-carousel.ts",
+      "default": "./src/types/social-carousel.ts"
+    },
+    "./types/integrations-hub": {
+      "types": "./src/types/integrations-hub.ts",
+      "import": "./src/types/integrations-hub.ts",
+      "default": "./src/types/integrations-hub.ts"
+    },
     "./components/empty-state": {
       "types": "./src/components/empty-state.tsx",
       "import": "./src/components/empty-state.tsx",

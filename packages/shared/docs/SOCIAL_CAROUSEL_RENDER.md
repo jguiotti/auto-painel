@@ -22,11 +22,20 @@ Corpo JSON:
   "jobId": "uuid",
   "dealershipId": "uuid",
   "artifactTemplate": "classic | performance | tech",
-  "payloadSnapshot": { "vehicle": { "images": [] }, "dealership": { "name": "" } }
+  "payloadSnapshot": {
+    "vehicle": { "images": [], "brand": "", "model": "", "price": 0 },
+    "dealership": { "name": "", "logo_url": "https://...", "phone": "" },
+    "branding_mask": true
+  },
+  "previewOnly": false,
+  "watermarkEnabled": true
 }
 ```
 
-Resposta: `{ "imageUrls": ["https://.../social-carousel-artifacts/..."] }`
+- `previewOnly: true` — path `preview/{dealershipId}/{uuid}/` (sem job); usado pelo painel em `previewVehicleCarouselAction`
+- `jobId` opcional quando `previewOnly` é true
+
+Resposta: `{ "imageUrls": [], "slideCount": N, "includesCtaSlide": true }`
 
 ## Variáveis
 
@@ -49,7 +58,15 @@ Migração `20260610140000_social_carousel_artifacts_bucket.sql` — bucket púb
 | `performance` | Vermelho `#7F1D1D` (layout 2) |
 | `tech` | Azul `#2563EB` (layout 3) |
 
-MVP: resize cover 1080×1080 + faixa inferior com título/preço (capa) ou nome da loja (demais slides).
+Estrutura de slides (2026-06-11):
+
+1. **Capa** — 1.ª foto + faixa com título/preço
+2. **Fotos** — demais imagens do veículo + watermark da logo (canto inferior direito, ~75% opacidade) quando `watermarkEnabled` e `dealership.logo_url` existem
+3. **CTA** — slide final com nome da loja, «Saiba mais» e telefone
+
+Settings por loja: tabela `dealership_social_carousel_settings` (`artifact_template`, `watermark_enabled`) — RPC `upsert_dealership_social_carousel_settings`.
+
+Deploy: `packages/shared/docs/INTEGRATIONS_DEPLOY.md`
 
 ## Instagram
 

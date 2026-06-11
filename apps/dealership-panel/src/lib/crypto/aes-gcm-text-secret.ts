@@ -21,7 +21,7 @@ function toBase64(bytes: Uint8Array): string {
 async function getAesKey(secret: string): Promise<CryptoKey> {
   const secretBytes = encoder.encode(secret);
   const digest = await crypto.subtle.digest("SHA-256", secretBytes);
-  return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt"]);
+  return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
 export async function encryptTextWithSecret(
@@ -37,4 +37,24 @@ export async function encryptTextWithSecret(
   );
   const cipherBytes = new Uint8Array(cipherBuffer);
   return `${toBase64(iv)}.${toBase64(cipherBytes)}`;
+}
+
+export async function decryptTextWithSecret(
+  ciphertext: string,
+  secret: string,
+): Promise<string> {
+  const trimmed = ciphertext.trim();
+  const dot = trimmed.indexOf(".");
+  if (dot < 1 || dot === trimmed.length - 1) {
+    throw new Error("Invalid ciphertext format.");
+  }
+  const iv = new Uint8Array(fromBase64(trimmed.slice(0, dot)));
+  const cipherBytes = new Uint8Array(fromBase64(trimmed.slice(dot + 1)));
+  const key = await getAesKey(secret);
+  const plainBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    cipherBytes,
+  );
+  return decoder.decode(plainBuffer);
 }

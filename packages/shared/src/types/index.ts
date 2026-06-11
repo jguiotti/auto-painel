@@ -8,6 +8,8 @@ export * from "./dealership-config";
 export * from "./dealership-storefront";
 export * from "./pricing-catalog";
 export * from "./finance-simulation";
+export * from "./social-carousel";
+export * from "./integrations-hub";
 
 export type BrandSlug = string;
 

@@ -9,6 +9,10 @@ import {
 import { Button } from "@autopainel/shared/ui";
 
 import { VehicleDetailPanel, type VehicleDetailRecord } from "@/components/inventory/vehicle-detail-panel";
+import {
+  artifactTemplateLabel,
+  getDealershipSocialCarouselSettings,
+} from "@/lib/data/dealership-social-carousel-settings";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 interface VehicleViewPageProps {
@@ -23,58 +27,66 @@ function resolveStorefrontUrl(slug: string): string {
   return buildLocalhostDealershipPreviewUrls(slug)?.storefrontUrl ?? "/";
 }
 
-function artifactTemplateLabel(layoutId: number | null | undefined): string {
-  if (layoutId === 2) {
-    return "Performance / Bold";
-  }
-  if (layoutId === 3) {
-    return "Tech / Modern";
-  }
-  return "Classic / Clean";
-}
-
 export default async function VehicleViewPage({ params }: VehicleViewPageProps) {
   const { vehicleId } = await params;
   const { supabase, dealershipId } = await requireDashboardSession(`/painel/estoque/${vehicleId}`);
 
-  const [vehicleResult, dealershipResult, unitsResult, metaResult, featuresResult, listingsResult, jobsResult, classifiedConnectionsResult] =
-    await Promise.all([
-      supabase
-        .from("vehicles")
-        .select("*")
-        .eq("id", vehicleId)
-        .eq("dealership_id", dealershipId)
-        .maybeSingle(),
-      supabase.from("dealerships").select("slug, layout_id").eq("id", dealershipId).maybeSingle(),
-      supabase
-        .from("dealership_units")
-        .select("id, name")
-        .eq("dealership_id", dealershipId),
-      supabase
-        .from("dealership_meta_connections")
-        .select("status")
-        .eq("dealership_id", dealershipId)
-        .maybeSingle(),
-      supabase.rpc("effective_feature_keys_for_active_dealership", {
-        p_dealership_id: dealershipId,
-      }),
-      supabase
-        .from("vehicle_classifieds_listings")
-        .select("provider, sync_status, last_synced_at, last_error")
-        .eq("vehicle_id", vehicleId)
-        .eq("dealership_id", dealershipId),
-      supabase
-        .from("classifieds_sync_jobs")
-        .select("provider, action, status, last_error, created_at")
-        .eq("vehicle_id", vehicleId)
-        .eq("dealership_id", dealershipId)
-        .order("created_at", { ascending: false })
-        .limit(6),
-      supabase
-        .from("dealership_classifieds_connections")
-        .select("provider, status")
-        .eq("dealership_id", dealershipId),
-    ]);
+  const [
+    vehicleResult,
+    dealershipResult,
+    unitsResult,
+    metaResult,
+    featuresResult,
+    listingsResult,
+    jobsResult,
+    classifiedConnectionsResult,
+    socialJobsResult,
+    carouselSettings,
+  ] = await Promise.all([
+    supabase
+      .from("vehicles")
+      .select("*")
+      .eq("id", vehicleId)
+      .eq("dealership_id", dealershipId)
+      .maybeSingle(),
+    supabase.from("dealerships").select("slug").eq("id", dealershipId).maybeSingle(),
+    supabase
+      .from("dealership_units")
+      .select("id, name")
+      .eq("dealership_id", dealershipId),
+    supabase
+      .from("dealership_meta_connections")
+      .select("status, instagram_business_account_id")
+      .eq("dealership_id", dealershipId)
+      .maybeSingle(),
+    supabase.rpc("effective_feature_keys_for_active_dealership", {
+      p_dealership_id: dealershipId,
+    }),
+    supabase
+      .from("vehicle_classifieds_listings")
+      .select("provider, sync_status, last_synced_at, last_error, external_listing_url")
+      .eq("vehicle_id", vehicleId)
+      .eq("dealership_id", dealershipId),
+    supabase
+      .from("classifieds_sync_jobs")
+      .select("provider, action, status, last_error, created_at")
+      .eq("vehicle_id", vehicleId)
+      .eq("dealership_id", dealershipId)
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("dealership_classifieds_connections")
+      .select("provider, status")
+      .eq("dealership_id", dealershipId),
+    supabase
+      .from("social_publication_jobs")
+      .select("id, status, channels, error_detail, published_at, created_at")
+      .eq("vehicle_id", vehicleId)
+      .eq("dealership_id", dealershipId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    getDealershipSocialCarouselSettings(dealershipId),
+  ]);
 
   const vehicle = vehicleResult.data;
   if (!vehicle) {
@@ -137,7 +149,6 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
   };
 
   const slug = dealershipResult.data?.slug ?? "";
-  const layoutId = dealershipResult.data?.layout_id;
 
   const classifiedsListings =
     listingsResult.data
@@ -147,6 +158,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
           sync_status: "pending" | "published" | "delisted" | "error";
           last_synced_at: string | null;
           last_error: string | null;
+          external_listing_url: string | null;
         } => row.provider === "olx" || row.provider === "webmotors",
       )
       .map((row) => ({
@@ -154,6 +166,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
         syncStatus: row.sync_status,
         lastSyncedAt: row.last_synced_at,
         lastError: row.last_error,
+        externalListingUrl: row.external_listing_url,
       })) ?? [];
 
   const classifiedsRecentJobs =
@@ -164,6 +177,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
           action: "publish" | "delist";
           status: string;
           last_error: string | null;
+          created_at: string;
         } =>
           (row.provider === "olx" || row.provider === "webmotors") &&
           (row.action === "publish" || row.action === "delist"),
@@ -175,8 +189,23 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
         lastError: row.last_error,
       })) ?? [];
 
-  const classifiedsHasConnectedProvider =
-    classifiedConnectionsResult.data?.some((row) => row.status === "connected") ?? false;
+  const classifiedsConnectedProviders =
+    classifiedConnectionsResult.data
+      ?.filter((row) => row.status === "connected")
+      .map((row) => row.provider)
+      .filter((provider): provider is "olx" | "webmotors" =>
+        provider === "olx" || provider === "webmotors",
+      ) ?? [];
+
+  const socialRecentJobs =
+    socialJobsResult.data?.map((row) => ({
+      id: row.id,
+      status: row.status,
+      channels: (row.channels as string[]) ?? [],
+      errorDetail: row.error_detail,
+      publishedAt: row.published_at,
+      createdAt: row.created_at,
+    })) ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -190,10 +219,12 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
         storefrontUrl={resolveStorefrontUrl(slug)}
         socialShareEnabled={isDealershipFeatureEnabled(activeFeatures, "social_media_kit")}
         metaConnected={metaResult.data?.status === "connected"}
-        artifactTemplateLabel={artifactTemplateLabel(layoutId)}
+        hasInstagramBusiness={Boolean(metaResult.data?.instagram_business_account_id)}
+        artifactTemplateLabel={artifactTemplateLabel(carouselSettings.artifactTemplate)}
+        socialRecentJobs={socialRecentJobs}
         isQrGeneratorEnabled={isDealershipFeatureEnabled(activeFeatures, "qr_generator")}
         classifiedsSyncEnabled={isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")}
-        classifiedsHasConnectedProvider={classifiedsHasConnectedProvider}
+        classifiedsConnectedProviders={classifiedsConnectedProviders}
         classifiedsListings={classifiedsListings}
         classifiedsRecentJobs={classifiedsRecentJobs}
       />

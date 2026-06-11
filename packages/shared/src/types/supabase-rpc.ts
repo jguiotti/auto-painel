@@ -68,3 +68,29 @@ export interface PlatformHealthPingResult {
   pinged_at: string;
   database: string;
 }
+
+/** `public.upsert_dealership_social_carousel_settings` — template + watermark per dealership. */
+export interface UpsertDealershipSocialCarouselSettingsRpcArgs {
+  p_artifact_template: "classic" | "performance" | "tech";
+  p_watermark_enabled: boolean;
+}
+
+/** Row returned by upsert_dealership_social_carousel_settings. */
+export interface DealershipSocialCarouselSettingsRow {
+  dealership_id: string;
+  artifact_template: "classic" | "performance" | "tech";
+  watermark_enabled: boolean;
+  integrations_onboarding_dismissed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** `public.list_dealership_meta_page_candidates` — non-sensitive pending pages after OAuth. */
+export type ListDealershipMetaPageCandidatesRpcResult = Array<{
+  page_id: string;
+  page_name: string;
+  instagram_business_account_id: string | null;
+  instagram_username: string | null;
+}>;
+
+/** `public.dismiss_integrations_onboarding` — no args; uses auth.uid() dealership. */

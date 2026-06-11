@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { VehicleForm } from "@/components/inventory/VehicleForm";
 
+import { getVehicleFormPromotionConfig } from "@/lib/data/vehicle-form-promotion-config";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 interface EditVehiclePageProps {
@@ -12,7 +13,9 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
   const { vehicleId } = await params;
   const { supabase, dealershipId } = await requireDashboardSession();
 
-  const [vehicleResult, unitsResult] = await Promise.all([
+  const promotionConfigPromise = getVehicleFormPromotionConfig({ supabase, dealershipId });
+
+  const [vehicleResult, unitsResult, promotionConfig] = await Promise.all([
     supabase
       .from("vehicles")
       .select(
@@ -26,6 +29,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
       .eq("dealership_id", dealershipId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
+    promotionConfigPromise,
   ]);
 
   const { data: vehicle, error } = vehicleResult;
@@ -110,6 +114,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
           cab_type: vehicle.cab_type ?? null,
           body_truck_type: vehicle.body_truck_type ?? null,
         }}
+        promotionConfig={promotionConfig}
       />
     </div>
   );
