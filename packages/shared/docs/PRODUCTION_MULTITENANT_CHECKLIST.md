@@ -50,7 +50,7 @@ Após alterar domínio raiz, **revalidar** todos os redirect URLs — login queb
 
 - [ ] Edge Functions `classifieds-sync-worker` e `social-publish-worker` deployadas
 - [ ] Secrets: `CLASSIFIEDS_TOKENS_CRYPTO_SECRET`, `META_TOKENS_CRYPTO_SECRET`
-- [x] Cron GitHub Actions `integration-workers-cron.yml` (15 min) — requer secrets `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+- [x] Cron GitHub Actions `integration-workers-cron.yml` (15 min) — secrets `SUPABASE_URL` + `INTEGRATION_WORKERS_CRON_SECRET` (headers `x-*-worker-key`; ver `npm run github:secrets:workers:manual`)
 
 ## Referências
 

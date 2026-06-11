@@ -10,9 +10,12 @@
  * When `api.github.com` is unreachable from Terminal (gh login timeout), use --manual
  * and paste secrets in GitHub → Settings → Secrets and variables → Actions.
  */
+import { randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
-import { loadRootEnvLocal } from "./lib/load-root-env.mjs";
+import { loadRootEnvLocal, repoRoot } from "./lib/load-root-env.mjs";
 
 const manualMode = process.argv.includes("--manual");
 
@@ -45,61 +48,66 @@ function run(command, args, { input } = {}) {
   return result.stdout;
 }
 
-const keysOutput = run("supabase", [
-  "projects",
-  "api-keys",
-  "--project-ref",
-  projectRef,
-]);
-if (!keysOutput) {
-  console.error("Failed to read remote API keys via Supabase CLI.");
-  process.exit(1);
-}
+function resolveWorkerCronSecret() {
+  const fromEnv = process.env.INTEGRATION_WORKERS_CRON_SECRET?.trim();
+  if (fromEnv) {
+    return fromEnv;
+  }
 
-let serviceRoleKey = "";
-for (const line of keysOutput.split("\n")) {
-  if (line.includes("|") && line.toLowerCase().includes("service_role")) {
-    const parts = line.split("|").map((part) => part.trim());
-    if (parts.length >= 2 && parts[0].toLowerCase() === "service_role") {
-      serviceRoleKey = parts[1];
-      break;
+  const envLocalPath = path.join(repoRoot, ".env.local");
+  if (fs.existsSync(envLocalPath)) {
+    const content = fs.readFileSync(envLocalPath, "utf8");
+    const match = content.match(/^INTEGRATION_WORKERS_CRON_SECRET=(.+)$/m);
+    if (match?.[1]?.trim()) {
+      return match[1].trim();
     }
   }
+
+  return randomBytes(24).toString("hex");
 }
 
-if (!serviceRoleKey) {
-  console.error("Could not parse service_role key from supabase projects api-keys.");
+const workerCronSecret = resolveWorkerCronSecret();
+
+const edgeSet = run("supabase", [
+  "secrets",
+  "set",
+  "--project-ref",
+  projectRef,
+  `CLASSIFIEDS_SYNC_WORKER_SECRET=${workerCronSecret}`,
+  `SOCIAL_PUBLISH_WORKER_SECRET=${workerCronSecret}`,
+]);
+if (!edgeSet) {
+  console.error("Failed to set worker secrets on Supabase Edge.");
   process.exit(1);
 }
+console.log("Supabase Edge secrets updated: CLASSIFIEDS_SYNC_WORKER_SECRET, SOCIAL_PUBLISH_WORKER_SECRET");
 
 const secrets = [
   ["SUPABASE_URL", supabaseUrl],
-  ["SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey],
+  ["INTEGRATION_WORKERS_CRON_SECRET", workerCronSecret],
 ];
 
 if (manualMode) {
-  console.log("Modo manual — api.github.com inacessível pelo Terminal?\n");
+  console.log("\nModo manual — cole no GitHub (Settings → Secrets → Actions):\n");
   console.log(
-    "Abra no browser: https://github.com/jguiotti/auto-painel/settings/secrets/actions\n",
+    "https://github.com/jguiotti/auto-painel/settings/secrets/actions\n",
   );
-  console.log("Crie ou atualize estes repository secrets:\n");
   for (const [name, value] of secrets) {
     console.log(`  ${name}`);
     console.log(`  ${value}\n`);
   }
   console.log(
-    "Depois: Actions → Integration workers cron → Run workflow (para testar).",
+    "Opcional: grave INTEGRATION_WORKERS_CRON_SECRET no .env.local da raiz para reutilizar.",
   );
+  console.log("Depois: Actions → Integration workers cron → Run workflow.");
   process.exit(0);
 }
 
 const ghCheck = run("gh", ["auth", "status"]);
 if (!ghCheck) {
   console.error(
-    "GitHub CLI não autenticado ou api.github.com inacessível pelo Terminal.",
+    "GitHub CLI não autenticado. Use: node scripts/configure-github-worker-secrets.mjs --manual",
   );
-  console.error("Tente: gh auth login --with-token  (cole um PAT)");
-  console.error("Ou:    node scripts/configure-github-worker-secrets.mjs --manual");
   process.exit(1);
 }
 
@@ -110,7 +118,6 @@ for (const [name, value] of secrets) {
   });
   if (setResult.status !== 0) {
     console.error(`Failed to set GitHub secret ${name}`);
-    console.error("Fallback: node scripts/configure-github-worker-secrets.mjs --manual");
     process.exit(setResult.status ?? 1);
   }
   console.log(`GitHub secret set: ${name}`);

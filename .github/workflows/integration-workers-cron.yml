@@ -18,31 +18,44 @@ jobs:
       - name: Invoke classifieds-sync-worker
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INTEGRATION_WORKERS_CRON_SECRET: ${{ secrets.INTEGRATION_WORKERS_CRON_SECRET }}
           WORKER_LIMIT: "10"
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "Skipping classifieds worker — missing Supabase secrets."
-            exit 0
+          if [ -z "$SUPABASE_URL" ] || [ -z "$INTEGRATION_WORKERS_CRON_SECRET" ]; then
+            echo "Missing SUPABASE_URL or INTEGRATION_WORKERS_CRON_SECRET."
+            echo "Run: npm run github:secrets:workers:manual"
+            exit 1
           fi
-          curl -fsS -X POST \
+          HTTP_CODE=$(curl -sS -o /tmp/classifieds-worker.json -w "%{http_code}" -X POST \
             "${SUPABASE_URL%/}/functions/v1/classifieds-sync-worker" \
-            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "x-classifieds-worker-key: ${INTEGRATION_WORKERS_CRON_SECRET}" \
             -H "Content-Type: application/json" \
-            -d "{\"limit\": ${WORKER_LIMIT}}"
+            -d "{\"limit\": ${WORKER_LIMIT}}")
+          cat /tmp/classifieds-worker.json
+          echo ""
+          echo "classifieds-sync-worker HTTP ${HTTP_CODE}"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            exit 1
+          fi
 
       - name: Invoke social-publish-worker
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          INTEGRATION_WORKERS_CRON_SECRET: ${{ secrets.INTEGRATION_WORKERS_CRON_SECRET }}
           WORKER_LIMIT: "5"
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "Skipping social worker — missing Supabase secrets."
-            exit 0
+          if [ -z "$SUPABASE_URL" ] || [ -z "$INTEGRATION_WORKERS_CRON_SECRET" ]; then
+            echo "Missing SUPABASE_URL or INTEGRATION_WORKERS_CRON_SECRET."
+            exit 1
           fi
-          curl -fsS -X POST \
+          HTTP_CODE=$(curl -sS -o /tmp/social-worker.json -w "%{http_code}" -X POST \
             "${SUPABASE_URL%/}/functions/v1/social-publish-worker" \
-            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "x-social-worker-key: ${INTEGRATION_WORKERS_CRON_SECRET}" \
             -H "Content-Type: application/json" \
-            -d "{\"limit\": ${WORKER_LIMIT}}"
+            -d "{\"limit\": ${WORKER_LIMIT}}")
+          cat /tmp/social-worker.json
+          echo ""
+          echo "social-publish-worker HTTP ${HTTP_CODE}"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            exit 1
+          fi
