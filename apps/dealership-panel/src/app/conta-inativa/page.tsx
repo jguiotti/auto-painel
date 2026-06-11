@@ -22,12 +22,12 @@ export default function ContaInativaPage() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Se acredita que isto é um erro, contacte o suporte AutoPainel com o nome da
+            Se acredita que isso é um erro, entre em contato com o suporte AutoPainel com o nome da
             loja ou o subdomínio utilizado.
           </p>
           <p>
             <Link href="/login" className="font-medium text-primary underline">
-              Voltar ao início de sessão
+              Voltar ao login
             </Link>
           </p>
         </CardContent>

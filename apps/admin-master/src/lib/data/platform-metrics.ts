@@ -7,6 +7,9 @@ export interface PlatformMetrics {
   activeDealerships: number;
   trialSubscriptions: number;
   saasProspectCount: number;
+  pendingSetupDealerships: number;
+  pastDueSubscriptions: number;
+  platformLeadsLast7Days: number;
 }
 
 export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
@@ -19,14 +22,22 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
       activeDealerships: 0,
       trialSubscriptions: 0,
       saasProspectCount: 0,
+      pendingSetupDealerships: 0,
+      pastDueSubscriptions: 0,
+      platformLeadsLast7Days: 0,
     };
   }
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     { count: totalDealerships },
     { count: activeDealerships },
     { count: trialPlans },
     { count: prospects },
+    { count: pendingSetup },
+    { count: pastDue },
+    { count: leadsLast7Days },
   ] = await Promise.all([
     supabase.from("dealerships").select("*", { count: "exact", head: true }),
     supabase
@@ -38,6 +49,18 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
       .select("*", { count: "exact", head: true })
       .eq("subscription_plan", "trial"),
     supabase.from("saas_prospects").select("*", { count: "exact", head: true }),
+    supabase
+      .from("dealerships")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending_setup"),
+    supabase
+      .from("dealerships")
+      .select("*", { count: "exact", head: true })
+      .eq("subscription_status", "past_due"),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", sevenDaysAgo),
   ]);
 
   return {
@@ -45,5 +68,8 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
     activeDealerships: activeDealerships ?? 0,
     trialSubscriptions: trialPlans ?? 0,
     saasProspectCount: prospects ?? 0,
+    pendingSetupDealerships: pendingSetup ?? 0,
+    pastDueSubscriptions: pastDue ?? 0,
+    platformLeadsLast7Days: leadsLast7Days ?? 0,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { Button } from "@autopainel/shared/ui";
 
@@ -13,12 +13,24 @@ interface DashboardMobileNavMountProps {
   storefrontUrl: string;
 }
 
-export function DashboardMobileNavMount(props: DashboardMobileNavMountProps) {
-  const [mounted, setMounted] = useState(false);
+function subscribeToClientMount() {
+  return () => {};
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
+export function DashboardMobileNavMount(props: DashboardMobileNavMountProps) {
+  const mounted = useSyncExternalStore(
+    subscribeToClientMount,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   if (!mounted) {
     return (

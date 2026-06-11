@@ -102,6 +102,48 @@ function firstImageUrl(payload: Record<string, unknown>): string | null {
   return typeof first === "string" ? first : null;
 }
 
+async function resolveCarouselImageUrls(
+  job: SocialPublicationJobRow,
+): Promise<string[]> {
+  const renderUrl = Deno.env.get("SOCIAL_CAROUSEL_RENDER_URL")?.trim();
+  if (renderUrl) {
+    const renderSecret = Deno.env.get("SOCIAL_CAROUSEL_RENDER_SECRET")?.trim();
+    try {
+      const response = await fetch(renderUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(renderSecret ? { "x-social-carousel-render-secret": renderSecret } : {}),
+        },
+        body: JSON.stringify({
+          jobId: job.id,
+          dealershipId: job.dealership_id,
+          vehicleId: job.vehicle_id,
+          artifactTemplate: job.artifact_template,
+          payloadSnapshot: job.payload_snapshot,
+        }),
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as { imageUrls?: unknown };
+        if (Array.isArray(payload.imageUrls)) {
+          const urls = payload.imageUrls.filter(
+            (entry): entry is string => typeof entry === "string" && entry.length > 0,
+          );
+          if (urls.length > 0) {
+            return urls;
+          }
+        }
+      }
+    } catch {
+      // Fall back to raw vehicle image when render service is unavailable.
+    }
+  }
+
+  const fallback = firstImageUrl(job.payload_snapshot);
+  return fallback ? [fallback] : [];
+}
+
 async function publishToFacebookPage(params: {
   pageId: string;
   pageAccessToken: string;
@@ -131,6 +173,116 @@ async function publishToFacebookPage(params: {
   return {
     mode: "live",
     postId: payload.id ?? payload.post_id,
+  };
+}
+
+async function createInstagramMediaContainer(params: {
+  igUserId: string;
+  pageAccessToken: string;
+  imageUrl: string;
+  graphVersion: string;
+  isCarouselItem: boolean;
+}): Promise<string> {
+  const body = new URLSearchParams({
+    image_url: params.imageUrl,
+    access_token: params.pageAccessToken,
+  });
+  if (params.isCarouselItem) {
+    body.set("is_carousel_item", "true");
+  }
+
+  const response = await fetch(
+    `https://graph.facebook.com/v${params.graphVersion}/${params.igUserId}/media`,
+    { method: "POST", body },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Instagram media container failed (${response.status}): ${text.slice(0, 500)}`);
+  }
+
+  const payload = (await response.json()) as { id?: string };
+  if (!payload.id) {
+    throw new Error("Instagram media container returned no id.");
+  }
+  return payload.id;
+}
+
+async function publishToInstagramCarousel(params: {
+  igUserId: string;
+  pageAccessToken: string;
+  imageUrls: string[];
+  caption: string;
+  graphVersion: string;
+}): Promise<{ mode: "live" | "dry_run"; postId?: string; slideCount: number }> {
+  if (isDryRunEnabled()) {
+    return {
+      mode: "dry_run",
+      postId: `dry_run_ig_${crypto.randomUUID()}`,
+      slideCount: params.imageUrls.length,
+    };
+  }
+
+  if (params.imageUrls.length < 2) {
+    throw new Error("Instagram carrossel exige ao menos 2 imagens renderizadas.");
+  }
+
+  const childIds: string[] = [];
+  for (const imageUrl of params.imageUrls) {
+    const childId = await createInstagramMediaContainer({
+      igUserId: params.igUserId,
+      pageAccessToken: params.pageAccessToken,
+      imageUrl,
+      graphVersion: params.graphVersion,
+      isCarouselItem: true,
+    });
+    childIds.push(childId);
+  }
+
+  const carouselResponse = await fetch(
+    `https://graph.facebook.com/v${params.graphVersion}/${params.igUserId}/media`,
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        media_type: "CAROUSEL",
+        children: childIds.join(","),
+        caption: params.caption,
+        access_token: params.pageAccessToken,
+      }),
+    },
+  );
+
+  if (!carouselResponse.ok) {
+    const text = await carouselResponse.text();
+    throw new Error(`Instagram carousel failed (${carouselResponse.status}): ${text.slice(0, 500)}`);
+  }
+
+  const carouselPayload = (await carouselResponse.json()) as { id?: string };
+  if (!carouselPayload.id) {
+    throw new Error("Instagram carousel container returned no id.");
+  }
+
+  const publishResponse = await fetch(
+    `https://graph.facebook.com/v${params.graphVersion}/${params.igUserId}/media_publish`,
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        creation_id: carouselPayload.id,
+        access_token: params.pageAccessToken,
+      }),
+    },
+  );
+
+  if (!publishResponse.ok) {
+    const text = await publishResponse.text();
+    throw new Error(`Instagram publish failed (${publishResponse.status}): ${text.slice(0, 500)}`);
+  }
+
+  const publishPayload = (await publishResponse.json()) as { id?: string };
+  return {
+    mode: "live",
+    postId: publishPayload.id,
+    slideCount: params.imageUrls.length,
   };
 }
 
@@ -181,7 +333,7 @@ export async function processSocialPublicationJob(
 
   const { data: connection, error: connectionError } = await admin
     .from("dealership_meta_connections")
-    .select("id, status, page_id")
+    .select("id, status, page_id, instagram_business_account_id")
     .eq("dealership_id", job.dealership_id)
     .maybeSingle();
 
@@ -207,19 +359,21 @@ export async function processSocialPublicationJob(
     cryptoSecret,
   );
 
-  const imageUrl = firstImageUrl(job.payload_snapshot);
-  if (!imageUrl) {
+  const carouselImageUrls = await resolveCarouselImageUrls(job);
+  if (carouselImageUrls.length === 0) {
     throw new Error("Snapshot do veículo sem imagens para publicação.");
   }
 
   const caption = buildCaption(job.payload_snapshot);
-  const results: Record<string, unknown> = {};
+  const results: Record<string, unknown> = {
+    rendered_slide_count: carouselImageUrls.length,
+  };
 
   if (job.channels.includes("facebook_page")) {
     const fbResult = await publishToFacebookPage({
       pageId: connection.page_id,
       pageAccessToken,
-      imageUrl,
+      imageUrl: carouselImageUrls[0],
       caption,
       graphVersion,
     });
@@ -227,10 +381,27 @@ export async function processSocialPublicationJob(
   }
 
   if (job.channels.includes("instagram_feed")) {
-    results.instagram_feed = {
-      mode: isDryRunEnabled() ? "dry_run" : "skipped",
-      reason: "instagram_carousel_worker_pending",
-    };
+    if (!connection.instagram_business_account_id) {
+      results.instagram_feed = {
+        mode: "skipped",
+        reason: "instagram_business_account_missing",
+      };
+    } else if (carouselImageUrls.length < 2) {
+      results.instagram_feed = {
+        mode: "skipped",
+        reason: "carousel_requires_two_slides",
+        slideCount: carouselImageUrls.length,
+      };
+    } else {
+      const igResult = await publishToInstagramCarousel({
+        igUserId: connection.instagram_business_account_id,
+        pageAccessToken,
+        imageUrls: carouselImageUrls,
+        caption,
+        graphVersion,
+      });
+      results.instagram_feed = igResult;
+    }
   }
 
   await markJobPublished(admin, job, results);

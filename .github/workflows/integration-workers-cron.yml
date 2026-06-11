@@ -1,0 +1,48 @@
+name: Integration workers cron
+
+on:
+  schedule:
+    # Every 15 minutes — drains classifieds + social publication queues
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: integration-workers-cron
+  cancel-in-progress: false
+
+jobs:
+  invoke-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke classifieds-sync-worker
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WORKER_LIMIT: "10"
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Skipping classifieds worker — missing Supabase secrets."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            "${SUPABASE_URL%/}/functions/v1/classifieds-sync-worker" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"limit\": ${WORKER_LIMIT}}"
+
+      - name: Invoke social-publish-worker
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WORKER_LIMIT: "5"
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Skipping social worker — missing Supabase secrets."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            "${SUPABASE_URL%/}/functions/v1/social-publish-worker" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"limit\": ${WORKER_LIMIT}}"

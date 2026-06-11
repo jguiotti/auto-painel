@@ -3,7 +3,6 @@
 import {
   BookOpen,
   Building2,
-  Command as CommandIcon,
   Layers,
   LayoutDashboard,
   Menu,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Button,
@@ -39,6 +38,8 @@ import {
   AdminNotificationProvider,
   AdminNotificationTrigger,
 } from "@/components/admin-notification-provider";
+import { AdminMobileNav } from "@/components/admin-mobile-nav";
+import type { CommandPaletteEntity } from "@/lib/data/command-palette-entities";
 
 const linkBase =
   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors";
@@ -65,7 +66,15 @@ function pageTitleFromPath(pathname: string): string {
   return "Painel global";
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+interface AdminShellProps {
+  children: React.ReactNode;
+  commandPaletteEntities?: CommandPaletteEntity[];
+}
+
+export function AdminShell({
+  children,
+  commandPaletteEntities = [],
+}: AdminShellProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const [collapsed, setCollapsed] = useState(false);
@@ -89,6 +98,32 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     [nav, pathname],
   );
 
+  const dealershipEntities = useMemo(
+    () => commandPaletteEntities.filter((entity) => entity.kind === "dealership"),
+    [commandPaletteEntities],
+  );
+  const planEntities = useMemo(
+    () => commandPaletteEntities.filter((entity) => entity.kind === "plan"),
+    [commandPaletteEntities],
+  );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function navigateFromPalette(href: string) {
+    router.push(href);
+    setCommandOpen(false);
+  }
+
   return (
     <AdminNotificationProvider>
     <div className="bg-background">
@@ -104,7 +139,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             className="h-8 w-auto bg-transparent"
           />
           <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
-            Admin
+            Plataforma
           </span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Administração">
@@ -153,12 +188,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
       <div className={`flex min-h-screen flex-1 flex-col ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 md:hidden">
-          <img
-            src="/autopainel-logo.png"
-            alt="AutoPainel"
-            className="h-7 w-auto bg-transparent"
-          />
+          <div className="flex min-w-0 items-center gap-2">
+            <AdminMobileNav items={nav} />
+            <img
+              src="/autopainel-logo.png"
+              alt="AutoPainel"
+              className="h-7 w-auto bg-transparent"
+            />
+          </div>
           <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setCommandOpen(true)}
+              aria-label="Buscar"
+            >
+              <Search className="size-4" aria-hidden />
+            </Button>
             <AdminNotificationTrigger />
             <form action={logoutAction}>
               <Button type="submit" variant="ghost" size="sm">
@@ -167,19 +214,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </form>
           </div>
         </header>
-        <div className="flex gap-2 overflow-x-auto border-b border-zinc-200 bg-white px-2 py-2 md:hidden">
-          {nav.map(({ href, label }) => (
-            <Button
-              key={href}
-              variant={pathname.startsWith(href) ? "default" : "outline"}
-              size="sm"
-              className="shrink-0"
-              asChild
-            >
-              <Link href={href}>{label}</Link>
-            </Button>
-          ))}
-        </div>
         <div className="hidden shrink-0 border-b border-zinc-200 bg-white md:block">
           <PageContainer size="xl" className="py-4">
             <div className="flex items-center justify-between gap-4">
@@ -238,23 +272,49 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandInput placeholder="Buscar no admin..." />
+        <CommandInput placeholder="Buscar concessionária, plano ou página..." />
         <CommandList>
           <CommandEmpty>Nada encontrado.</CommandEmpty>
           <CommandGroup heading="Navegação">
             {nav.map((item) => (
               <CommandItem
                 key={item.href}
-                onSelect={() => {
-                  router.push(item.href);
-                  setCommandOpen(false);
-                }}
+                value={`${item.label} navegação página ${item.href}`}
+                onSelect={() => navigateFromPalette(item.href)}
               >
-                <CommandIcon className="size-4" />
+                <item.icon className="size-4" />
                 <span>{item.label}</span>
               </CommandItem>
             ))}
           </CommandGroup>
+          {dealershipEntities.length > 0 ? (
+            <CommandGroup heading="Concessionárias">
+              {dealershipEntities.map((entity) => (
+                <CommandItem
+                  key={entity.id}
+                  value={entity.searchValue}
+                  onSelect={() => navigateFromPalette(entity.href)}
+                >
+                  <Building2 className="size-4" />
+                  <span>{entity.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {planEntities.length > 0 ? (
+            <CommandGroup heading="Planos comerciais">
+              {planEntities.map((entity) => (
+                <CommandItem
+                  key={entity.id}
+                  value={entity.searchValue}
+                  onSelect={() => navigateFromPalette(entity.href)}
+                >
+                  <Layers className="size-4" />
+                  <span>{entity.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
         </CommandList>
       </CommandDialog>
     </div>

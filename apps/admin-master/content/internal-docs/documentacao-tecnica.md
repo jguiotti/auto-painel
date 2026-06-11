@@ -43,11 +43,11 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | Épico | Nome | Entregas principais | Estado |
 | --- | --- | --- | --- |
 | **0** | Decisões PM | Business = finance+QR; equipe só admin; Meta Connect; workers first | ✅ Fechado |
-| **2** | Workers integração | Ver tabela abaixo | 🟡 Em progresso (2026-06-10) |
-| **3** | Produção multitenant | DNS wildcard, TLS, Auth redirects, CI lint/build/E2E | 🔲 |
-| **4** | Operação admin | Dashboard KPIs, busca global; sem equipe no painel loja | 🔲 |
-| **1** | UX mobile + copy | EmptyState shared, Sheet nav admin, pt-BR operador | 🔲 Após 2–4 |
-| **5** | QA encerramento | QR físico, matriz cross-tenant, lapidação demo | 🔲 |
+| **2** | Workers integração | Ver tabela abaixo | ✅ Entregue (2026-06-10) |
+| **3** | Produção multitenant | DNS wildcard, TLS, Auth redirects, CI lint/build/E2E | 🟡 CI + checklist + E2E cross-tenant |
+| **4** | Operação admin | Dashboard KPIs, busca global; sem equipe no painel loja | 🟡 Dashboard + ⌘K entidades |
+| **1** | UX mobile + copy | EmptyState shared, Sheet nav admin, pt-BR operador | 🟡 Sheet admin, copy pt-BR, EmptyState |
+| **5** | QA encerramento | QR físico, matriz cross-tenant, lapidação demo | 🟡 E2E cross-tenant + QR print |
 
 ### Épico 2 — detalhe técnico (workers)
 
@@ -58,10 +58,48 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | **E2-C3** | Trigger/enqueue delist ao `status != available` ou `is_active = false` | ✅ migração `20260610120000_classifieds_sync_worker.sql` |
 | **E2-M1** | Meta Connect plataforma (`META_PLATFORM_APP_ONLY`); remover form App ID da UI | ✅ `meta-platform-connect.ts`, Integrações |
 | **E2-M2** | Edge `social-publish-worker` — MVP post Facebook (dry-run padrão) | ✅ `supabase/functions/social-publish-worker/` |
-| **E2-M3** | Render carrossel Sharp (Route Handler Next, não Edge Deno) | ADR pendente |
+| **E2-M3** | Render carrossel Sharp (Route Handler Next, não Edge Deno) | ✅ `render-social-carousel-slides.ts`, bucket `social-carousel-artifacts` |
+| **E2-M5** | Instagram carrossel Graph API (≥2 slides) | ✅ `social-publish-process-job.ts` |
+| **E2-C4** | Cron GitHub Actions workers (15 min) | ✅ `.github/workflows/integration-workers-cron.yml` |
 | **E2-S** | Secrets OLX/WM/Meta + homologação portais | DevOps / `.env.example` |
 
-Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md`.
+Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RENDER.md`, `TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md`.
+
+### Épico 3 — produção multitenant (2026-06-10)
+
+| ID | Entrega | Artefactos |
+| --- | --- | --- |
+| **E3-C1** | CI lint + build em PR/push `main` | ✅ `.github/workflows/ci.yml` |
+| **E3-C2** | Checklist DNS/TLS/Auth redirects | ✅ `packages/shared/docs/PRODUCTION_MULTITENANT_CHECKLIST.md` |
+| **E3-Q1** | E2E isolamento cross-tenant | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` |
+
+Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live por domínio real.
+
+### Épico 4 — operação admin (2026-06-10)
+
+| ID | Entrega | Artefactos |
+| --- | --- | --- |
+| **E4-D1** | KPIs ampliados (leads 7d, pending_setup, past_due) | ✅ `platform-metrics.ts`, `dashboard/page.tsx` |
+| **E4-D2** | Command palette com concessionárias e planos | ✅ `command-palette-entities.ts`, `admin-shell.tsx` |
+| **E4-D3** | Ações rápidas no dashboard | ✅ `dashboard/page.tsx` |
+
+### Épico 1 — UX mobile + copy (2026-06-10)
+
+| ID | Entrega | Artefactos |
+| --- | --- | --- |
+| **E1-N1** | Nav mobile admin via Sheet (substitui scroll horizontal) | ✅ `admin-mobile-nav.tsx` |
+| **E1-C1** | Badge «Plataforma»; copy pt-BR residual | ✅ `admin-shell.tsx`, `conta-inativa/page.tsx`, dashboard loja |
+| **E1-U1** | `EmptyState` compartilhado | ✅ `packages/shared/src/components/empty-state.tsx` |
+
+### Épico 5 — QA (2026-06-10)
+
+| ID | Entrega | Artefactos |
+| --- | --- | --- |
+| **E5-Q1** | Matriz cross-tenant guiotti/autoprime | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` |
+| **E5-Q2** | Smoke lâmina QR veículo demo | ✅ `e2e/specs/vehicle-qr-print.spec.ts` |
+| **E5-Q3** | Lapidação vitrine demo | ✅ existente `storefront-lapida-qa.spec.ts` |
+
+Pendente manual: impressão física QR (cross-browser print dialog).
 
 ---
 

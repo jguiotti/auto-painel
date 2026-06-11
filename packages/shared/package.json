@@ -138,6 +138,11 @@
       "import": "./src/types/index.ts",
       "default": "./src/types/index.ts"
     },
+    "./components/empty-state": {
+      "types": "./src/components/empty-state.tsx",
+      "import": "./src/components/empty-state.tsx",
+      "default": "./src/components/empty-state.tsx"
+    },
     "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },
   "peerDependencies": {

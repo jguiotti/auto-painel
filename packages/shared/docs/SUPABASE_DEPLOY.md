@@ -27,6 +27,7 @@ Em **pull requests** que tocam migrações: workflow `supabase-migrations-check.
 | `SUPABASE_ACCESS_TOKEN` | [Personal access token](https://supabase.com/dashboard/account/tokens) — deploy de Edge Functions |
 | `SUPABASE_URL` | URL pública (health ping pós-deploy) |
 | `SUPABASE_ANON_KEY` | Chave anon (health ping) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role (cron `integration-workers-cron.yml`) — ver `npm run github:secrets:workers` |
 
 ### 2. Variáveis locais (`.env.local` na raiz)
 

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Inbox } from "lucide-react";
 
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 import {
   Badge,
@@ -460,7 +462,7 @@ export default async function DashboardHomePage({
                           </p>
                         </div>
                         <Badge variant="secondary" className="tabular-nums">
-                          {item.views} views
+                          {item.views} visualizações
                         </Badge>
                       </li>
                     ))}
@@ -489,7 +491,13 @@ export default async function DashboardHomePage({
       <section aria-label="Contatos recentes">
         <h2 className="text-lg font-semibold text-foreground">Contatos recentes</h2>
         {recentLeads.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">Nenhum contato ainda.</p>
+          <EmptyState
+            className="mt-4"
+            icon={Inbox}
+            title="Nenhum contato ainda"
+            description="Quando clientes enviarem mensagens pela vitrine, eles aparecerão aqui."
+            action={{ label: "Ver contatos", href: "/painel/contatos" }}
+          />
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
             {recentLeads.map((lead) => {

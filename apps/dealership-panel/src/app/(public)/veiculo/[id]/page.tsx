@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { VehicleEngagementSection } from "@/components/public/VehicleEngagementSection";
 
+import { formatBrl } from "@/lib/format/format-brl";
 import { getPlatformFinanceMonthlyRatePercent } from "@/lib/finance/get-platform-finance-rate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
