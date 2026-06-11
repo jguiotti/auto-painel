@@ -66,65 +66,71 @@ Production branch: `main`.
 
 ---
 
-## 3. DNS no Registro.br
+## 3. DNS no Registro.br (modo avançado)
 
-No painel do domínio **autopainel.com.br**, após adicionar cada domínio na Vercel (Settings → Domains), a Vercel mostra os registos exactos. Modelo típico:
+O **Registro.br não aceita** `@`, `*` nem `*.loja` no campo **Nome** — isto é limitação da plataforma, não erro seu. Referência confirmada: [tutorial Registro.br](https://viniciuspaes.com/website/tutorial-apontar-dns-dominio-para-servidor-registrobr-google-domains/) (*«o Registro.BR não permite» wildcard*).
 
-### Site institucional (`autopainel-marketing`)
+### 3.1 Padrão que funciona (igual ao teu **odona.com.br** + Vercel)
 
-| Tipo | Nome | Valor |
+No odona, cada hostname é um registo **explícito** com **FQDN completo** no campo Nome:
+
+| Tipo | Nome (como aparece no Registro.br) | Dados |
 | --- | --- | --- |
-| `A` | `@` | `76.76.21.21` |
-| `CNAME` | `www` | `cname.vercel-dns.com` |
+| A | `odona.com.br` | `76.76.21.21` |
+| CNAME | `backoffice.odona.com.br` | `a8fd7769b7e042e5.vercel-dns-017.com.` |
+| CNAME | `escola.odona.com.br` | `b1634886ed7701a6.vercel-dns-017.com.` |
 
-(Alternativa recomendada pela Vercel: usar só os registos que o wizard indicar após «Add Domain».)
+Regras:
 
-### Admin (`autopainel-admin`)
+1. **Apex (site principal):** Tipo **A**, Nome = **`autopainel.com.br`** (domínio completo) ou **campo Nome vazio** — **nunca** `@` (dá *«Nome do record inválido - @»*).
+2. **Subdomínios:** Tipo **CNAME**, Nome = **FQDN completo** (`www.autopainel.com.br`, `admin.autopainel.com.br`, …).
+3. **Destino CNAME:** copiar **exactamente** o valor que a Vercel mostra ao adicionar cada domínio (ex.: `xxxx.vercel-dns-017.com.`). Pode ser diferente de `cname.vercel-dns.com` genérico.
+4. **Sem wildcard:** cada loja nova precisa de **dois** CNAME explícitos (vitrine + painel) **ou** usar Cloudflare/Vercel NS (§3.3).
 
-| Tipo | Nome | Valor |
+### 3.2 AutoPainel — registos mínimos para começar (sem wildcard)
+
+Adicionar domínios **primeiro na Vercel** (Settings → Domains); depois replicar no Registro.br o target exacto.
+
+| App Vercel | Adicionar na Vercel | Registro.br |
 | --- | --- | --- |
-| `CNAME` | `admin` | `cname.vercel-dns.com` |
+| marketing | `autopainel.com.br` | **A** · Nome `autopainel.com.br` · `76.76.21.21` |
+| marketing | `www.autopainel.com.br` | **CNAME** · Nome `www.autopainel.com.br` · target Vercel |
+| admin | `admin.autopainel.com.br` | **CNAME** · Nome `admin.autopainel.com.br` · target Vercel |
+| customer | `guiotti.autopainel.com.br` (demo) | **CNAME** · Nome `guiotti.autopainel.com.br` · target Vercel |
+| panel | `guiotti.loja.autopainel.com.br` (demo) | **CNAME** · Nome `guiotti.loja.autopainel.com.br` · target Vercel |
 
-### Vitrine — wildcard (`autopainel-customer`)
+**Demo Guiotti:** suficiente para validar produção antes de escalar.
 
-| Tipo | Nome | Valor |
+**Nova concessionária:** repetir linhas customer + panel com `{slug}.autopainel.com.br` e `{slug}.loja.autopainel.com.br` (processo manual ou automatizar via API Cloudflare no onboarding — backlog DevOps).
+
+### 3.3 Multitenant ilimitado — wildcards (recomendado para produção)
+
+Como o Registro.br **não suporta** `*.autopainel.com.br`, escolha **uma**:
+
+| Opção | O quê fazer | Wildcard |
 | --- | --- | --- |
-| `CNAME` | `*` | `cname.vercel-dns.com` |
+| **A — Cloudflare (recomendado)** | Registro.br → alterar **servidores DNS** para os NS da Cloudflare; zona DNS na Cloudflare com A + CNAME wildcard | Sim (`*`, `*.loja`) |
+| **B — Vercel DNS** | Se o domínio estiver na Vercel Team com DNS gerido, apontar NS do Registro.br para a Vercel | Sim (conforme plano) |
+| **C — Só Registro.br** | CNAME **por slug** (como odona por subdomínio) | Não — manual por loja |
 
-Domínios **apex** reservados (`admin`, `www`, `loja`) devem estar atribuídos aos projectos correctos na Vercel; a Vercel prioriza o hostname mais específico.
+**Cloudflare (resumo):**
 
-### Painel loja — wildcard (`autopainel-panel`)
+1. Criar zona `autopainel.com.br` na Cloudflare (plano Free).
+2. Registro.br → DNS → trocar servidores para os NS indicados pela Cloudflare.
+3. Na Cloudflare, importar/copiar: A apex → `76.76.21.21`, CNAME `www`, `admin`, CNAME `*` → target Vercel do project customer, CNAME `*.loja` → target Vercel do project panel.
 
-| Tipo | Nome | Valor |
-| --- | --- | --- |
-| `CNAME` | `*.loja` | `cname.vercel-dns.com` |
-
-No Registro.br o nome do registo costuma ser `*.loja` (subdomínio wildcard sob `loja`).
-
-**Ordem sugerida:** (1) marketing + admin, (2) validar HTTPS, (3) wildcards customer + panel.
-
-Propagação DNS: até 48 h; normalmente minutos.
-
-### Erros comuns no Registro.br
+### 3.4 Erros comuns no Registro.br
 
 | Sintoma | Causa | Solução |
 | --- | --- | --- |
-| **Erro ao salvar alterações de DNS** | Entrada duplicada (ex.: `loja` CNAME já existe na tabela) | **Cancele** «Nova entrada»; edite a linha existente ou apague antes de recriar |
-| Wildcard vitrine não resolve | Falta registo `*` | Adicionar **só uma vez**: Tipo `CNAME`, Nome `*`, Dados `cname.vercel-dns.com` |
-| Painel `{slug}.loja` não resolve | Só existe `loja`, falta wildcard | Adicionar: Tipo `CNAME`, Nome `*.loja`, Dados `cname.vercel-dns.com` |
-| Conflito apex | CNAME no `@` com A record | Mantenha `@` como **A** `76.76.21.21`; nunca CNAME no apex |
+| **Nome do record inválido - @** | `@` não é aceite no modo avançado | Nome vazio **ou** `autopainel.com.br` |
+| **Erro ao salvar** | Entrada duplicada (`loja`, `admin`, …) | Cancelar «Nova entrada»; editar linha existente |
+| Wildcard rejeitado | Registro.br não suporta `*` | §3.3 Cloudflare **ou** CNAME por slug (§3.2) |
+| CNAME genérico não valida | Target errado | Usar target **exacto** da Vercel (como odona `….vercel-dns-017.com.`) |
 
-**Estado correcto mínimo (além do que já tens):**
+**Ordem sugerida:** (1) marketing + admin com FQDN, (2) HTTPS OK, (3) Guiotti demo, (4) Cloudflare se quiser slugs automáticos.
 
-| Tipo | Nome | Dados |
-| --- | --- | --- |
-| A | `@` | `76.76.21.21` |
-| CNAME | `www` | `cname.vercel-dns.com` |
-| CNAME | `admin` | `cname.vercel-dns.com` |
-| CNAME | `*` | `cname.vercel-dns.com` |
-| CNAME | `*.loja` | `cname.vercel-dns.com` |
-
-O registo `loja` (sem slug) é opcional — o painel multitenant usa **`guiotti.loja.autopainel.com.br`**, não `loja.autopainel.com.br` sozinho.
+Propagação DNS: até 48 h; normalmente minutos.
 
 ---
 
