@@ -14,18 +14,28 @@ function resolvePublishUrl(provider: ClassifiedsProviderKey): string | null {
   if (provider === "olx") {
     return Deno.env.get("OLX_LISTINGS_API_URL")?.trim() || null;
   }
-  return Deno.env.get("WEBMOTORS_LISTINGS_API_URL")?.trim() || null;
+  if (provider === "webmotors") {
+    return Deno.env.get("WEBMOTORS_LISTINGS_API_URL")?.trim() || null;
+  }
+  return Deno.env.get("ICARROS_LISTINGS_API_URL")?.trim() || null;
 }
 
 function resolveDelistUrl(provider: ClassifiedsProviderKey, externalId: string): string | null {
-  const base =
-    provider === "olx"
-      ? Deno.env.get("OLX_LISTINGS_API_URL")?.trim()
-      : Deno.env.get("WEBMOTORS_LISTINGS_API_URL")?.trim();
+  const base = resolvePublishUrl(provider);
   if (!base) {
     return null;
   }
   return `${base.replace(/\/$/, "")}/${encodeURIComponent(externalId)}`;
+}
+
+function dryRunListingUrl(provider: ClassifiedsProviderKey, dryRunId: string): string {
+  if (provider === "olx") {
+    return `https://www.olx.com.br/vi/${encodeURIComponent(dryRunId)}`;
+  }
+  if (provider === "webmotors") {
+    return `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(dryRunId)}`;
+  }
+  return `https://www.icarros.com.br/comprar/${encodeURIComponent(dryRunId)}`;
 }
 
 function buildListingBody(vehicle: VehicleListingPayload): Record<string, unknown> {
@@ -57,10 +67,7 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
       if (isDryRunEnabled() || !publishUrl) {
         const suffix = existingExternalId ?? crypto.randomUUID();
         const dryRunId = `dry_run_${provider}_${suffix}`;
-        const dryRunUrl =
-          provider === "olx"
-            ? `https://www.olx.com.br/vi/${encodeURIComponent(dryRunId)}`
-            : `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(dryRunId)}`;
+        const dryRunUrl = dryRunListingUrl(provider, dryRunId);
         return {
           externalListingId: dryRunId,
           externalListingUrl: dryRunUrl,
@@ -101,9 +108,7 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
       const externalListingUrl =
         (typeof payload.url === "string" && payload.url) ||
         (typeof payload.listing_url === "string" && payload.listing_url) ||
-        (provider === "olx"
-          ? `https://www.olx.com.br/vi/${encodeURIComponent(externalListingId)}`
-          : `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(externalListingId)}`);
+        dryRunListingUrl(provider, externalListingId);
 
       return {
         externalListingId,
@@ -140,6 +145,7 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
 const adapters: Record<ClassifiedsProviderKey, ClassifiedsProviderAdapter> = {
   olx: createAdapter("olx"),
   webmotors: createAdapter("webmotors"),
+  icarros: createAdapter("icarros"),
 };
 
 export function createClassifiedsProviderAdapter(

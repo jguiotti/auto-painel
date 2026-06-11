@@ -1,4 +1,6 @@
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  isClassifiedsProviderModuleEnabled,
+} from "@autopainel/shared/lib/dealership-features";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
@@ -12,6 +14,7 @@ import {
 } from "@/lib/classifieds/oauth-pkce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
+import { resolveDealershipPanelOrigin } from "@/lib/tenant/resolve-dealership-panel-origin";
 
 export async function POST(request: NextRequest) {
   const provider = parseClassifiedsProvider(
@@ -66,18 +69,21 @@ export async function POST(request: NextRequest) {
   const activeFeatures = Array.isArray(featuresRes.data)
     ? featuresRes.data.filter((item): item is string => typeof item === "string")
     : [];
-  if (!isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")) {
+  if (!isClassifiedsProviderModuleEnabled(activeFeatures, provider)) {
     return NextResponse.json(
-      { error: "Módulo de integrações não habilitado no plano da loja." },
+      { error: "Este integrador não está habilitado no plano da loja." },
       { status: 403 },
     );
   }
+
+  const panelOrigin = resolveDealershipPanelOrigin(request);
 
   let providerConfig;
   try {
     providerConfig = await resolveClassifiedsOAuthProviderConfigForDealership({
       dealershipId: dealershipIdFromCookie,
       provider,
+      panelOrigin,
     });
   } catch (error) {
     if (error instanceof ClassifiedsOAuthNotConfiguredError) {
@@ -111,7 +117,7 @@ export async function POST(request: NextRequest) {
       created_by: user.id,
       state,
       code_verifier: codeVerifier,
-      redirect_origin: request.nextUrl.origin,
+      redirect_origin: panelOrigin,
       status: "pending",
       expires_at: expiresAt,
     });

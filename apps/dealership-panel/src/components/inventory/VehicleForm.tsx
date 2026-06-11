@@ -470,7 +470,7 @@ export function VehicleForm({
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">Status comercial</Label>
               <select
                 id="status"
                 name="status"
@@ -485,6 +485,10 @@ export function VehicleForm({
                 <option value="available">Disponível</option>
                 <option value="sold">Vendido</option>
               </select>
+              <p className="text-xs text-muted-foreground">
+                Veículos vendidos saem da vitrine. Na listagem ou na ficha você também pode usar
+                «Marcar como vendido».
+              </p>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="is_active">Visibilidade do anúncio</Label>

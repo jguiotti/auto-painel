@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, FileText, Pencil } from "lucide-react";
 
 import {
   Button,
@@ -15,6 +15,8 @@ import {
 import { formatBrl } from "@/lib/format/format-brl";
 
 import { DeleteVehicleButton } from "@/components/inventory/DeleteVehicleButton";
+import { MarkVehicleAsSoldButton } from "@/components/inventory/mark-vehicle-as-sold-button";
+import { UnmarkVehicleAsSoldButton } from "@/components/inventory/unmark-vehicle-as-sold-button";
 
 export interface VehicleInventoryRow {
   id: string;
@@ -57,9 +59,39 @@ function vehicleTypeLabel(value: string): string {
   return labels[value] ?? value;
 }
 
-function InventoryIconActions({ vehicleId }: { vehicleId: string }) {
+function InventoryIconActions({
+  vehicleId,
+  status,
+  vehicleLabel,
+}: {
+  vehicleId: string;
+  status: string;
+  vehicleLabel: string;
+}) {
   return (
     <div className="flex items-center justify-end gap-1">
+      {status === "available" ? (
+        <MarkVehicleAsSoldButton
+          vehicleId={vehicleId}
+          vehicleLabel={vehicleLabel}
+          size="icon"
+          redirectToVehiclePage
+        />
+      ) : null}
+      {status === "sold" ? (
+        <Button variant="ghost" size="icon" className="size-8" asChild>
+          <Link
+            href={`/painel/estoque/${vehicleId}/recibo`}
+            aria-label="Emitir ou imprimir recibo"
+            title="Recibo de venda"
+          >
+            <FileText className="size-4" aria-hidden />
+          </Link>
+        </Button>
+      ) : null}
+      {status === "sold" ? (
+        <UnmarkVehicleAsSoldButton vehicleId={vehicleId} vehicleLabel={vehicleLabel} size="icon" />
+      ) : null}
       <Button variant="ghost" size="icon" className="size-8" asChild>
         <Link href={`/painel/estoque/${vehicleId}`} aria-label="Visualizar veículo">
           <Eye className="size-4" aria-hidden />
@@ -154,7 +186,11 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                     ) : null}
                   </TableCell>
                   <TableCell className="text-right">
-                    <InventoryIconActions vehicleId={v.id} />
+                    <InventoryIconActions
+                      vehicleId={v.id}
+                      status={v.status}
+                      vehicleLabel={`${v.brand} ${v.model}`}
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -204,7 +240,11 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                 </div>
               </div>
               <div className="mt-3 flex justify-end border-t border-border pt-3">
-                <InventoryIconActions vehicleId={v.id} />
+                <InventoryIconActions
+                  vehicleId={v.id}
+                  status={v.status}
+                  vehicleLabel={`${v.brand} ${v.model}`}
+                />
               </div>
             </li>
           );

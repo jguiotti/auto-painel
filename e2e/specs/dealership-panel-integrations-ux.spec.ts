@@ -78,9 +78,10 @@ test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () 
       await expect(page.getByRole("heading", { name: "Integrações", level: 1 })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Instagram e Facebook" })).toBeVisible();
       await expect(page.locator("#aparencia-carrossel").getByText("Aparência do carrossel")).toBeVisible();
-      await expect(page.getByRole("heading", { name: "OLX e WebMotors" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "OLX, WebMotors, iCarros" })).toBeVisible();
       await expect(page.getByText("OLX", { exact: true })).toBeVisible();
       await expect(page.getByText("WebMotors", { exact: true })).toBeVisible();
+      await expect(page.getByText("iCarros", { exact: true })).toBeVisible();
     });
 
     test("banner de onboarding visível quando Meta não conectada", async ({ page }) => {

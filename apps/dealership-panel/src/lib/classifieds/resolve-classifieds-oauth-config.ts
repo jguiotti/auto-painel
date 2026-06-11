@@ -2,10 +2,11 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
+
 import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
 import {
   type ClassifiedsOAuthProviderConfig,
-  type ClassifiedsProvider,
   tryGetClassifiedsOAuthProviderConfig,
 } from "@/lib/classifieds/oauth-provider";
 import { tryResolvePlatformClassifiedsOAuthConfig } from "@/lib/classifieds/resolve-platform-classifieds-oauth";
@@ -16,9 +17,15 @@ import { tryResolvePlatformClassifiedsOAuthConfig } from "@/lib/classifieds/reso
 export async function resolveClassifiedsOAuthProviderConfigForDealership(params: {
   dealershipId: string;
   provider: ClassifiedsProvider;
+  panelOrigin?: string;
 }): Promise<ClassifiedsOAuthProviderConfig> {
-  const platformConfig = await tryResolvePlatformClassifiedsOAuthConfig(params.provider);
-  const envConfig = tryGetClassifiedsOAuthProviderConfig(params.provider);
+  const platformConfig = await tryResolvePlatformClassifiedsOAuthConfig(
+    params.provider,
+    params.panelOrigin,
+  );
+  const envConfig = tryGetClassifiedsOAuthProviderConfig(params.provider, {
+    panelOrigin: params.panelOrigin,
+  });
   const baseConfig = platformConfig ?? envConfig;
 
   if (!baseConfig) {

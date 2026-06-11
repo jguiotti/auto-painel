@@ -94,3 +94,21 @@ export type ListDealershipMetaPageCandidatesRpcResult = Array<{
 }>;
 
 /** `public.dismiss_integrations_onboarding` — no args; uses auth.uid() dealership. */
+
+/** `public.upsert_vehicle_sale_receipt` — create/update receipt for sold vehicle. */
+export interface UpsertVehicleSaleReceiptArgs {
+  p_vehicle_id: string;
+  p_buyer_name: string;
+  p_buyer_document: string;
+  p_buyer_billing_address: string;
+  p_payment_lines: Array<{ method: string; amount: number }>;
+  p_sale_amount: number;
+  p_down_payment_amount?: number | null;
+  p_vehicle_license_plate?: string | null;
+  p_vehicle_renavam?: string | null;
+}
+
+/** `public.get_vehicle_sale_receipt` */
+export interface GetVehicleSaleReceiptArgs {
+  p_vehicle_id: string;
+}

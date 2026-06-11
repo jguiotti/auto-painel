@@ -1,8 +1,9 @@
-import type { ClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
 
 const PROVIDER_LABEL: Record<ClassifiedsProvider, string> = {
   olx: "OLX",
   webmotors: "WebMotors",
+  icarros: "iCarros",
 };
 
 export function classifiedsProviderLabel(provider: ClassifiedsProvider): string {
@@ -22,7 +23,24 @@ export function classifiedsConnectDialogDescription(
 export function classifiedsProviderUnavailableMessage(
   provider: ClassifiedsProvider,
 ): string {
-  return `A conexão com a ${classifiedsProviderLabel(provider)} ainda não está disponível para sua loja. Fale com nosso suporte para solicitar a ativação deste canal.`;
+  return classifiedsProviderOAuthPendingMessage(provider);
+}
+
+/** Shown when the plan includes the portal but platform OAuth credentials are not live yet. */
+export function classifiedsProviderOAuthPendingMessage(
+  provider: ClassifiedsProvider,
+): string {
+  return `Seu plano inclui a ${classifiedsProviderLabel(provider)}, mas a conexão OAuth ainda não foi liberada pela plataforma. Nossa equipe configura as credenciais oficiais do portal — tente novamente em breve ou fale com o suporte.`;
+}
+
+export function classifiedsProviderConnectHint(
+  provider: ClassifiedsProvider,
+  oauthReady: boolean,
+): string {
+  if (oauthReady) {
+    return "Clique em Conectar e faça login na janela que abrir. A conexão é concluída automaticamente.";
+  }
+  return "Seu plano inclui este integrador. A conexão será habilitada assim que a plataforma publicar as credenciais OAuth do portal.";
 }
 
 export function classifiedsConnectSuccessMessage(provider: ClassifiedsProvider): string {

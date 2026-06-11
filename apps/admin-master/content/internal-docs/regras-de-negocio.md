@@ -19,7 +19,9 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Simulador de financiamento | `finance_simulator` | Passos A-D concluídos (com hotfixes de banco aplicados) | Esta página + `documentacao-tecnica.md` |
 | Gerador de QR Code para veículos | `qr_generator` | **Passo C implementado no repositório** (pendente QA funcional final de escaneamento/print cross-browser) | Esta página + `documentacao-tecnica.md` |
 | Métricas avançadas da concessionária | `advanced_metrics` | **Passo C implementado no repositório** (pendente aplicar migração no Supabase + QA funcional final) | Esta página + `documentacao-tecnica.md` |
-| Integração com classificados (OLX & WebMotors) | `classifieds_sync` | **UX facilitada entregue (2026-06-11)** — toggles por portal, links externos, «Salvar e divulgar»; pendente homologação OAuth/credenciais reais dos portais | Esta página + `documentacao-tecnica.md` |
+| Integração OLX | `olx_sync` | **Blueprint 2026-06-11** — módulo por portal; scaffold OAuth entregue; pendente split planos + auto-publish | `CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` |
+| Integração WebMotors | `webmotors_sync` | Idem | Idem |
+| Integração iCarros | `icarros_sync` | **Blueprint 2026-06-11** — módulo no catálogo; OAuth/publish pendente (INT-3) | `CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` |
 | Kit de redes sociais com postagem automática (Meta) | `social_media_kit` | **UX facilitada entregue (2026-06-11)** — wizard Meta, aparência carrossel, preview/watermark, status jobs, «Salvar e divulgar»; pendente homologação Meta produção (`SOCIAL_PUBLISH_DRY_RUN=false`) | Esta página + `documentacao-tecnica.md` |
 | Central de gestão (Admin Master) | `dealership_management_hub` | **Passo A–B documentados**; scaffold parcial no repositório (BD + papel `manager` + bloqueio painel inativo); UI por abas e exportações — roadmap | Esta página + `documentacao-tecnica.md` |
 | Subdomínios por loja + OAuth por concessionária (OLX / WebMotors / Meta) | `classifieds_sync`, `social_media_kit`, resolução de host | **PRD/BZ** em `packages/shared/docs/TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md` §7 + **BZ-TERR-***; jornada operador — alinhar com **`tenant_operator_journey`** | Esta página + doc partilhado |
@@ -27,6 +29,7 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Templates dinâmicos da vitrine | `layout_id` | Implementado e registrado | Esta página + `documentacao-tecnica.md` |
 | Ambiente demo E2E (3 lojas) | `demo_seed_e2e` | **Implementado (2026-05-26)** | Secção abaixo + `documentacao-tecnica.md` |
 | Roadmap integrações + UX mobile | Épicos 0–5 | **Épico 0 fechado (2026-06-10)** — ver secção abaixo | Esta página + `documentacao-tecnica.md` + `META_INTEGRATION_SIMPLIFIED.md` |
+| Recibo simples de venda | `recibo_compra` | **Implementado (2026-06-11)** — módulo único; legado `sale_receipt` removido do catálogo | Esta página + `documentacao-tecnica.md` |
 
 ---
 
@@ -63,7 +66,7 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | ID | Regra |
 | --- | --- |
 | **BZ-PLAN-001** | Plano **business** inclui exactamente `finance_simulator` e `qr_generator` no catálogo comercial. |
-| **BZ-PLAN-002** | `classifieds_sync`, `social_media_kit` e `advanced_metrics` exigem plano **enterprise** (ou trial/demo interno). |
+| **BZ-PLAN-002** | `olx_sync`, `webmotors_sync`, `icarros_sync`, `social_media_kit` e `advanced_metrics` são atribuíveis **individualmente** por plano (típico enterprise/demo); Business/Starter **sem** integradores salvo pivot explícito. |
 | **BZ-TEAM-001** | Criação de utilizadores da loja (gestor, vendedor) é feita **apenas** por operador da plataforma no admin-master; painel da loja **não** expõe convites. |
 | **BZ-META-S01** | OAuth Meta em produção usa app da AutoPainel; gestor não preenche App ID/Secret (detalhe em `META_INTEGRATION_SIMPLIFIED.md`). |
 
@@ -136,14 +139,16 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | **BZ-CAT-003** | Cada concessionária recebe **exatamente um** `pricing_plan_id`. **Proibido** atribuir módulos avulsos por loja na UI do admin (sem checkboxes `enabled_features`). |
 | **BZ-CAT-004** | Na ficha da loja, a aba **Plano** mostra select do plano + preview read-only dos módulos herdados; alterar funcionalidades exige editar o plano ou trocar o plano da loja. |
 | **BZ-CAT-005** | O gating runtime (painel, vitrine) usa chaves efetivas do plano via RPC — não o array legado `dealerships.enabled_features`. |
-| **BZ-CAT-006** | Integrações com portais classificados (OLX, WebMotors) partilham **uma única** chave de módulo: `classifieds_sync`. Não existem módulos separados `olx_sync` / `webmotors_sync` no catálogo. |
+| **BZ-CAT-006** | Cada portal classificado tem **chave SaaS própria:** `olx_sync`, `webmotors_sync`, `icarros_sync`. O plano define quais a loja pode usar; **não** se obriga conectar portal sem módulo. |
+| **BZ-CAT-007** | `classifieds_sync` (bundle legado) habilita os três portais até migração completa dos planos; novos planos comerciais devem usar módulos por portal. |
 
 | ID | Cenário |
 | --- | --- |
 | **CA-CAT-001** | Given operador em `/painel/concessionarias/[id]/editar` — When abre aba Plano — Then vê select de plano e lista read-only de módulos **sem** checkboxes por módulo. |
 | **CA-CAT-002** | Given plano «Starter» com N módulos — When operador atribui plano a nova loja — Then preview mostra exactamente os N módulos antes de criar. |
 | **CA-CAT-003** | Given lista `/painel/planos` — When visualiza tabela — Then coluna «Módulos» reflecte contagem de `pricing_plan_modules`. |
-| **CA-CAT-004** | Given catálogo `/painel/modulos` — When lista módulos — Then existe **apenas** «Integração com classificados» (`classifieds_sync`) e **não** «Integração OLX» (`olx_sync`). |
+| **CA-CAT-004** | Given catálogo `/painel/modulos` — When lista módulos — Then existem entradas separadas «Integração OLX», «Integração WebMotors», «Integração iCarros» (`olx_sync`, `webmotors_sync`, `icarros_sync`). |
+| **CA-CAT-005** | Given plano só com `olx_sync` — When gestor abre Integrações — Then vê **apenas** card OLX (sem WebMotors/iCarros). |
 
 #### Cenários de aceite (CA)
 
@@ -610,9 +615,60 @@ Hoje o lojista precisa operar publicação manual em classificados, com alto ris
 1. Edição avançada de anúncios com estratégia de preço por portal.
 2. Sincronização bidirecional completa de leads vindos dos portais.
 3. Relatórios financeiros avançados de ROI por portal/campanha.
-4. Suporte a mais portais além de OLX e WebMotors.
+4. Suporte a mais portais além de OLX e WebMotors. → **iCarros entrou no escopo (2026-06-11)** — ver secção abaixo.
 
-#### Regras de negócio (BZ)
+---
+
+### 2026-06-11 — Integradores classificados v2 (OLX + WebMotors + iCarros + auto-publish)
+
+| Campo | Valor |
+| --- | --- |
+| **Nome** | Integração com classificados — fluxo automático |
+| **Status** | **PRD aprovado pelo operador**; implementação INT-1…INT-3 pendente |
+| **Módulo** | `olx_sync` + `webmotors_sync` + `icarros_sync` (por portal); legado `classifieds_sync` = bundle |
+| **Blueprint** | `packages/shared/docs/CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` |
+| **Meta** | **Fora de escopo** deste épico |
+
+#### Decisões de produto (O)
+
+| # | Decisão |
+| --- | --- |
+| O1 | **Três módulos SaaS** — plano escolhe OLX, WebMotors e/ou iCarros independentemente. |
+| O1b | Bundle legado `classifieds_sync` = os três portais (compatibilidade); descontinuar em novos planos. |
+| O2 | **Publicação automática** apenas nos portais **contratados no plano e conectados** — nunca forçar OAuth em portal não incluído. |
+| O3 | **Baixa automática** ao marcar vendido, inativar ou **excluir** veículo. |
+| O4 | Opt-out por cadastro: «Não divulgar em classificados neste save» (default = divulgar). |
+| O5 | «Salvar e divulgar» e checkboxes por portal deixam de ser o caminho principal (podem virar atalho Meta depois). |
+
+#### Regras de negócio (BZ — incremento)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-INT-001** | Só enfileira publish se módulo **do portal** ativo (`olx_sync`/`webmotors_sync`/`icarros_sync` ou bundle legado) **e** portal `connected`. |
+| **BZ-INT-001b** | Hub Integrações e OAuth start **ocultam/bloqueiam** portais sem módulo no plano. |
+| **BZ-INT-002** | Publish exige ≥1 imagem no veículo. |
+| **BZ-INT-003** | Delist em sold, `is_active=false`, delete e status ≠ available. |
+| **BZ-INT-004** | Provider `icarros` segue mesmo contrato OAuth+fila que OLX/WM. |
+| **BZ-INT-005** | Desfazer venda não republica sozinho — operador salva de novo ou usa ação na ficha. |
+
+#### Critérios de aceite (CA — incremento)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-INT-001** | Given só `olx_sync` no plano e OLX conectado — When cadastra veículo com foto — Then job `publish` **só** `olx` + vitrine. |
+| **CA-INT-001b** | Given plano **sem** `webmotors_sync` — When abre Integrações — Then **sem** card WebMotors. |
+| **CA-INT-002** | Given anúncio publicado — When marca vendido — Then jobs `delist` enfileirados. |
+| **CA-INT-003** | Given anúncio publicado — When exclui veículo — Then delist antes do DELETE. |
+| **CA-INT-004** | Given iCarros conectado — When cadastra veículo — Then fila inclui provider `icarros`. |
+| **CA-INT-005** | Given opt-out marcado — When salva — Then **nenhum** job classificados para esse save. |
+
+#### Fora de escopo
+
+- Meta / Instagram / Facebook (épico separado).
+- Sincronização bidirecional de leads dos portais.
+- Preço diferente por portal.
+
+#### Regras de negócio (BZ — MVP original, ainda válidas)
 
 1. **BZ-001 (gating por módulo):** recursos de integração só aparecem quando `classifieds_sync` estiver ativo para a concessionária.
 2. **BZ-002 (ux um clique):** conexão deve iniciar por um único clique no botão do portal, sem exigir input manual de token/chave na UI.
@@ -714,6 +770,69 @@ Hoje a loja consegue operar estoque e leads, mas não possui uma visão analíti
 - Arquitetura deve definir contrato API-first para agregações e estratégia de coleta de views.
 - Devs devem gerar prompts técnicos detalhados para backend/frontend e telemetria de views.
 - QA deve validar precisão matemática e isolamento RLS como prioridade crítica.
+
+---
+
+### 2026-06-11 — Módulo: Recibo simples de venda (`recibo_compra`) — PRD aprovado
+
+| Campo | Valor |
+| --- | --- |
+| **Nome** | Recibo de compra/venda (`recibo_compra`) |
+| **Status** | PRD + decisões PM fechadas; migração + tipos no repositório; **implementação painel pendente** |
+| **Apps** | `dealership-panel` (ficha veículo vendido, formulário, impressão); `packages/shared` (tipos, validador CPF/CNPJ); Supabase (RLS + RPCs) |
+| **Objetivo** | Permitir emitir e reimprimir recibo interno de compra e venda quando o veículo está **Vendido**, sem validade fiscal |
+
+#### Decisões PM (open questions — fechadas 2026-06-11)
+
+| # | Decisão |
+| --- | --- |
+| O1 | Fluxo **somente na ficha** do veículo vendido (sem modal ao salvar). |
+| O2 | **Um registro por veículo**, **editável** (corrigir dados antes de reimprimir). |
+| O3 | **CPF/CNPJ** com validação de dígitos verificadores. |
+| O4 | **Lista fixa** de formas de pagamento + **multipagamento** (várias linhas método/valor) + campo **valor de entrada** quando aplicável. |
+| O5 | Recibo inclui **placa, RENAVAM, modelo, tipo de veículo** (+ demais dados do snapshot). |
+| O6 | **Módulo SaaS** `recibo_compra` (comercialização estruturada). |
+| O7 | **Qualquer vendedor** autenticado no painel (`owner`, `manager`, `seller`) pode emitir. |
+| O8 | Dados da loja incompletos → **imprimir mesmo assim**; campos vazios ficam em branco para preenchimento manual. |
+
+#### Formas de pagamento (código → UI)
+
+`cash` Dinheiro · `pix` PIX · `card` Cartão · `bank_transfer` Transferência bancária · `financing` Financiamento · `trade_in` Permuta
+
+Multipagamento: array `{ method, amount }`; soma das linhas deve bater com valor total da venda (validação no frontend).
+
+#### Regras de negócio (BZ)
+
+1. **BZ-REC-001:** documento **sem validade fiscal**; disclaimer obrigatório na tela e no impresso.
+2. **BZ-REC-002:** só veículos com **`status = sold`**.
+3. **BZ-REC-003:** gating **`recibo_compra`** via `effective_feature_keys_for_active_dealership`.
+4. **BZ-REC-004:** isolamento tenant — RLS por `dealership_id`.
+5. **BZ-REC-005:** cabeçalho com logo (se existir) + nome/CNPJ/endereço/contato da loja quando cadastrados.
+6. **BZ-REC-006:** comprador: nome, documento (CPF/CNPJ válido), endereço de cobrança.
+7. **BZ-REC-007:** corpo: veículo (marca, modelo, versão, tipo, placa, RENAVAM, anos, km, valor).
+8. **BZ-REC-008:** pagamento: linhas multipagamento + **entrada** opcional (`down_payment_amount`).
+9. **BZ-REC-009:** rodapé com áreas de **assinatura da loja** e **do comprador** (linhas; sem assinatura digital no MVP).
+10. **BZ-REC-010:** registro **editável** (`upsert` por `vehicle_id`); reimpressão ilimitada.
+11. **BZ-REC-011:** papéis `owner`, `manager`, `seller` podem emitir/editar.
+
+#### Critérios de aceite (CA)
+
+1. **CA-001:** veículo **Vendido** na ficha → secção **Recibo de venda** visível (com módulo ativo).
+2. **CA-002:** preencher comprador + multipagamento → **Salvar** → **Imprimir recibo** com logo, loja, veículo, pagamentos e assinaturas.
+3. **CA-003:** editar dados do comprador e reimprimir sem duplicar registro.
+4. **CA-004:** CPF/CNPJ inválido → erro em pt-BR; não salva.
+5. **CA-005:** veículo **Disponível** → secção oculta / bloqueada.
+6. **CA-006:** loja sem CNPJ/endereço → recibo imprime com campos em branco.
+7. **CA-007:** tenant A não acede recibo do veículo B.
+8. **CA-008:** plano sem `recibo_compra` → secção oculta (sem erro genérico).
+
+#### Fora de escopo MVP
+
+NF-e/NFC-e, assinatura digital, envio e-mail/WhatsApp, multi-veículo num recibo, integração contábil.
+
+#### UX / copy (referência)
+
+Ver secção técnica «Recibo de venda — UX Writer» em `documentacao-tecnica.md`.
 
 ---
 

@@ -1,19 +1,20 @@
 "use client";
 
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
+
 export interface VehiclePromotionConfig {
   socialEnabled: boolean;
   metaConnected: boolean;
   hasInstagramBusiness: boolean;
-  classifiedsEnabled: boolean;
-  connectedProviders: Array<"olx" | "webmotors">;
+  enabledClassifiedProviders: ClassifiedsProvider[];
+  connectedProviders: ClassifiedsProvider[];
 }
 
 export function isVehiclePromotionActionAvailable(
   config: VehiclePromotionConfig,
 ): boolean {
   const showSocial = config.socialEnabled && config.metaConnected;
-  const showClassifieds =
-    config.classifiedsEnabled && config.connectedProviders.length > 0;
+  const showClassifieds = config.connectedProviders.length > 0;
   return showSocial || showClassifieds;
 }
 
@@ -41,8 +42,7 @@ export function VehiclePromotionSection({
   onWebmotorsChange,
 }: VehiclePromotionSectionProps) {
   const showSocial = config.socialEnabled && config.metaConnected;
-  const showClassifieds =
-    config.classifiedsEnabled && config.connectedProviders.length > 0;
+  const showClassifieds = config.connectedProviders.length > 0;
 
   if (!isVehiclePromotionActionAvailable(config)) {
     return null;
@@ -114,6 +114,12 @@ export function VehiclePromotionSection({
               />
               Publicar na WebMotors ao salvar
             </label>
+          ) : null}
+          {config.enabledClassifiedProviders.includes("icarros") &&
+          !config.connectedProviders.includes("icarros") ? (
+            <p className="text-xs text-muted-foreground">
+              iCarros está no seu plano — conecte em Integrações quando o canal estiver disponível.
+            </p>
           ) : null}
         </div>
       ) : null}

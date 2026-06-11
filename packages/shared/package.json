@@ -43,6 +43,16 @@
       "import": "./src/lib/dealership-features.ts",
       "default": "./src/lib/dealership-features.ts"
     },
+    "./lib/classifieds-oauth-dev-stub": {
+      "types": "./src/lib/classifieds-oauth-dev-stub.ts",
+      "import": "./src/lib/classifieds-oauth-dev-stub.ts",
+      "default": "./src/lib/classifieds-oauth-dev-stub.ts"
+    },
+    "./lib/classifieds-token-crypto": {
+      "types": "./src/lib/classifieds-token-crypto.ts",
+      "import": "./src/lib/classifieds-token-crypto.ts",
+      "default": "./src/lib/classifieds-token-crypto.ts"
+    },
     "./lib/dealership-public-url": {
       "types": "./src/lib/dealership-public-url.ts",
       "import": "./src/lib/dealership-public-url.ts",
@@ -147,6 +157,16 @@
       "types": "./src/types/integrations-hub.ts",
       "import": "./src/types/integrations-hub.ts",
       "default": "./src/types/integrations-hub.ts"
+    },
+    "./types/sale-receipt": {
+      "types": "./src/types/sale-receipt.ts",
+      "import": "./src/types/sale-receipt.ts",
+      "default": "./src/types/sale-receipt.ts"
+    },
+    "./lib/validators/buyer-document": {
+      "types": "./src/lib/validators/buyer-document.ts",
+      "import": "./src/lib/validators/buyer-document.ts",
+      "default": "./src/lib/validators/buyer-document.ts"
     },
     "./components/empty-state": {
       "types": "./src/components/empty-state.tsx",

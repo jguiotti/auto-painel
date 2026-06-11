@@ -31,3 +31,11 @@ Evite rodar `shadcn init` de novo salvo migração major; isso pode sobrescrever
 ## Cursor MCP
 
 Se o projeto tiver o MCP do shadcn, consulte o registro e exemplos antes de adicionar um bloco grande (ex.: formulários complexos).
+
+## Confirmações de ação (UI)
+
+**Não use** `window.alert`, `window.confirm` ou `window.prompt` em nenhum app.
+
+Para pedir confirmação antes de uma ação destrutiva ou irreversível, use **`ConfirmActionDialog`** (`@autopainel/shared/ui`) — wrapper sobre `AlertDialog` com botões Cancelar/Confirmar, estado de loading e exibição de erro inline.
+
+Para avisos informativos (sem confirmação), use `AlertDialog` ou `Dialog` conforme o fluxo.

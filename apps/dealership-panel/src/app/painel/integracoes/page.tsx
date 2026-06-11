@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  getEnabledClassifiedsProviders,
+  isAnyClassifiedsModuleEnabled,
+  isDealershipFeatureEnabled,
+  type ClassifiedsProvider,
+} from "@autopainel/shared/lib/dealership-features";
 
 import { CarouselAppearanceCard } from "@/components/integrations/carousel-appearance-card";
 import { ClassifiedsIntegrationCards } from "@/components/integrations/classifieds-integration-cards";
 import { IntegrationOnboardingBanner } from "@/components/integrations/integration-onboarding-banner";
 import { MetaDeveloperAppForm } from "@/components/integrations/meta-developer-app-form";
 import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta-integration-card";
-import { getClassifiedsProviderAvailability } from "@/lib/classifieds/get-classifieds-provider-availability";
+import { getClassifiedsProviderOAuthReady } from "@/lib/classifieds/get-classifieds-provider-availability";
 import { getDealershipSocialCarouselSettings } from "@/lib/data/dealership-social-carousel-settings";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { getDealershipMetaOauthAppPublic } from "@/lib/data/dealership-meta-oauth-app";
@@ -16,6 +21,19 @@ import {
   hasMetaPlatformAppConfigured,
   isMetaPlatformConnectMode,
 } from "@/lib/integrations/meta-platform-connect";
+
+const CLASSIFIEDS_SECTION_LABEL: Record<ClassifiedsProvider, string> = {
+  olx: "OLX",
+  webmotors: "WebMotors",
+  icarros: "iCarros",
+};
+
+function formatClassifiedsSectionTitle(providers: ClassifiedsProvider[]): string {
+  if (providers.length === 0) {
+    return "Classificados";
+  }
+  return providers.map((provider) => CLASSIFIEDS_SECTION_LABEL[provider]).join(", ");
+}
 
 export default async function IntegracoesPage() {
   const { supabase, dealershipId } = await requireDashboardSession();
@@ -43,22 +61,19 @@ export default async function IntegracoesPage() {
   const activeFeatures = Array.isArray(featuresRes.data)
     ? featuresRes.data.filter((entry): entry is string => typeof entry === "string")
     : [];
-  const isClassifiedsSyncEnabled = isDealershipFeatureEnabled(
-    activeFeatures,
-    "classifieds_sync",
-  );
+  const enabledClassifiedProviders = getEnabledClassifiedsProviders(activeFeatures);
   const isSocialMediaKitEnabled = isDealershipFeatureEnabled(
     activeFeatures,
     "social_media_kit",
   );
 
-  if (!isClassifiedsSyncEnabled && !isSocialMediaKitEnabled) {
+  if (!isAnyClassifiedsModuleEnabled(activeFeatures) && !isSocialMediaKitEnabled) {
     redirect("/painel");
   }
 
   const connectionRows = (connectionsRes.data ?? []).filter(
     (row): row is {
-      provider: "olx" | "webmotors";
+      provider: ClassifiedsProvider;
       status:
         | "disconnected"
         | "connecting"
@@ -68,7 +83,11 @@ export default async function IntegracoesPage() {
       token_expires_at: string | null;
       connected_at: string | null;
       last_error: string | null;
-    } => row.provider === "olx" || row.provider === "webmotors",
+    } =>
+      enabledClassifiedProviders.includes(row.provider as ClassifiedsProvider) &&
+      (row.provider === "olx" ||
+        row.provider === "webmotors" ||
+        row.provider === "icarros"),
   );
 
   const metaRow = metaConnectionRes.data;
@@ -113,9 +132,15 @@ export default async function IntegracoesPage() {
         }
       : null;
 
-  const classifiedsProviderAvailability = isClassifiedsSyncEnabled
-    ? await getClassifiedsProviderAvailability({ dealershipId })
-    : { olx: false, webmotors: false };
+  const classifiedsProviderOAuthReady =
+    enabledClassifiedProviders.length > 0
+      ? await getClassifiedsProviderOAuthReady({
+          dealershipId,
+          enabledProviders: enabledClassifiedProviders,
+          panelOrigin: process.env.NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN?.replace(/\/$/, "") ||
+            undefined,
+        })
+      : { olx: false, webmotors: false, icarros: false };
 
   const showOnboarding =
     !carouselSettings.integrationsOnboardingDismissedAt &&
@@ -128,7 +153,7 @@ export default async function IntegracoesPage() {
           Integrações
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Conecte sua loja ao Instagram, Facebook, OLX e WebMotors. O login abre em uma janela
+          Conecte sua loja aos canais incluídos no seu plano. O login abre em uma janela
           segura — sem códigos nem configuração técnica.
         </p>
       </section>
@@ -173,15 +198,15 @@ export default async function IntegracoesPage() {
         </section>
       ) : null}
 
-      {isClassifiedsSyncEnabled ? (
+      {enabledClassifiedProviders.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            OLX e WebMotors
+            {formatClassifiedsSectionTitle(enabledClassifiedProviders)}
           </h2>
           <ClassifiedsIntegrationCards
-            isEnabled={isClassifiedsSyncEnabled}
+            enabledProviders={enabledClassifiedProviders}
             connections={connectionRows}
-            providerAvailability={classifiedsProviderAvailability}
+            providerOAuthReady={classifiedsProviderOAuthReady}
           />
         </section>
       ) : null}

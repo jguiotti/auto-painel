@@ -1,4 +1,4 @@
-import type { ClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
 
 export class ClassifiedsOAuthNotConfiguredError extends Error {
   readonly code = "oauth_not_configured" as const;

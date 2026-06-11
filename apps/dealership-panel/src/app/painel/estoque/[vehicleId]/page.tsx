@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  getEnabledClassifiedsProviders,
+  isClassifiedsProviderModuleEnabled,
+  isDealershipFeatureEnabled,
+  isSaleReceiptModuleEnabled,
+  type ClassifiedsProvider,
+} from "@autopainel/shared/lib/dealership-features";
 import {
   buildDealershipSubdomainSurfaceUrls,
   buildLocalhostDealershipPreviewUrls,
@@ -42,6 +48,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
     classifiedConnectionsResult,
     socialJobsResult,
     carouselSettings,
+    saleReceiptResult,
   ] = await Promise.all([
     supabase
       .from("vehicles")
@@ -86,6 +93,12 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
       .order("created_at", { ascending: false })
       .limit(5),
     getDealershipSocialCarouselSettings(dealershipId),
+    supabase
+      .from("vehicle_sale_receipts")
+      .select("id")
+      .eq("vehicle_id", vehicleId)
+      .eq("dealership_id", dealershipId)
+      .maybeSingle(),
   ]);
 
   const vehicle = vehicleResult.data;
@@ -154,12 +167,14 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
     listingsResult.data
       ?.filter(
         (row): row is {
-          provider: "olx" | "webmotors";
+          provider: ClassifiedsProvider;
           sync_status: "pending" | "published" | "delisted" | "error";
           last_synced_at: string | null;
           last_error: string | null;
           external_listing_url: string | null;
-        } => row.provider === "olx" || row.provider === "webmotors",
+        } =>
+          (row.provider === "olx" || row.provider === "webmotors" || row.provider === "icarros") &&
+          isClassifiedsProviderModuleEnabled(activeFeatures, row.provider as ClassifiedsProvider),
       )
       .map((row) => ({
         provider: row.provider,
@@ -173,13 +188,13 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
     jobsResult.data
       ?.filter(
         (row): row is {
-          provider: "olx" | "webmotors";
+          provider: ClassifiedsProvider;
           action: "publish" | "delist";
           status: string;
           last_error: string | null;
           created_at: string;
         } =>
-          (row.provider === "olx" || row.provider === "webmotors") &&
+          (row.provider === "olx" || row.provider === "webmotors" || row.provider === "icarros") &&
           (row.action === "publish" || row.action === "delist"),
       )
       .map((row) => ({
@@ -193,8 +208,9 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
     classifiedConnectionsResult.data
       ?.filter((row) => row.status === "connected")
       .map((row) => row.provider)
-      .filter((provider): provider is "olx" | "webmotors" =>
-        provider === "olx" || provider === "webmotors",
+      .filter((provider): provider is ClassifiedsProvider =>
+        (provider === "olx" || provider === "webmotors" || provider === "icarros") &&
+        isClassifiedsProviderModuleEnabled(activeFeatures, provider as ClassifiedsProvider),
       ) ?? [];
 
   const socialRecentJobs =
@@ -223,10 +239,12 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
         artifactTemplateLabel={artifactTemplateLabel(carouselSettings.artifactTemplate)}
         socialRecentJobs={socialRecentJobs}
         isQrGeneratorEnabled={isDealershipFeatureEnabled(activeFeatures, "qr_generator")}
-        classifiedsSyncEnabled={isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")}
+        enabledClassifiedProviders={getEnabledClassifiedsProviders(activeFeatures)}
         classifiedsConnectedProviders={classifiedsConnectedProviders}
         classifiedsListings={classifiedsListings}
         classifiedsRecentJobs={classifiedsRecentJobs}
+        isSaleReceiptEnabled={isSaleReceiptModuleEnabled(activeFeatures)}
+        hasSaleReceipt={Boolean(saleReceiptResult.data?.id)}
       />
     </div>
   );

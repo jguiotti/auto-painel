@@ -4,8 +4,15 @@ import {
   decryptSecretValue,
   encryptSecretValue,
 } from "../_shared/classifieds-crypto.ts";
+import {
+  buildClassifiedsOAuthDevStubTokenPayload,
+  CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
+  CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_SECRET,
+  isClassifiedsOAuthDevStubEnabled,
+  parseClassifiedsOAuthDevStubCode,
+} from "../_shared/classifieds-oauth-dev-stub.ts";
 
-type ProviderKey = "olx" | "webmotors";
+type ProviderKey = "olx" | "webmotors" | "icarros";
 
 interface OAuthSessionRow {
   id: string;
@@ -33,7 +40,7 @@ interface TokenResponsePayload {
 }
 
 function resolveProvider(raw: string | null): ProviderKey | null {
-  if (raw === "olx" || raw === "webmotors") {
+  if (raw === "olx" || raw === "webmotors" || raw === "icarros") {
     return raw;
   }
   return null;
@@ -57,6 +64,16 @@ function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig 
   const supabaseUrl = requireEnvVar("SUPABASE_URL");
   const defaultRedirectUri = `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
 
+  if (isClassifiedsOAuthDevStubEnabled()) {
+    return {
+      provider,
+      tokenUrl: `${supabaseUrl}/functions/v1/classifieds-oauth-callback`,
+      clientId: CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
+      clientSecret: CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_SECRET,
+      redirectUri: defaultRedirectUri,
+    };
+  }
+
   if (provider === "olx") {
     return {
       provider,
@@ -67,13 +84,24 @@ function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig 
     };
   }
 
+  if (provider === "webmotors") {
+    return {
+      provider,
+      tokenUrl: requireEnvVar("WEBMOTORS_OAUTH_TOKEN_URL"),
+      clientId: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_ID"),
+      clientSecret: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_SECRET"),
+      redirectUri:
+        Deno.env.get("WEBMOTORS_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
+    };
+  }
+
   return {
     provider,
-    tokenUrl: requireEnvVar("WEBMOTORS_OAUTH_TOKEN_URL"),
-    clientId: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_ID"),
-    clientSecret: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_SECRET"),
+    tokenUrl: requireEnvVar("ICARROS_OAUTH_TOKEN_URL"),
+    clientId: requireEnvVar("ICARROS_OAUTH_CLIENT_ID"),
+    clientSecret: requireEnvVar("ICARROS_OAUTH_CLIENT_SECRET"),
     redirectUri:
-      Deno.env.get("WEBMOTORS_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
+      Deno.env.get("ICARROS_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
   };
 }
 
@@ -224,7 +252,18 @@ async function exchangeCodeForTokens(
   config: ProviderRuntimeConfig,
   code: string,
   codeVerifier: string | null,
+  expectedState: string,
 ): Promise<TokenResponsePayload> {
+  const stubPayload = parseClassifiedsOAuthDevStubCode(code);
+  if (
+    stubPayload &&
+    isClassifiedsOAuthDevStubEnabled() &&
+    stubPayload.state === expectedState &&
+    stubPayload.provider === config.provider
+  ) {
+    return buildClassifiedsOAuthDevStubTokenPayload(stubPayload.provider);
+  }
+
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
@@ -412,6 +451,7 @@ Deno.serve(async (req: Request) => {
       providerConfig,
       code,
       oauthSession.code_verifier,
+      oauthSession.state,
     );
 
     const accessTokenEncrypted = await encryptSecretValue(

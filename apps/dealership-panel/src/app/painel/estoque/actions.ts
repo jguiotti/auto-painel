@@ -450,6 +450,92 @@ export async function removeVehicleImageAction(vehicleId: string, imageUrl: stri
   revalidatePath(`/painel/estoque/${vehicleId}/editar`);
 }
 
+export async function markVehicleAsSoldAction(vehicleId: string) {
+  const { supabase, dealershipId } = await requireDashboardSession(
+    `/painel/estoque/${vehicleId}`,
+  );
+
+  const { data: existing, error: loadError } = await supabase
+    .from("vehicles")
+    .select("id, status")
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId)
+    .maybeSingle();
+
+  if (loadError || !existing) {
+    return { error: "Veículo não encontrado." };
+  }
+
+  if (existing.status === "sold") {
+    return { error: "Este veículo já está marcado como vendido." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("vehicles")
+    .update({
+      status: "sold",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId);
+
+  if (updateError) {
+    return { error: "Não foi possível marcar o veículo como vendido. Tente novamente." };
+  }
+
+  await dispatchClassifiedsSyncWorker(3);
+
+  revalidatePath("/painel");
+  revalidatePath("/painel/estoque");
+  revalidatePath(`/painel/estoque/${vehicleId}`);
+  revalidatePath(`/painel/estoque/${vehicleId}/editar`);
+  revalidatePath(`/painel/estoque/${vehicleId}/recibo`);
+
+  return { success: true as const };
+}
+
+export async function unmarkVehicleAsSoldAction(vehicleId: string) {
+  const { supabase, dealershipId } = await requireDashboardSession(
+    `/painel/estoque/${vehicleId}`,
+  );
+
+  const { data: existing, error: loadError } = await supabase
+    .from("vehicles")
+    .select("id, status")
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId)
+    .maybeSingle();
+
+  if (loadError || !existing) {
+    return { error: "Veículo não encontrado." };
+  }
+
+  if (existing.status !== "sold") {
+    return { error: "Este veículo não está marcado como vendido." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("vehicles")
+    .update({
+      status: "available",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", vehicleId)
+    .eq("dealership_id", dealershipId);
+
+  if (updateError) {
+    return { error: "Não foi possível desfazer a venda. Tente novamente." };
+  }
+
+  revalidatePath("/painel");
+  revalidatePath("/painel/estoque");
+  revalidatePath(`/painel/estoque/${vehicleId}`);
+  revalidatePath(`/painel/estoque/${vehicleId}/editar`);
+  revalidatePath(`/painel/estoque/${vehicleId}/recibo`);
+
+  return { success: true as const };
+}
+
 export async function deleteVehicleAction(vehicleId: string) {
   const { supabase, dealershipId } = await requireDashboardSession("/painel/estoque");
 

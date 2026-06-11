@@ -47,6 +47,8 @@ apps/**/.env.local
 supabase/.env
 supabase/.env.local
 supabase/.env.*.local
+supabase/.env.classifieds-oauth
+supabase/.generated-platform-classifieds-oauth.sql
 # Local-only list for git-filter-repo (scripts/git-purge-secrets-from-history.sh)
 .secrets-purge-local.txt
 replacements-purge-secrets.txt

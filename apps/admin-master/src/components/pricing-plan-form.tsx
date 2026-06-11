@@ -3,6 +3,7 @@
 import type { PricingPlanListRow, SaasModuleListRow } from "@autopainel/shared/types";
 import {
   Button,
+  ConfirmActionDialog,
   Input,
   Label,
   Textarea,
@@ -31,7 +32,6 @@ export function PricingPlanForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [delPending, startDelTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const selectedSet = new Set(selectedModuleIds);
@@ -53,31 +53,6 @@ export function PricingPlanForm({
       toast.success(
         mode === "create" ? "Plano criado com sucesso." : "Plano atualizado.",
       );
-      router.push("/painel/planos");
-      router.refresh();
-    });
-  }
-
-  function onDelete() {
-    if (!plan || mode !== "edit") {
-      return;
-    }
-    if (
-      !window.confirm(
-        "Eliminar este plano? Concessionárias que o utilizavam ficam sem plano dinâmico (campo limpo).",
-      )
-    ) {
-      return;
-    }
-    setError(null);
-    startDelTransition(async () => {
-      const result = await deletePricingPlanAction(plan.id);
-      if (result.error) {
-        setError(result.error);
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Plano eliminado.");
       router.push("/painel/planos");
       router.refresh();
     });
@@ -279,15 +254,41 @@ export function PricingPlanForm({
             <Link href="/painel/planos">Cancelar</Link>
           </Button>
           {mode === "edit" && plan ? (
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={pending || delPending}
-              className="ml-auto"
-              onClick={onDelete}
-            >
-              {delPending ? "A eliminar…" : "Eliminar plano"}
-            </Button>
+            <ConfirmActionDialog
+              title="Eliminar plano?"
+              description={
+                <p>
+                  Concessionárias que utilizavam este plano ficam sem plano dinâmico (campo
+                  limpo). Esta ação não pode ser desfeita.
+                </p>
+              }
+              confirmLabel="Eliminar plano"
+              confirmPendingLabel="A eliminar…"
+              confirmVariant="destructive"
+              disabled={pending}
+              onConfirm={async () => {
+                setError(null);
+                const result = await deletePricingPlanAction(plan.id);
+                if (result.error) {
+                  setError(result.error);
+                  toast.error(result.error);
+                  return { error: result.error };
+                }
+                toast.success("Plano eliminado.");
+                router.push("/painel/planos");
+                router.refresh();
+              }}
+              trigger={
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={pending}
+                  className="ml-auto"
+                >
+                  Eliminar plano
+                </Button>
+              }
+            />
           ) : null}
         </div>
       </form>

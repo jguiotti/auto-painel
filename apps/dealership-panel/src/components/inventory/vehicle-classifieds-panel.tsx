@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
 import { Badge, Button } from "@autopainel/shared/ui";
 
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/app/painel/estoque/classified-actions";
 
 export interface VehicleClassifiedListingStatus {
-  provider: "olx" | "webmotors";
+  provider: ClassifiedsProvider;
   syncStatus: "pending" | "published" | "delisted" | "error";
   lastSyncedAt: string | null;
   lastError: string | null;
@@ -21,10 +22,11 @@ export interface VehicleClassifiedListingStatus {
 interface VehicleClassifiedsPanelProps {
   vehicleId: string;
   enabled: boolean;
-  connectedProviders: Array<"olx" | "webmotors">;
+  enabledProviders: ClassifiedsProvider[];
+  connectedProviders: ClassifiedsProvider[];
   listings: VehicleClassifiedListingStatus[];
   recentJobs: Array<{
-    provider: "olx" | "webmotors";
+    provider: ClassifiedsProvider;
     action: "publish" | "delist";
     status: string;
     lastError: string | null;
@@ -32,9 +34,10 @@ interface VehicleClassifiedsPanelProps {
   showAutoDelistHint?: boolean;
 }
 
-const PROVIDER_LABEL: Record<"olx" | "webmotors", string> = {
+const PROVIDER_LABEL: Record<ClassifiedsProvider, string> = {
   olx: "OLX",
   webmotors: "WebMotors",
+  icarros: "iCarros",
 };
 
 function listingStatusLabel(status: VehicleClassifiedListingStatus["syncStatus"]): string {
@@ -69,14 +72,23 @@ function jobStatusLabel(status: string): string {
 export function VehicleClassifiedsPanel({
   vehicleId,
   enabled,
+  enabledProviders,
   connectedProviders,
   listings,
   recentJobs,
   showAutoDelistHint = false,
 }: VehicleClassifiedsPanelProps) {
-  const [publishOlx, setPublishOlx] = useState(connectedProviders.includes("olx"));
-  const [publishWebmotors, setPublishWebmotors] = useState(
-    connectedProviders.includes("webmotors"),
+  const publishableProviders = useMemo(
+    () => enabledProviders.filter((provider) => connectedProviders.includes(provider)),
+    [connectedProviders, enabledProviders],
+  );
+
+  const [selectedProviders, setSelectedProviders] = useState<Record<ClassifiedsProvider, boolean>>(
+    () => ({
+      olx: publishableProviders.includes("olx"),
+      webmotors: publishableProviders.includes("webmotors"),
+      icarros: publishableProviders.includes("icarros"),
+    }),
   );
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -93,13 +105,7 @@ export function VehicleClassifiedsPanel({
 
   function handlePublish() {
     setMessage(null);
-    const providers: Array<"olx" | "webmotors"> = [];
-    if (publishOlx && connectedProviders.includes("olx")) {
-      providers.push("olx");
-    }
-    if (publishWebmotors && connectedProviders.includes("webmotors")) {
-      providers.push("webmotors");
-    }
+    const providers = publishableProviders.filter((provider) => selectedProviders[provider]);
 
     if (providers.length === 0) {
       setMessage("Selecione ao menos um portal conectado para publicar.");
@@ -134,7 +140,7 @@ export function VehicleClassifiedsPanel({
     <div className="rounded-lg border border-border bg-card p-5">
       <p className="text-sm font-medium">Portais classificados</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Publique ou remova este veículo na OLX e WebMotors sem sair do painel.
+        Publique ou remova este veículo nos portais conectados sem sair do painel.
       </p>
 
       {showAutoDelistHint ? (
@@ -153,28 +159,22 @@ export function VehicleClassifiedsPanel({
         </p>
       ) : (
         <div className="mt-4 space-y-3">
-          {connectedProviders.includes("olx") ? (
-            <label className="flex items-center gap-2 text-sm">
+          {publishableProviders.map((provider) => (
+            <label key={provider} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={publishOlx}
-                onChange={(event) => setPublishOlx(event.target.checked)}
+                checked={selectedProviders[provider]}
+                onChange={(event) => {
+                  setSelectedProviders((current) => ({
+                    ...current,
+                    [provider]: event.target.checked,
+                  }));
+                }}
                 className="size-4 rounded border-input"
               />
-              Publicar na OLX
+              Publicar na {PROVIDER_LABEL[provider]}
             </label>
-          ) : null}
-          {connectedProviders.includes("webmotors") ? (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={publishWebmotors}
-                onChange={(event) => setPublishWebmotors(event.target.checked)}
-                className="size-4 rounded border-input"
-              />
-              Publicar na WebMotors
-            </label>
-          ) : null}
+          ))}
 
           <div className="flex flex-wrap gap-2">
             <Button type="button" disabled={isPending} onClick={handlePublish}>

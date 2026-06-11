@@ -1,8 +1,22 @@
 import { getSupabaseUrl } from "@autopainel/shared/lib/supabase";
+import {
+  buildClassifiedsOAuthDevAuthorizePath,
+  buildClassifiedsOAuthDevCallbackPath,
+  CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
+  isClassifiedsOAuthDevStubEnabled,
+  isClassifiedsOAuthDevStubProvider,
+  type ClassifiedsOAuthDevStubProvider,
+} from "@autopainel/shared/lib/classifieds-oauth-dev-stub";
 
-export const CLASSIFIEDS_PROVIDERS = ["olx", "webmotors"] as const;
+export const CLASSIFIEDS_OAUTH_PROVIDERS = ["olx", "webmotors", "icarros"] as const;
 
-export type ClassifiedsProvider = (typeof CLASSIFIEDS_PROVIDERS)[number];
+export type ClassifiedsOAuthProvider = (typeof CLASSIFIEDS_OAUTH_PROVIDERS)[number];
+
+/** @deprecated Use ClassifiedsOAuthProvider for OAuth flows. */
+export const CLASSIFIEDS_PROVIDERS = CLASSIFIEDS_OAUTH_PROVIDERS;
+
+/** @deprecated Use ClassifiedsOAuthProvider — OAuth-ready portals only. */
+export type ClassifiedsProvider = ClassifiedsOAuthProvider;
 
 export interface ClassifiedsOAuthProviderConfig {
   provider: ClassifiedsProvider;
@@ -31,29 +45,27 @@ export function parseClassifiedsProvider(
   if (!raw) {
     return null;
   }
-  if (raw === "olx" || raw === "webmotors") {
+  if (raw === "olx" || raw === "webmotors" || raw === "icarros") {
     return raw;
   }
   return null;
 }
 
-/**
- * Env-only defaults for OLX / WebMotors OAuth (used when no per-dealership row exists).
- * See {@link resolveClassifiedsOAuthProviderConfigForDealership} for merged config.
- */
-export function tryGetClassifiedsOAuthProviderConfig(
-  provider: ClassifiedsProvider,
-): ClassifiedsOAuthProviderConfig | null {
-  try {
-    return getClassifiedsOAuthProviderConfig(provider);
-  } catch {
-    return null;
-  }
+function resolveDevStubOAuthConfig(
+  provider: ClassifiedsOAuthDevStubProvider,
+  panelOrigin: string,
+): ClassifiedsOAuthProviderConfig {
+  const origin = panelOrigin.replace(/\/$/, "");
+  return {
+    provider,
+    authorizationUrl: `${origin}${buildClassifiedsOAuthDevAuthorizePath(provider)}`,
+    clientId: CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
+    scope: "classifieds.dev_stub",
+    redirectUri: `${origin}${buildClassifiedsOAuthDevCallbackPath(provider)}`,
+  };
 }
 
-export function getClassifiedsOAuthProviderConfig(
-  provider: ClassifiedsProvider,
-): ClassifiedsOAuthProviderConfig {
+function resolveProductionOAuthConfig(provider: ClassifiedsProvider): ClassifiedsOAuthProviderConfig {
   if (provider === "olx") {
     return {
       provider,
@@ -66,13 +78,54 @@ export function getClassifiedsOAuthProviderConfig(
     };
   }
 
+  if (provider === "webmotors") {
+    return {
+      provider,
+      authorizationUrl: requireEnvVar("WEBMOTORS_OAUTH_AUTHORIZATION_URL"),
+      clientId: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_ID"),
+      scope: process.env.WEBMOTORS_OAUTH_SCOPE?.trim() || null,
+      redirectUri:
+        process.env.WEBMOTORS_OAUTH_REDIRECT_URI?.trim() ||
+        resolveDefaultCallbackUrl(provider),
+    };
+  }
+
   return {
     provider,
-    authorizationUrl: requireEnvVar("WEBMOTORS_OAUTH_AUTHORIZATION_URL"),
-    clientId: requireEnvVar("WEBMOTORS_OAUTH_CLIENT_ID"),
-    scope: process.env.WEBMOTORS_OAUTH_SCOPE?.trim() || null,
+    authorizationUrl: requireEnvVar("ICARROS_OAUTH_AUTHORIZATION_URL"),
+    clientId: requireEnvVar("ICARROS_OAUTH_CLIENT_ID"),
+    scope: process.env.ICARROS_OAUTH_SCOPE?.trim() || null,
     redirectUri:
-      process.env.WEBMOTORS_OAUTH_REDIRECT_URI?.trim() ||
+      process.env.ICARROS_OAUTH_REDIRECT_URI?.trim() ||
       resolveDefaultCallbackUrl(provider),
   };
+}
+
+/**
+ * Env-only defaults for classifieds OAuth (used when no per-dealership row exists).
+ * See {@link resolveClassifiedsOAuthProviderConfigForDealership} for merged config.
+ */
+export function tryGetClassifiedsOAuthProviderConfig(
+  provider: ClassifiedsProvider,
+  options?: { panelOrigin?: string },
+): ClassifiedsOAuthProviderConfig | null {
+  try {
+    return getClassifiedsOAuthProviderConfig(provider, options);
+  } catch {
+    return null;
+  }
+}
+
+export function getClassifiedsOAuthProviderConfig(
+  provider: ClassifiedsProvider,
+  options?: { panelOrigin?: string },
+): ClassifiedsOAuthProviderConfig {
+  if (
+    isClassifiedsOAuthDevStubEnabled() &&
+    isClassifiedsOAuthDevStubProvider(provider) &&
+    options?.panelOrigin?.trim()
+  ) {
+    return resolveDevStubOAuthConfig(provider, options.panelOrigin.trim());
+  }
+  return resolveProductionOAuthConfig(provider);
 }

@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  getEnabledClassifiedsProviders,
+  isAnyClassifiedsModuleEnabled,
+  isClassifiedsProviderModuleEnabled,
+  type ClassifiedsProvider,
+} from "@autopainel/shared/lib/dealership-features";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { dispatchClassifiedsSyncWorker } from "@/lib/integrations/dispatch-classifieds-sync-worker";
-
-type ClassifiedsProvider = "olx" | "webmotors";
 
 function parseEnqueueResult(data: unknown): { enqueued: number; message?: string } {
   if (!data || typeof data !== "object") {
@@ -18,6 +21,17 @@ function parseEnqueueResult(data: unknown): { enqueued: number; message?: string
     enqueued: typeof record.enqueued === "number" ? record.enqueued : 0,
     message: typeof record.message === "string" ? record.message : undefined,
   };
+}
+
+function filterProvidersByPlan(
+  activeFeatures: string[],
+  providers?: ClassifiedsProvider[],
+): ClassifiedsProvider[] {
+  const enabled = getEnabledClassifiedsProviders(activeFeatures);
+  if (!providers?.length) {
+    return enabled;
+  }
+  return providers.filter((provider) => isClassifiedsProviderModuleEnabled(activeFeatures, provider));
 }
 
 async function assertClassifiedsEnabled(
@@ -31,8 +45,8 @@ async function assertClassifiedsEnabled(
     ? featureRes.data.filter((entry): entry is string => typeof entry === "string")
     : [];
 
-  if (!isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")) {
-    return { error: "Integração com classificados não está ativa no plano da loja." as const };
+  if (!isAnyClassifiedsModuleEnabled(activeFeatures)) {
+    return { error: "Nenhum integrador de classificados está ativo no plano da loja." as const };
   }
 
   return { activeFeatures };
@@ -49,6 +63,11 @@ export async function publishVehicleToClassifiedsAction(
   const gate = await assertClassifiedsEnabled(supabase, dealershipId);
   if ("error" in gate) {
     return gate;
+  }
+
+  const scopedProviders = filterProvidersByPlan(gate.activeFeatures, providers);
+  if (scopedProviders.length === 0) {
+    return { error: "Nenhum portal de classificados habilitado no plano para esta ação." };
   }
 
   const { data: vehicle, error: vehicleError } = await supabase
@@ -73,7 +92,7 @@ export async function publishVehicleToClassifiedsAction(
   const { data, error } = await supabase.rpc("enqueue_classifieds_sync_jobs", {
     p_vehicle_id: vehicleId,
     p_action: "publish",
-    p_providers: providers?.length ? providers : null,
+    p_providers: scopedProviders,
   });
 
   if (error) {
@@ -85,7 +104,7 @@ export async function publishVehicleToClassifiedsAction(
     return {
       error:
         result.message === "no_connected_providers"
-          ? "Conecte OLX ou Webmotors em Integrações antes de publicar."
+          ? "Conecte um portal em Integrações antes de publicar."
           : "Nenhuma publicação enfileirada. Verifique se os portais estão conectados.",
     };
   }
@@ -114,10 +133,12 @@ export async function delistVehicleFromClassifiedsAction(
     return gate;
   }
 
+  const scopedProviders = filterProvidersByPlan(gate.activeFeatures, providers);
+
   const { data, error } = await supabase.rpc("enqueue_classifieds_sync_jobs", {
     p_vehicle_id: vehicleId,
     p_action: "delist",
-    p_providers: providers?.length ? providers : null,
+    p_providers: scopedProviders.length > 0 ? scopedProviders : null,
   });
 
   if (error) {

@@ -67,6 +67,8 @@ Funções em `supabase/functions/` ficam disponíveis em:
 
 Secrets locais: `supabase secrets set --env-file supabase/.env` (não versionar).
 
+**OAuth classificados (dev):** com `CLASSIFIEDS_OAUTH_DEV_STUB=true` e `CLASSIFIEDS_TOKENS_CRYPTO_SECRET` na raiz `.env.local`, rode `npm run sync:env` e `npm run classifieds:oauth:dev:configure`. O fluxo simula login OLX/WebMotors/iCarros em `/api/painel/integracoes/oauth/dev/*` (sem credenciais reais dos portais). Use `CLASSIFIEDS_SYNC_DRY_RUN=true` para publicação simulada na ficha do veículo.
+
 ## Troubleshooting
 
 - **Docker não conecta:** abra o Docker Desktop e aguarde ficar *Running*.

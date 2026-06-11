@@ -1,4 +1,4 @@
-export type ClassifiedsProviderKey = "olx" | "webmotors";
+export type ClassifiedsProviderKey = "olx" | "webmotors" | "icarros";
 
 export type ClassifiedsSyncAction = "publish" | "delist";
 

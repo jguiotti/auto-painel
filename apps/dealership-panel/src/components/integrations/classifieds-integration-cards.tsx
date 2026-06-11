@@ -27,16 +27,18 @@ import {
 } from "@autopainel/shared/ui";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { ClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
+import type { ClassifiedsOAuthProvider } from "@/lib/classifieds/oauth-provider";
 import {
-  classifiedsConnectDialogDescription,
-  classifiedsConnectDialogTitle,
   classifiedsConnectFailureMessage,
   classifiedsConnectSuccessMessage,
+  classifiedsConnectDialogDescription,
+  classifiedsConnectDialogTitle,
   classifiedsDisconnectSuccessMessage,
   classifiedsPopupBlockedMessage,
+  classifiedsProviderConnectHint,
   classifiedsProviderLabel,
-  classifiedsProviderUnavailableMessage,
+  classifiedsProviderOAuthPendingMessage,
   mapClassifiedsOAuthCallbackError,
 } from "@/lib/integrations/integration-user-messages";
 
@@ -57,20 +59,20 @@ export interface ClassifiedsConnectionRow {
 
 interface OAuthMessagePayload {
   source: "autopainel_classifieds_oauth";
-  provider: ClassifiedsProvider;
+  provider: ClassifiedsOAuthProvider;
   success: boolean;
   error?: string;
 }
 
-export type ClassifiedsProviderAvailability = Record<ClassifiedsProvider, boolean>;
+export type ClassifiedsProviderOAuthReady = Record<ClassifiedsProvider, boolean>;
 
 interface ClassifiedsIntegrationCardsProps {
-  isEnabled: boolean;
+  enabledProviders: ClassifiedsProvider[];
   connections: ClassifiedsConnectionRow[];
-  providerAvailability: ClassifiedsProviderAvailability;
+  providerOAuthReady: ClassifiedsProviderOAuthReady;
 }
 
-const PROVIDERS: Array<{
+const PROVIDER_CATALOG: Array<{
   key: ClassifiedsProvider;
   subtitle: string;
 }> = [
@@ -81,6 +83,10 @@ const PROVIDERS: Array<{
   {
     key: "webmotors",
     subtitle: "Envie veículos para a WebMotors com login seguro no portal.",
+  },
+  {
+    key: "icarros",
+    subtitle: "Publique anúncios no iCarros a partir do seu estoque.",
   },
 ];
 
@@ -130,15 +136,15 @@ function formatConnectedAt(value: string | null): string | null {
 }
 
 export function ClassifiedsIntegrationCards({
-  isEnabled,
+  enabledProviders,
   connections,
-  providerAvailability,
+  providerOAuthReady,
 }: ClassifiedsIntegrationCardsProps) {
   const router = useRouter();
   const [pendingProvider, setPendingProvider] = useState<ClassifiedsProvider | null>(null);
   const [disconnectingProvider, setDisconnectingProvider] =
     useState<ClassifiedsProvider | null>(null);
-  const [dialogProvider, setDialogProvider] = useState<ClassifiedsProvider | null>(null);
+  const [dialogProvider, setDialogProvider] = useState<ClassifiedsOAuthProvider | null>(null);
   const [unavailableProvider, setUnavailableProvider] = useState<ClassifiedsProvider | null>(
     null,
   );
@@ -153,6 +159,11 @@ export function ClassifiedsIntegrationCards({
     }
     return map;
   }, [connections]);
+
+  const visibleProviders = useMemo(
+    () => PROVIDER_CATALOG.filter((provider) => enabledProviders.includes(provider.key)),
+    [enabledProviders],
+  );
 
   useEffect(() => {
     const allowedOrigins = new Set<string>([window.location.origin]);
@@ -204,11 +215,37 @@ export function ClassifiedsIntegrationCards({
 
   function openConnectDialog(provider: ClassifiedsProvider) {
     setInlineFeedback(null);
-    if (!providerAvailability[provider]) {
-      setUnavailableProvider(provider);
-      return;
-    }
     setDialogProvider(provider);
+  }
+
+  async function resolveConnectionAfterPopup(provider: ClassifiedsProvider) {
+    try {
+      const res = await fetch(
+        `/api/painel/integracoes/oauth/connection-status?provider=${provider}`,
+      );
+      const payload = (await res.json()) as {
+        status?: string;
+        lastError?: string | null;
+      };
+      if (payload.status === "connected") {
+        setInlineFeedback(classifiedsConnectSuccessMessage(provider));
+        return;
+      }
+      if (payload.status === "error" && payload.lastError) {
+        setInlineFeedback(
+          mapClassifiedsOAuthCallbackError(payload.lastError) ??
+            classifiedsConnectFailureMessage(provider),
+        );
+        return;
+      }
+      if (payload.status === "connecting") {
+        setInlineFeedback(
+          "A conexão ainda está em andamento. Aguarde alguns segundos e atualize a página.",
+        );
+      }
+    } catch {
+      // refresh below still runs
+    }
   }
 
   async function startOAuthFromDialog() {
@@ -246,7 +283,7 @@ export function ClassifiedsIntegrationCards({
       const popup = window.open(
         payload.authorizationUrl,
         `autopainel-oauth-${provider}`,
-        "popup=yes,width=560,height=760,noopener,noreferrer",
+        "popup=yes,width=560,height=760",
       );
       if (!popup) {
         setPendingProvider(null);
@@ -264,7 +301,9 @@ export function ClassifiedsIntegrationCards({
           popupRef.current = null;
           setPendingProvider(null);
           setDialogProvider(null);
-          router.refresh();
+          void resolveConnectionAfterPopup(provider).finally(() => {
+            router.refresh();
+          });
         }
       }, 600);
     } catch {
@@ -273,7 +312,7 @@ export function ClassifiedsIntegrationCards({
     }
   }
 
-  async function disconnectProvider(provider: ClassifiedsProvider) {
+  async function disconnectProvider(provider: ClassifiedsOAuthProvider) {
     setInlineFeedback(null);
     setDisconnectingProvider(provider);
 
@@ -304,7 +343,7 @@ export function ClassifiedsIntegrationCards({
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
-        {PROVIDERS.map((provider) => {
+        {visibleProviders.map((provider) => {
           const row = connectionMap.get(provider.key);
           const status = row?.status ?? "disconnected";
           const isBusy =
@@ -313,10 +352,11 @@ export function ClassifiedsIntegrationCards({
             status === "connecting";
           const actionLabel = resolveActionLabel(status);
           const connectedAtLabel = formatConnectedAt(row?.connected_at ?? null);
-          const canConnect = providerAvailability[provider.key];
+          const oauthReady = providerOAuthReady[provider.key];
+          const connectHint = classifiedsProviderConnectHint(provider.key, oauthReady);
 
           return (
-            <Card key={provider.key}>
+            <Card key={provider.key} data-provider={provider.key}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -347,17 +387,13 @@ export function ClassifiedsIntegrationCards({
                     {mapClassifiedsOAuthCallbackError(row.last_error) ?? row.last_error}
                   </p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {canConnect
-                      ? "Clique em Conectar e faça login na janela que abrir. A conexão é concluída automaticamente."
-                      : "Este canal será liberado pela equipe de suporte quando estiver disponível para sua loja."}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{connectHint}</p>
                 )}
 
                 <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
-                    disabled={!isEnabled || isBusy || status === "connected"}
+                    disabled={isBusy || status === "connected"}
                     onClick={() => {
                       openConnectDialog(provider.key);
                     }}
@@ -368,7 +404,7 @@ export function ClassifiedsIntegrationCards({
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={!isEnabled || isBusy}
+                      disabled={isBusy}
                       onClick={() => {
                         void disconnectProvider(provider.key);
                       }}
@@ -436,10 +472,10 @@ export function ClassifiedsIntegrationCards({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Canal indisponível</AlertDialogTitle>
+            <AlertDialogTitle>Conexão em configuração</AlertDialogTitle>
             <AlertDialogDescription>
               {unavailableProvider
-                ? classifiedsProviderUnavailableMessage(unavailableProvider)
+                ? classifiedsProviderOAuthPendingMessage(unavailableProvider)
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>

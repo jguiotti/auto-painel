@@ -37,3 +37,34 @@ Sprint Review + atualizar regras-de-negocio.md e documentacao-tecnica.md.
 
 ---
 **Funcionalidade:** $[FEATURE_DESCRIPTION]
+
+---
+
+## Épico integradores classificados (OLX · WebMotors · iCarros)
+
+Use este roteiro quando a feature envolver `classifieds_sync`, publish/delist ou novo portal.
+
+**Blueprint:** `packages/shared/docs/CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md`
+
+### Checklist por fase
+
+| Fase | Foco integradores |
+| --- | --- |
+| **PM** | Módulos **por portal** (`olx_sync`, `webmotors_sync`, `icarros_sync`); plano escolhe subset; bundle `classifieds_sync` legado; auto-publish só portais contratados+conectados; Meta fora |
+| **UX Writer** | Copy «Conectar iCarros»; toasts enqueue; estados fila (pendente/publicado/erro); opt-out «Não divulgar em classificados» |
+| **UX** | Hub mostra **só** cards do plano; ficha com linhas por portal habilitado; formulário sem checkboxes obrigatórios se auto-publish |
+| **Arquiteto** | Migração split `saas_modules`; enum SQL `icarros`; `isClassifiedsProviderModuleEnabled`; RPC enqueue valida módulo |
+| **Backend** | `createVehicleAction`/`updateVehicleAction` enqueue; `deleteVehicleAction` delist first; refresh token |
+| **Frontend** | Card iCarros; remover/simplificar `vehicle-promotion-section` checkboxes OLX/WM |
+| **DevOps** | `ICARROS_*` secrets; homologação APIs; cron workers |
+| **QA** | Dry-run E2E publish+delist; manual credenciais reais; cross-tenant |
+
+### Definition of Done (integradores)
+
+- [ ] Plano pode incluir só OLX, só WM, só iCarros ou combinação — cards Integrações reflectem o plano.
+- [ ] Novo veículo com foto → vitrine + fila publish **só** nos portais contratados e conectados.
+- [ ] Vendido/inativo/excluído → delist enfileirado em todos conectados.
+- [ ] Ficha mostra URL externa quando publicado.
+- [ ] `regras-de-negocio.md` + `documentacao-tecnica.md` + blueprint atualizados.
+
+**Não implementar Meta neste épico** — registrar bloqueio explícito no PRD se surgir escopo cruzado.

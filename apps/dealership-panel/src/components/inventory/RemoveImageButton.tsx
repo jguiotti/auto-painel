@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
-import { Button } from "@autopainel/shared/ui";
+import { Button, ConfirmActionDialog } from "@autopainel/shared/ui";
 
 import { removeVehicleImageAction } from "@/app/painel/estoque/actions";
 
@@ -17,27 +16,31 @@ export function RemoveImageButton({
   imageUrl,
 }: RemoveImageButtonProps) {
   const router = useRouter();
-  const [isRemoving, setIsRemoving] = useState(false);
 
-  async function handleClick() {
-    if (!globalThis.confirm("Remover esta imagem?")) {
-      return;
-    }
-    setIsRemoving(true);
+  async function handleConfirm() {
     await removeVehicleImageAction(vehicleId, imageUrl);
     router.refresh();
-    setIsRemoving(false);
   }
 
   return (
-    <Button
-      type="button"
-      variant="link"
-      className="mt-1 h-auto p-0 text-xs text-destructive hover:text-destructive"
-      onClick={handleClick}
-      disabled={isRemoving}
-    >
-      {isRemoving ? "Removendo…" : "Remover"}
-    </Button>
+    <ConfirmActionDialog
+      title="Remover imagem?"
+      description={
+        <p>A foto será removida do veículo. Você pode enviar outra imagem depois.</p>
+      }
+      confirmLabel="Remover imagem"
+      confirmPendingLabel="Removendo…"
+      confirmVariant="destructive"
+      onConfirm={handleConfirm}
+      trigger={
+        <Button
+          type="button"
+          variant="link"
+          className="mt-1 h-auto p-0 text-xs text-destructive hover:text-destructive"
+        >
+          Remover
+        </Button>
+      }
+    />
   );
 }

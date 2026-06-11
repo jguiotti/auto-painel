@@ -34,7 +34,10 @@ Chaves estáveis (`key`) são contratos de código; labels em PT-BR na UI admin.
 | `finance_simulator` | Simulador de financiamento | Fluxo / página de simulação na vitrine e ferramentas associadas no painel. |
 | `qr_generator` | QR Code para veículos | Geração / uso de QR vinculado ao catálogo. |
 | `advanced_metrics` | Métricas avançadas | Relatórios e indicadores extras no painel da loja. |
-| `classifieds_sync` | Integração com classificados (OLX & WebMotors) | Conexão OAuth2 por popup, publicação e baixa automática de anúncios por loja. **Única chave** para ambos os portais — não usar módulos separados por portal. |
+| `olx_sync` | Integração OLX | OAuth2 popup, publicação e baixa automática de anúncios OLX por loja. |
+| `webmotors_sync` | Integração WebMotors | Idem para WebMotors. |
+| `icarros_sync` | Integração iCarros | Idem para iCarros. |
+| `classifieds_sync` | *(legado — bundle)* | **Deprecado:** habilita OLX + WebMotors + iCarros; migrar planos para módulos por portal. |
 | `social_media_kit` | Kit redes sociais | Geração de carrosséis whitelabel (1080×1080, templates Classic/Performance/Tech), conexão Meta (Facebook Page + Instagram Business) OAuth por popup e publicação assíncrona via Graph API a partir da finalização do cadastro do veículo (`dealership-panel`). |
 | `crm_enhanced` | CRM / pipeline avançado | Funcionalidades de CRM além do fluxo mínimo de leads (quando existir). |
 | `multi_branch_console` | Console multi-unidade avançado | Regras extras por filial além do cadastro base de unidades (se produto diferenciar). |
@@ -53,10 +56,12 @@ Para manter consistência entre pricing e feature flags dos módulos verticais j
 |------|----------------------------------|
 | `starter` | `finance_simulator` |
 | `business` | `finance_simulator`, `qr_generator` |
-| `enterprise` | todos os módulos ativos de catálogo (inclui `advanced_metrics`, `classifieds_sync`, `social_media_kit`) |
+| `enterprise` | todos os módulos ativos de catálogo (inclui integradores por portal, `advanced_metrics`, `social_media_kit`) |
 | `trial` | alinhado ao **enterprise** para demos internas (catálogo completo); comercial fechar checklist explícito no admin quando trial for vendido |
 
-**Decisão PM (2026-06-10):** plano **Business** comercial inclui **apenas** simulador + QR. Integrações (`classifieds_sync`, `social_media_kit`) e métricas avançadas ficam no **Enterprise** até nova decisão. Estado demo (`20260527090000`) já reflecte business = finance + QR — **fonte de verdade comercial confirmada**.
+**Decisão PM (2026-06-11 revisão):** integradores classificados são **módulos separados** (`olx_sync`, `webmotors_sync`, `icarros_sync`) — plano comercial pode incluir subset. Bundle `classifieds_sync` mantido só para compatibilidade.
+
+**Decisão PM (2026-06-10):** plano **Business** comercial inclui **apenas** simulador + QR. Integradores e `social_media_kit` / `advanced_metrics` ficam no **Enterprise** (ou planos custom) até nova decisão comercial.
 
 **Regra de governança:** qualquer mudança na presença de módulos por plano deve atualizar este documento + seeds/migrações + páginas de gestão em `admin-master` no mesmo ciclo.
 

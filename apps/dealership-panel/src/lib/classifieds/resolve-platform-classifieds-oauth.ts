@@ -2,8 +2,13 @@ import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
+import {
+  isClassifiedsOAuthDevStubEnabled,
+  isClassifiedsOAuthDevStubProvider,
+} from "@autopainel/shared/lib/classifieds-oauth-dev-stub";
+
 import type { ClassifiedsOAuthProviderConfig } from "@/lib/classifieds/oauth-provider";
-import type { ClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
 import { getClassifiedsOAuthProviderConfig } from "@/lib/classifieds/oauth-provider";
 
 interface PlatformClassifiedsOAuthRow {
@@ -30,7 +35,11 @@ function isPlatformRowConfigured(row: PlatformClassifiedsOAuthRow): boolean {
  */
 export async function tryResolvePlatformClassifiedsOAuthConfig(
   provider: ClassifiedsProvider,
+  panelOrigin?: string,
 ): Promise<ClassifiedsOAuthProviderConfig | null> {
+  if (isClassifiedsOAuthDevStubEnabled() && isClassifiedsOAuthDevStubProvider(provider)) {
+    return null;
+  }
   let admin;
   try {
     admin = createSupabaseServiceRoleClient();

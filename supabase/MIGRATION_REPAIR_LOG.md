@@ -37,7 +37,22 @@ SUPABASE_DB_PUSH_INCLUDE_ALL=true npm run supabase:deploy
 
 ---
 
-## Template (copiar para novos repairs)
+## 20260611172939 / 20260611173013 — MCP apply com timestamp divergente do git
+
+| Campo | Valor |
+| --- | --- |
+| **Versões remoto** | `20260611172939` (`classifieds_modules_by_provider`), `20260611173013` (`classifieds_enqueue_module_gate`) |
+| **Detectado em** | 2026-06-11 (`npm run supabase:deploy` após apply via MCP Cursor) |
+| **Sintoma** | `db push` falhou: *Remote migration versions not found in local migrations directory*; ficheiros locais tinham `20260611190000` / `20260611200000` |
+| **Causa** | SQL aplicado no remoto via MCP `apply_migration` (timestamps auto), enquanto o git tinha nomes diferentes |
+| **Ação aplicada** | Renomear ficheiros locais para `20260611172939_*` e `20260611173013_*` (paridade com `schema_migrations` remoto; **sem** reexecutar DDL) |
+| **Schema** | Três módulos (`olx_sync`, `webmotors_sync`, `icarros_sync`) no catálogo; `classifieds_sync` removido; enterprise/trial com pivôs |
+
+### Regra
+
+Preferir **sempre** `npm run supabase:deploy` ou commit em `supabase/migrations/` — evitar `apply_migration` MCP com timestamp que não existe no git.
+
+---
 
 ```markdown
 ## YYYYMMDDHHMMSS — título curto

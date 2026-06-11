@@ -2,7 +2,12 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  getEnabledClassifiedsProviders,
+  isAnyClassifiedsModuleEnabled,
+  isDealershipFeatureEnabled,
+  type ClassifiedsProvider,
+} from "@autopainel/shared/lib/dealership-features";
 
 import type { VehiclePromotionConfig } from "@/components/inventory/vehicle-promotion-section";
 
@@ -32,9 +37,9 @@ export async function getVehicleFormPromotionConfig(params: {
     : [];
 
   const socialEnabled = isDealershipFeatureEnabled(activeFeatures, "social_media_kit");
-  const classifiedsEnabled = isDealershipFeatureEnabled(activeFeatures, "classifieds_sync");
+  const enabledClassifiedProviders = getEnabledClassifiedsProviders(activeFeatures);
 
-  if (!socialEnabled && !classifiedsEnabled) {
+  if (!socialEnabled && !isAnyClassifiedsModuleEnabled(activeFeatures)) {
     return undefined;
   }
 
@@ -42,15 +47,15 @@ export async function getVehicleFormPromotionConfig(params: {
     classifiedConnectionsRes.data
       ?.filter((row) => row.status === "connected")
       .map((row) => row.provider)
-      .filter((provider): provider is "olx" | "webmotors" =>
-        provider === "olx" || provider === "webmotors",
+      .filter((provider): provider is ClassifiedsProvider =>
+        enabledClassifiedProviders.includes(provider as ClassifiedsProvider),
       ) ?? [];
 
   return {
     socialEnabled,
     metaConnected: metaRes.data?.status === "connected",
     hasInstagramBusiness: Boolean(metaRes.data?.instagram_business_account_id),
-    classifiedsEnabled,
+    enabledClassifiedProviders,
     connectedProviders,
   };
 }

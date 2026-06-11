@@ -10,6 +10,7 @@ export * from "./pricing-catalog";
 export * from "./finance-simulation";
 export * from "./social-carousel";
 export * from "./integrations-hub";
+export * from "./sale-receipt";
 
 export type BrandSlug = string;
 

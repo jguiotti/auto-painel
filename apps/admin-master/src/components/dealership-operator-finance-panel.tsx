@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ConfirmActionDialog,
   Input,
   Label,
   Separator,
@@ -137,22 +138,6 @@ export function DealershipOperatorFinancePanel({
     });
   }
 
-  function handleDeleteDocument(historyId: string, documentId: string) {
-    if (!globalThis.confirm("Remover este documento do arquivo?")) {
-      return;
-    }
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("history_id", historyId);
-      fd.set("document_id", documentId);
-      const r = await deleteDealershipBillingHistoryDocumentAction(
-        dealership.id,
-        fd,
-      );
-      afterMutationMessage(r, "Documento removido.");
-    });
-  }
-
   function renderAttachmentsCell(line: DealershipBillingHistoryRow) {
     const docs = line.supporting_documents;
     return (
@@ -172,17 +157,45 @@ export function DealershipOperatorFinancePanel({
                 >
                   {DOC_KIND_PT[d.doc_kind]} · {d.original_name}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-muted-foreground hover:text-destructive"
+                <ConfirmActionDialog
+                  title="Remover documento?"
+                  description={
+                    <p>
+                      O arquivo <strong>{d.original_name}</strong> será removido do histórico
+                      de cobrança.
+                    </p>
+                  }
+                  confirmLabel="Remover documento"
+                  confirmPendingLabel="Removendo…"
+                  confirmVariant="destructive"
                   disabled={pending}
-                  aria-label="Remover documento"
-                  onClick={() => handleDeleteDocument(line.id, d.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
+                  onConfirm={async () => {
+                    const fd = new FormData();
+                    fd.set("history_id", line.id);
+                    fd.set("document_id", d.id);
+                    const r = await deleteDealershipBillingHistoryDocumentAction(
+                      dealership.id,
+                      fd,
+                    );
+                    if (r.error) {
+                      toast.error(r.error);
+                      return { error: r.error };
+                    }
+                    afterMutationMessage(r, "Documento removido.");
+                  }}
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-muted-foreground hover:text-destructive"
+                      disabled={pending}
+                      aria-label="Remover documento"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  }
+                />
               </li>
             ))
           )}

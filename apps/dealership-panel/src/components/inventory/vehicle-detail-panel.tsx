@@ -6,6 +6,7 @@ import { buildVehicleTypeSpecDisplayItems } from "@autopainel/shared/lib/vehicle
 import type { VehicleTypeSpecFields } from "@autopainel/shared/lib/vehicle/vehicle-type-spec-options";
 import { resolveVehicleTypeLabel } from "@autopainel/shared/lib/vehicle/vehicle-type-labels";
 import { Badge, Button, Separator } from "@autopainel/shared/ui";
+import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
 
 import { formatBrl } from "@/lib/format/format-brl";
 
@@ -17,6 +18,9 @@ import {
   VehicleSocialSharePanel,
   type SocialPublicationJobSummary,
 } from "./vehicle-social-share-panel";
+import { SoldVehicleReceiptCard } from "./sold-vehicle-receipt-card";
+import { MarkVehicleAsSoldButton } from "./mark-vehicle-as-sold-button";
+import { UnmarkVehicleAsSoldButton } from "./unmark-vehicle-as-sold-button";
 
 export interface VehicleDetailRecord {
   id: string;
@@ -75,15 +79,17 @@ interface VehicleDetailPanelProps {
   artifactTemplateLabel: string;
   socialRecentJobs?: SocialPublicationJobSummary[];
   isQrGeneratorEnabled?: boolean;
-  classifiedsSyncEnabled?: boolean;
-  classifiedsConnectedProviders?: Array<"olx" | "webmotors">;
+  enabledClassifiedProviders?: ClassifiedsProvider[];
+  classifiedsConnectedProviders?: ClassifiedsProvider[];
   classifiedsListings?: VehicleClassifiedListingStatus[];
   classifiedsRecentJobs?: Array<{
-    provider: "olx" | "webmotors";
+    provider: ClassifiedsProvider;
     action: "publish" | "delist";
     status: string;
     lastError: string | null;
   }>;
+  isSaleReceiptEnabled?: boolean;
+  hasSaleReceipt?: boolean;
 }
 
 function statusLabel(status: string, isActive: boolean): string {
@@ -102,10 +108,12 @@ export function VehicleDetailPanel({
   artifactTemplateLabel,
   socialRecentJobs = [],
   isQrGeneratorEnabled = false,
-  classifiedsSyncEnabled = false,
+  enabledClassifiedProviders = [],
   classifiedsConnectedProviders = [],
   classifiedsListings = [],
   classifiedsRecentJobs = [],
+  isSaleReceiptEnabled = false,
+  hasSaleReceipt = false,
 }: VehicleDetailPanelProps) {
   const images = vehicle.images?.filter(Boolean) ?? [];
   const typeLabel = resolveVehicleTypeLabel(vehicle.vehicle_type, vehicle.vehicle_type_custom);
@@ -163,6 +171,25 @@ export function VehicleDetailPanel({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {vehicle.status === "available" ? (
+              <MarkVehicleAsSoldButton
+                vehicleId={vehicle.id}
+                vehicleLabel={`${vehicle.brand} ${vehicle.model}`}
+                variant="default"
+              />
+            ) : (
+              <>
+                <Button variant="default" asChild>
+                  <Link href={`/painel/estoque/${vehicle.id}/recibo`}>
+                    {hasSaleReceipt ? "Imprimir recibo" : "Emitir recibo"}
+                  </Link>
+                </Button>
+                <UnmarkVehicleAsSoldButton
+                  vehicleId={vehicle.id}
+                  vehicleLabel={`${vehicle.brand} ${vehicle.model}`}
+                />
+              </>
+            )}
             <Button variant="outline" asChild>
               <Link href={`/painel/estoque/${vehicle.id}/editar`}>Editar</Link>
             </Button>
@@ -246,7 +273,8 @@ export function VehicleDetailPanel({
       <aside className="space-y-4">
         <VehicleClassifiedsPanel
           vehicleId={vehicle.id}
-          enabled={classifiedsSyncEnabled}
+          enabled={enabledClassifiedProviders.length > 0}
+          enabledProviders={enabledClassifiedProviders}
           connectedProviders={classifiedsConnectedProviders}
           listings={classifiedsListings}
           recentJobs={classifiedsRecentJobs}
@@ -262,6 +290,14 @@ export function VehicleDetailPanel({
           imageCount={images.length}
           recentJobs={socialRecentJobs}
         />
+
+        {vehicle.status === "sold" ? (
+          <SoldVehicleReceiptCard
+            vehicleId={vehicle.id}
+            hasReceipt={hasSaleReceipt}
+            isSaleReceiptEnabled={isSaleReceiptEnabled}
+          />
+        ) : null}
 
         {isQrGeneratorEnabled && vehicle.status === "available" && vehicle.is_active ? (
           <div className="rounded-lg border border-border bg-card p-5">

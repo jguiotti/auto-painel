@@ -32,6 +32,10 @@ Public storefront reads `layout_id` (1–3) via `get_dealership_public_by_id` (r
 
 Closed list `default | serif_editorial | sans_geometric` — consumed by `resolveDealershipFontStacks` in `@autopainel/shared/lib/theme/branding`.
 
+### `vehicle_sale_receipts`
+
+Tabela **`public.vehicle_sale_receipts`**: um registro **editável** por veículo vendido (`vehicle_id` unique). Campos comprador, `payment_lines` JSONB, snapshot do veículo (marca, modelo, tipo, placa, RENAVAM, etc.). **RLS:** tenant via `profiles.dealership_id`. Módulo **`recibo_compra`**. Tipos: **`packages/shared/src/types/sale-receipt.ts`**. Validador CPF/CNPJ: **`@autopainel/shared/lib/validators/buyer-document`**. RPCs: **`upsert_vehicle_sale_receipt`**, **`get_vehicle_sale_receipt`** — interfaces em `supabase-rpc.ts`. Migração: **`20260611143000_sale_receipt_module.sql`**; catálogo consolidado em **`20260611210000_remove_sale_receipt_duplicate_module.sql`**.
+
 ### `dealership_classifieds_oauth_apps`
 
 Tabela **`public.dealership_classifieds_oauth_apps`**: `oauth_client_id` + **`oauth_client_secret_encrypted`** por `dealership_id` e provider (`olx` \| `webmotors`). **RLS:** JWT `anon`/`authenticated` sem acesso; escrita/leitura apenas **service role** / Edge (igual a **`dealership_classifieds_credentials`**). Tipos: **`DealershipClassifiedsOauthAppRow`**, **`DealershipClassifiedsOauthAppUpsertInput`**, **`DealershipClassifiedsOauthAppPublic`** em `packages/shared/src/types/classifieds-oauth-app.ts`. Migração: **`supabase/migrations/20260508220000_dealership_classifieds_oauth_apps.sql`**.

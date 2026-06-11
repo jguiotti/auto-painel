@@ -67,7 +67,32 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | **E2-UX4** | «Salvar e divulgar» no formulário de veículo | ✅ `vehicle-promotion-section.tsx`, `runVehicleSavePromotions` em `estoque/actions.ts` |
 | **E2-S** | Secrets OLX/WM/Meta + homologação portais | DevOps / `.env.example` |
 
-Migração `20260610160000_integrations_ux_facilitated.sql` **aplicada no remoto** (2026-06-11).
+### Integradores classificados v2 — OLX + WebMotors + iCarros + auto-publish (2026-06-11)
+
+**PRD:** `regras-de-negocio.md` (secção 2026-06-11). **Blueprint:** `packages/shared/docs/CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md`. **Squad:** `.cursor/commands/squad.md` (épico integradores).
+
+| ID | Entrega | Estado | Paths / notas |
+| --- | --- | --- | --- |
+**INT-0 concluído (2026-06-11):** migrações `20260611172939_classifieds_modules_by_provider.sql` + `20260611173013_classifieds_enqueue_module_gate.sql` aplicadas no remoto; `classifieds_sync` removido; enterprise/trial com os três módulos; código migrado para gating por portal.
+
+**OAuth dev stub (2026-06-11):** ver `packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md`. Credenciais reais OLX: homologação OLX → `OLX_OAUTH_*` → `npm run classifieds:oauth:platform:configure` + `classifieds:oauth:secrets:configure`. WebMotors real = password grant (INT-5b, não popup). Fix UI: removido `noopener` no popup + `GET /api/painel/integracoes/oauth/connection-status`.
+| **INT-1** | Auto-publish pós create/update (P1–P6 **por portal**) | 🔴 pendente | `actions.ts` — filtrar providers por plano **e** conexão |
+| **INT-2** | Delist antes de `deleteVehicleAction` | 🔴 pendente | `actions.ts` — trigger SQL não cobre DELETE |
+| **INT-3** | Provider `icarros` end-to-end | 🔴 pendente | migration enum; `integrations-hub.ts`; adapter Edge; card UI |
+| **INT-4** | Refresh token + `reauth_required` | 🔴 pendente | `classifieds-refresh-token` / worker |
+| **INT-5** | Homologação APIs reais OLX/WM/iCarros | 🔴 pendente | `CLASSIFIEDS_SYNC_DRY_RUN=false` |
+| **INT-7** | Republicar após update (preço/fotos) | 🟡 pendente | enqueue `publish` idempotente no update |
+
+**Já entregue (base):** OAuth scaffold, fila `classifieds_sync_jobs`, worker `classifieds-sync-worker`, hub `/painel/integracoes`, ficha `vehicle-classifieds-panel.tsx`, trigger delist sold/inactive (`20260610120000_classifieds_sync_worker.sql`), toggles UX (`20260610160000`).
+
+**Decisão PM (2026-06-11 revisão):** módulos **por portal** — plano escolhe integradores; loja só vê/conecta portais contratados. Bundle `classifieds_sync` legado até migração de planos.
+
+**Paths a migrar de `classifieds_sync` → gating por portal:** `classified-actions.ts`, `oauth/start/route.ts`, `DashboardShell.tsx`, `vehicle-form-promotion-config.ts`, `integracoes/page.tsx`, `classifieds-integration-cards.tsx`, E2E `integrations-ux.spec.ts`.
+
+**Migração prevista (INT-0):** `supabase/migrations/20260611172939_classifieds_modules_by_provider.sql` — seed `olx_sync`, `webmotors_sync`, `icarros_sync`; copia pivôs de `classifieds_sync`.
+
+**Env previsto:** `ICARROS_OAUTH_*`, `ICARROS_LISTINGS_API_URL` em `.env.example`.
+
 
 ### Épico 2 — DevOps integrações (2026-06-11)
 
@@ -88,7 +113,7 @@ Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RE
 | ID | Entrega | Artefactos |
 | --- | --- | --- |
 | **E2-QA1** | E2E hub + gating plano + ficha/formulário veículo | ✅ `e2e/specs/dealership-panel-integrations-ux.spec.ts` |
-| **E2-QA2** | E2E OAuth classificados (canal indisponível) | ✅ `e2e/specs/dealership-panel-integrations-oauth.spec.ts` (existente) |
+| **E2-QA2** | E2E OAuth classificados (OAuth pendente / iCarros em breve) | ✅ `e2e/specs/dealership-panel-integrations-oauth.spec.ts` |
 | **E2-QA3** | Matriz isolamento cross-tenant estoque | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` (regressão) |
 | **E2-QA4** | Revisão RLS + RPCs migração `20260610160000` | ✅ code review (policies `dealership_social_carousel_settings`, RPCs com `auth.uid()`) |
 
@@ -102,7 +127,8 @@ Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RE
 | 2 | Given gestor `ecodrive`/`autoprime` (starter/business) — When tenta `/painel/integracoes` — Then redirect `/painel` e menu sem link | automatizado `integrations-ux.spec.ts` |
 | 3 | Given Ferrari demo — When abre ficha — Then painéis social + classificados visíveis | automatizado `integrations-ux.spec.ts` |
 | 4 | Given `guiotti` sem Meta/portais conectados — When abre `/painel/estoque/novo` — Then «Salvar e divulgar» oculto (fix QA 2026-06-11) | automatizado `integrations-ux.spec.ts` |
-| 5 | Given OAuth OLX/WM sem credenciais — When POST start — Then 503 `oauth_not_configured` + copy PT | automatizado `integrations-oauth.spec.ts` |
+| 5 | Given OAuth OLX/WM sem credenciais — When Conectar → Continuar para login — Then modal «Conexão em configuração» + POST 503 `oauth_not_configured` | automatizado `integrations-oauth.spec.ts` |
+| 5b | Given iCarros no plano — When Conectar — Then botão ativo + modal «Em breve» | automatizado `integrations-oauth.spec.ts` |
 | 6 | Given loja A vs B — When lista estoque — Then zero vazamento cross-tenant | automatizado `cross-tenant-isolation.spec.ts` |
 | 7 | Given Meta conectada multi-página — When OAuth conclui — Then `page_selection_required` + diálogo escolha | manual (requer app Meta + migração remota) |
 | 8 | Given preview carrossel — When clica «Ver preview» na ficha — Then modal com slides | manual (requer `SOCIAL_CAROUSEL_RENDER_SECRET` + Sharp) |
@@ -126,6 +152,64 @@ Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `SOCIAL_CAROUSEL_RE
 npm run dev:all   # ou só dealership-panel :3002
 npx playwright test e2e/specs/dealership-panel-integrations-ux.spec.ts e2e/specs/dealership-panel-integrations-oauth.spec.ts
 ```
+
+### Recibo de venda (`recibo_compra`) — arquitetura (2026-06-11)
+
+**Status:** PRD aprovado; migração aplicada no remoto; Backend + Frontend entregues (2026-06-11).
+
+| ID | Entrega | Estado |
+| --- | --- | --- |
+| **SR-A1** | Módulo `recibo_compra` + pivot planos | ✅ migrações `20260611143000_*`, `20260611180000_*`, `20260611210000_remove_sale_receipt_duplicate_module.sql` |
+| **SR-A2** | Tabela `vehicle_sale_receipts` + RLS tenant | ✅ |
+| **SR-A3** | Colunas `vehicles.license_plate`, `vehicles.renavam` | ✅ |
+| **SR-A4** | RPCs `upsert_vehicle_sale_receipt`, `get_vehicle_sale_receipt` | ✅ SQL |
+| **SR-A5** | Tipos `packages/shared/src/types/sale-receipt.ts` | ✅ |
+| **SR-A6** | Validador CPF/CNPJ `lib/validators/buyer-document.ts` | ✅ |
+| **SR-B1** | Server actions + payload print | ✅ `sale-receipt-actions.ts`, `get-vehicle-sale-receipt-page-context.ts`, `map-sale-receipt-row.ts`, `validate-sale-receipt-input.ts` |
+| **SR-F1** | Ficha vendido + rota `/painel/estoque/[vehicleId]/recibo` | ✅ `SoldVehicleReceiptCard`, `SaleReceiptWorkspace`, `SaleReceiptPrintSheet`, `SaleReceiptPrintToolbar`, `MarkVehicleAsSoldButton` |
+
+#### Contratos RPC
+
+| RPC | Args | Retorno | Auth | Notas |
+| --- | --- | --- | --- | --- |
+| `upsert_vehicle_sale_receipt` | `UpsertVehicleSaleReceiptArgs` | `vehicle_sale_receipts` row | authenticated | Veículo deve estar `sold`; gate `recibo_compra` |
+| `get_vehicle_sale_receipt` | `p_vehicle_id` | row | authenticated | `receipt_not_found` se ausente |
+
+`payment_lines` JSON: `[{ "method": "pix"|"cash"|..., "amount": number }]`
+
+#### Superfície frontend (entregue)
+
+| Rota / componente | Path |
+| --- | --- |
+| `/painel/estoque/[vehicleId]/recibo` | `apps/dealership-panel/src/app/painel/estoque/[vehicleId]/recibo/page.tsx` |
+| `SoldVehicleReceiptCard` | `components/inventory/sold-vehicle-receipt-card.tsx` |
+| `SaleReceiptWorkspace` | `components/inventory/sale-receipt-workspace.tsx` (form + preview) |
+| `SaleReceiptPrintSheet` | `components/inventory/sale-receipt-print-sheet.tsx` |
+| `SaleReceiptPrintToolbar` | `components/inventory/sale-receipt-print-toolbar.tsx` |
+| `MarkVehicleAsSoldButton` | `components/inventory/mark-vehicle-as-sold-button.tsx` — listagem + ficha (`markVehicleAsSoldAction`); redireciona à ficha após marcar na listagem |
+| `UnmarkVehicleAsSoldButton` | `components/inventory/unmark-vehicle-as-sold-button.tsx` — desfazer venda (`unmarkVehicleAsSoldAction`) |
+
+**Gating:** `isSaleReceiptModuleEnabled(keys)` — chave `recibo_compra` via `effective_feature_keys_for_active_dealership` + plano `pricing_plan_modules`.
+
+#### Recibo de venda — UX Writer (copy aprovada)
+
+| Elemento | Copy pt-BR |
+| --- | --- |
+| Secção ficha | **Recibo de venda** |
+| CTA | **Imprimir recibo** / **Salvar e imprimir** |
+| Disclaimer tela | **Recibo simples, sem validade fiscal.** Não substitui nota fiscal eletrônica. |
+| Disclaimer impresso | Documento emitido para fins informativos. Sem validade fiscal. |
+| Comprador | Nome completo · CPF ou CNPJ · Endereço de cobrança |
+| Pagamento | Forma de pagamento · Valor · **Adicionar forma de pagamento** |
+| Entrada | Valor de entrada (opcional) |
+| Veículo | Placa · RENAVAM · Modelo · Tipo |
+| Assinaturas | Assinatura da loja · Assinatura do comprador |
+| Empty | **Nenhum recibo emitido ainda** — Registre os dados do comprador para gerar o comprovante. |
+| Erro documento | Informe um CPF ou CNPJ válido. |
+| Erro veículo | Só é possível emitir recibo para veículos marcados como vendidos. |
+| Módulo off | A emissão de recibo de venda não está incluída no plano da sua loja. |
+
+Migração `20260611143000_sale_receipt_module.sql` aplicada no remoto (2026-06-11).
 
 ### Épico 3 — produção multitenant (2026-06-10)
 

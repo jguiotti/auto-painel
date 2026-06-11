@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  isAnyClassifiedsModuleEnabled,
+  isDealershipFeatureEnabled,
+} from "@autopainel/shared/lib/dealership-features";
 import {
   buildDealershipSubdomainSurfaceUrls,
   buildLocalhostDealershipPreviewUrls,
@@ -55,7 +58,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const storefrontUrl = resolveStorefrontUrl(dealershipSlug);
   const showIntegrations =
-    isDealershipFeatureEnabled(activeFeatureKeys, "classifieds_sync") ||
+    isAnyClassifiedsModuleEnabled(activeFeatureKeys) ||
     isDealershipFeatureEnabled(activeFeatureKeys, "social_media_kit");
   const alertOnVitrineLeads =
     viewerRole === "owner" || viewerRole === "super_admin";
