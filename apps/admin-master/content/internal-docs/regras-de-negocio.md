@@ -26,6 +26,60 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Acesso multi-tenant (Admin + painel + vitrine) | `tenant_operator_journey` | **PRD aprovado** (2026-05-08); handoff UX **Fase 2** registrado abaixo; refinamento técnico / QA multi-tenant após **aprovação UX** | Esta página |
 | Templates dinâmicos da vitrine | `layout_id` | Implementado e registrado | Esta página + `documentacao-tecnica.md` |
 | Ambiente demo E2E (3 lojas) | `demo_seed_e2e` | **Implementado (2026-05-26)** | Secção abaixo + `documentacao-tecnica.md` |
+| Roadmap integrações + UX mobile | Épicos 0–5 | **Épico 0 fechado (2026-06-10)** — ver secção abaixo | Esta página + `documentacao-tecnica.md` + `META_INTEGRATION_SIMPLIFIED.md` |
+
+---
+
+### 2026-06-10 — Épico 0: decisões PM (roadmap 0→5)
+
+| Campo | Valor |
+| --- | --- |
+| **Nome** | Fecho de open questions + ordem de execução dos épicos |
+| **Status** | **Aprovado** |
+| **Prioridade de entrega** | Workers de integração **antes** do redesign UX mobile |
+
+#### Decisões fechadas
+
+| # | Questão | Decisão |
+| --- | --- | --- |
+| D1 | Plano **Business** inclui integrações? | **Não** — apenas `finance_simulator` + `qr_generator`. Integrações e métricas avançadas no **Enterprise**. |
+| D2 | Gestor convida vendedores no painel? | **Não** — convites de equipe **somente via admin-master** (aba Equipe na ficha da concessionária). |
+| D3 | Meta: App ID/Secret por loja? | **Não na UI padrão** — modelo **Connect da plataforma** (app AutoPainel única); ver `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`. |
+| D4 | UX mobile vs workers? | **Workers primeiro** (classificados publish/delist + publicação Meta). Épico 1 (UX mobile) após Épicos 2–4. |
+
+#### Ordem de execução acordada
+
+| Ordem | Épico | Foco |
+| --- | --- | --- |
+| 0 | Decisões PM | ✅ Fechado nesta secção |
+| 2 | Workers integração | Classificados + Meta (Connect simplificado + filas) |
+| 3 | Produção multitenant | DNS/TLS, Auth redirects, CI |
+| 4 | Operação admin/painel | Dashboard admin, busca global; **sem** gestão de equipe no painel loja |
+| 1 | UX mobile + copy | EmptyState, Sheet nav admin, pt-BR operador |
+| 5 | QA encerramento | QR físico, cross-tenant, lapidação demo |
+
+#### Regras de negócio (BZ)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-PLAN-001** | Plano **business** inclui exactamente `finance_simulator` e `qr_generator` no catálogo comercial. |
+| **BZ-PLAN-002** | `classifieds_sync`, `social_media_kit` e `advanced_metrics` exigem plano **enterprise** (ou trial/demo interno). |
+| **BZ-TEAM-001** | Criação de utilizadores da loja (gestor, vendedor) é feita **apenas** por operador da plataforma no admin-master; painel da loja **não** expõe convites. |
+| **BZ-META-S01** | OAuth Meta em produção usa app da AutoPainel; gestor não preenche App ID/Secret (detalhe em `META_INTEGRATION_SIMPLIFIED.md`). |
+
+#### Cenários de aceite (CA)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-PLAN-001** | Given loja `autoprime` (business) — When abre painel — Then simulador na vitrine e QR no estoque; menu Integrações e métricas avançadas **ausentes**. |
+| **CA-PLAN-002** | Given loja `guiotti` (enterprise) — When abre painel — Then integrações e métricas disponíveis conforme catálogo enterprise. |
+| **CA-TEAM-001** | Given gestor da loja autenticado — When navega painel — Then **não** existe menu ou página «Convidar vendedor». |
+| **CA-TEAM-002** | Given operador admin — When aba Equipe na ficha concessionária — Then pode convidar colaborador com papel. |
+
+#### Fora de escopo (Épico 4, pós-decisão D2)
+
+- Self-service de convites no `dealership-panel`.
+- Página «Minha equipe» no painel loja (adiado).
 
 ---
 

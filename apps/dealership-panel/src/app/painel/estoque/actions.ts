@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import { dispatchClassifiedsSyncWorker } from "@/lib/integrations/dispatch-classifieds-sync-worker";
 import { normalizePublicSlug } from "@/lib/inventory/normalize-public-slug";
 import {
   parseVehicleCatalogForm,
@@ -231,7 +232,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
 
   const { data: existing, error: loadError } = await supabase
     .from("vehicles")
-    .select("id, images")
+    .select("id, images, status, is_active")
     .eq("id", vehicleId)
     .eq("dealership_id", dealershipId)
     .single();
@@ -367,8 +368,17 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       .eq("dealership_id", dealershipId);
   }
 
+  const shouldDispatchClassifiedsDelist =
+    existing.status !== status ||
+    Boolean(existing.is_active) !== isActive;
+
+  if (shouldDispatchClassifiedsDelist) {
+    await dispatchClassifiedsSyncWorker(3);
+  }
+
   revalidatePath("/painel");
   revalidatePath("/painel/estoque");
+  revalidatePath(`/painel/estoque/${vehicleId}`);
   return { success: true as const };
 }
 

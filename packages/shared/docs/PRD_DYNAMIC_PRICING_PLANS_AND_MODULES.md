@@ -52,11 +52,13 @@ Para manter consistência entre pricing e feature flags dos módulos verticais j
 | Plano | Módulos obrigatórios nesta fase |
 |------|----------------------------------|
 | `starter` | `finance_simulator` |
-| `business` | `finance_simulator`, `qr_generator`, `advanced_metrics`, `classifieds_sync`, `social_media_kit` |
-| `enterprise` | todos os módulos ativos de catálogo (inclui `advanced_metrics` e `classifieds_sync`) |
-| `trial` | manter alinhado à estratégia comercial ativa (quando usado, explicitar checklist no admin) |
+| `business` | `finance_simulator`, `qr_generator` |
+| `enterprise` | todos os módulos ativos de catálogo (inclui `advanced_metrics`, `classifieds_sync`, `social_media_kit`) |
+| `trial` | alinhado ao **enterprise** para demos internas (catálogo completo); comercial fechar checklist explícito no admin quando trial for vendido |
 
-**Regra de governança:** qualquer mudança na presença de `advanced_metrics`, `classifieds_sync` ou `social_media_kit` em planos premium deve atualizar este documento + seeds/migrações + páginas de gestão em `admin-master` no mesmo ciclo.
+**Decisão PM (2026-06-10):** plano **Business** comercial inclui **apenas** simulador + QR. Integrações (`classifieds_sync`, `social_media_kit`) e métricas avançadas ficam no **Enterprise** até nova decisão. Estado demo (`20260527090000`) já reflecte business = finance + QR — **fonte de verdade comercial confirmada**.
+
+**Regra de governança:** qualquer mudança na presença de módulos por plano deve atualizar este documento + seeds/migrações + páginas de gestão em `admin-master` no mesmo ciclo.
 
 ### 2.3 Interface — Gestão global de módulos (`admin-master`)
 

@@ -36,6 +36,37 @@ Projeto remoto linkado: `wcgevmvystdhqpzwuyig` (AutoPainel). Alternar `.env.loca
 
 ---
 
+## Roadmap épicos 0–5 (2026-06-10)
+
+Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **implementação** (prioridade workers):
+
+| Épico | Nome | Entregas principais | Estado |
+| --- | --- | --- | --- |
+| **0** | Decisões PM | Business = finance+QR; equipe só admin; Meta Connect; workers first | ✅ Fechado |
+| **2** | Workers integração | Ver tabela abaixo | 🟡 Em progresso (2026-06-10) |
+| **3** | Produção multitenant | DNS wildcard, TLS, Auth redirects, CI lint/build/E2E | 🔲 |
+| **4** | Operação admin | Dashboard KPIs, busca global; sem equipe no painel loja | 🔲 |
+| **1** | UX mobile + copy | EmptyState shared, Sheet nav admin, pt-BR operador | 🔲 Após 2–4 |
+| **5** | QA encerramento | QR físico, matriz cross-tenant, lapidação demo | 🔲 |
+
+### Épico 2 — detalhe técnico (workers)
+
+| ID | Entrega | Artefactos previstos |
+| --- | --- | --- |
+| **E2-C1** | Edge `classifieds-sync-worker` — dequeue `classifieds_sync_jobs`, publish/delist OLX/WM | ✅ `supabase/functions/classifieds-sync-worker/` |
+| **E2-C2** | UI painel: «Publicar nos classificados» na ficha veículo + badge status sync | ✅ `vehicle-classifieds-panel.tsx`, `classified-actions.ts` |
+| **E2-C3** | Trigger/enqueue delist ao `status != available` ou `is_active = false` | ✅ migração `20260610120000_classifieds_sync_worker.sql` |
+| **E2-M1** | Meta Connect plataforma (`META_PLATFORM_APP_ONLY`); remover form App ID da UI | ✅ `meta-platform-connect.ts`, Integrações |
+| **E2-M2** | Edge `social-publish-worker` — MVP post Facebook (dry-run padrão) | ✅ `supabase/functions/social-publish-worker/` |
+| **E2-M3** | Render carrossel Sharp (Route Handler Next, não Edge Deno) | ADR pendente |
+| **E2-S** | Secrets OLX/WM/Meta + homologação portais | DevOps / `.env.example` |
+
+Docs: `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md`, `TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md`.
+
+---
+
+---
+
 ## Iniciativa — módulos da plataforma (2026)
 
 Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento** (`saas_modules.key = 'finance_simulator'`). Blueprint de catálogo dinâmico e RLS: `packages/shared/docs/PRD_DYNAMIC_PRICING_PLANS_AND_MODULES.md`.

@@ -15,6 +15,20 @@ export async function resolveMetaOAuthStartParams(params: {
   const envAppId = process.env.META_APP_CLIENT_ID?.trim();
   const graphVersion =
     process.env.META_GRAPH_API_VERSION?.trim() || "21.0";
+  const platformOnly =
+    process.env.META_PLATFORM_APP_ONLY?.trim().toLowerCase() === "true" ||
+    process.env.META_PLATFORM_APP_ONLY?.trim() === "1";
+
+  if (platformOnly || envAppId) {
+    if (!envAppId) {
+      return null;
+    }
+    return {
+      metaAppId: envAppId,
+      graphVersion,
+      redirectUri: resolveMetaRedirectUri(),
+    };
+  }
 
   let admin;
   try {

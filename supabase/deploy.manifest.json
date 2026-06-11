@@ -23,6 +23,14 @@
     {
       "name": "platform-health-ping",
       "verify_jwt": false
+    },
+    {
+      "name": "classifieds-sync-worker",
+      "verify_jwt": false
+    },
+    {
+      "name": "social-publish-worker",
+      "verify_jwt": false
     }
   ]
 }

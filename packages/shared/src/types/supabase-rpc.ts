@@ -50,6 +50,18 @@ export interface PlatformInternalDocumentRow {
   updated_by: string | null;
 }
 
+/** `public.enqueue_classifieds_sync_jobs` — tenant-scoped publish/delist queue. */
+export interface EnqueueClassifiedsSyncJobsArgs {
+  p_vehicle_id: string;
+  p_action: "publish" | "delist";
+  p_providers?: string[] | null;
+}
+
+export interface EnqueueClassifiedsSyncJobsResult {
+  enqueued: number;
+  message?: string;
+}
+
 /** `public.platform_health_ping` — harmless keep-alive for scheduled cron. */
 export interface PlatformHealthPingResult {
   ok: boolean;

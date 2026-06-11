@@ -10,6 +10,10 @@ import { Badge, Button, Separator } from "@autopainel/shared/ui";
 import { formatBrl } from "@/lib/format/format-brl";
 
 import { VehicleSocialSharePanel } from "./vehicle-social-share-panel";
+import {
+  VehicleClassifiedsPanel,
+  type VehicleClassifiedListingStatus,
+} from "./vehicle-classifieds-panel";
 
 export interface VehicleDetailRecord {
   id: string;
@@ -66,6 +70,15 @@ interface VehicleDetailPanelProps {
   metaConnected: boolean;
   artifactTemplateLabel: string;
   isQrGeneratorEnabled?: boolean;
+  classifiedsSyncEnabled?: boolean;
+  classifiedsHasConnectedProvider?: boolean;
+  classifiedsListings?: VehicleClassifiedListingStatus[];
+  classifiedsRecentJobs?: Array<{
+    provider: "olx" | "webmotors";
+    action: "publish" | "delist";
+    status: string;
+    lastError: string | null;
+  }>;
 }
 
 function statusLabel(status: string, isActive: boolean): string {
@@ -82,6 +95,10 @@ export function VehicleDetailPanel({
   metaConnected,
   artifactTemplateLabel,
   isQrGeneratorEnabled = false,
+  classifiedsSyncEnabled = false,
+  classifiedsHasConnectedProvider = false,
+  classifiedsListings = [],
+  classifiedsRecentJobs = [],
 }: VehicleDetailPanelProps) {
   const images = vehicle.images?.filter(Boolean) ?? [];
   const typeLabel = resolveVehicleTypeLabel(vehicle.vehicle_type, vehicle.vehicle_type_custom);
@@ -220,6 +237,14 @@ export function VehicleDetailPanel({
       </div>
 
       <aside className="space-y-4">
+        <VehicleClassifiedsPanel
+          vehicleId={vehicle.id}
+          enabled={classifiedsSyncEnabled}
+          hasConnectedProvider={classifiedsHasConnectedProvider}
+          listings={classifiedsListings}
+          recentJobs={classifiedsRecentJobs}
+        />
+
         <VehicleSocialSharePanel
           vehicleId={vehicle.id}
           enabled={socialShareEnabled}

@@ -68,6 +68,23 @@ async function resolveMetaAppRuntimeConfig(
   const envGraph = Deno.env.get("META_GRAPH_API_VERSION")?.trim() || "21.0";
   const envClientId = Deno.env.get("META_APP_CLIENT_ID")?.trim();
   const envClientSecret = Deno.env.get("META_APP_CLIENT_SECRET")?.trim();
+  const platformOnly =
+    Deno.env.get("META_PLATFORM_APP_ONLY")?.trim().toLowerCase() === "true" ||
+    Deno.env.get("META_PLATFORM_APP_ONLY")?.trim() === "1";
+
+  if (platformOnly) {
+    if (!envClientId || !envClientSecret) {
+      throw new Error(
+        "App Meta da plataforma não configurada. Defina META_APP_CLIENT_ID e META_APP_CLIENT_SECRET.",
+      );
+    }
+    return {
+      clientId: envClientId,
+      clientSecret: envClientSecret,
+      graphVersion: envGraph,
+      redirectUri,
+    };
+  }
 
   const { data: row } = await admin
     .from("dealership_meta_oauth_apps")

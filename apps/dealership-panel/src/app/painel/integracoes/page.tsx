@@ -8,6 +8,10 @@ import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta
 import { getClassifiedsProviderAvailability } from "@/lib/classifieds/get-classifieds-provider-availability";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { getDealershipMetaOauthAppPublic } from "@/lib/data/dealership-meta-oauth-app";
+import {
+  hasMetaPlatformAppConfigured,
+  isMetaPlatformConnectMode,
+} from "@/lib/integrations/meta-platform-connect";
 
 export default async function IntegracoesPage() {
   const { supabase, dealershipId } = await requireDashboardSession();
@@ -63,11 +67,13 @@ export default async function IntegracoesPage() {
   const metaRow = metaConnectionRes.data;
 
   const metaAppRow = await getDealershipMetaOauthAppPublic(dealershipId);
-  const hasMetaAppForOAuth =
-    !!(
-      metaAppRow?.meta_app_id?.trim() ||
-      process.env.META_APP_CLIENT_ID?.trim()
-    );
+  const metaPlatformConnect = isMetaPlatformConnectMode();
+  const hasMetaAppForOAuth = metaPlatformConnect
+    ? hasMetaPlatformAppConfigured()
+    : !!(
+        metaAppRow?.meta_app_id?.trim() ||
+        process.env.META_APP_CLIENT_ID?.trim()
+      );
 
   function isMetaConnectionStatus(
     value: string | null | undefined,
@@ -121,12 +127,20 @@ export default async function IntegracoesPage() {
             Instagram e Facebook
           </h2>
           <div className="space-y-6">
-            <MetaDeveloperAppForm
-              initialMetaAppId={metaAppRow?.meta_app_id ?? ""}
-              initialGraphOverride={
-                metaAppRow?.graph_api_version_override ?? ""
-              }
-            />
+            {!metaPlatformConnect ? (
+              <MetaDeveloperAppForm
+                initialMetaAppId={metaAppRow?.meta_app_id ?? ""}
+                initialGraphOverride={
+                  metaAppRow?.graph_api_version_override ?? ""
+                }
+              />
+            ) : (
+              <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                Clique em <strong className="font-medium text-foreground">Conectar</strong> abaixo
+                e faça login com a conta Facebook da sua loja. Não é necessário configurar App ID
+                ou chaves técnicas.
+              </p>
+            )}
             <SocialMetaIntegrationCard
               isEnabled={isSocialMediaKitEnabled}
               connection={normalizedMetaConnection}

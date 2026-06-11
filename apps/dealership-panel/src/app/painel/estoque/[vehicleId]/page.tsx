@@ -37,7 +37,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
   const { vehicleId } = await params;
   const { supabase, dealershipId } = await requireDashboardSession(`/painel/estoque/${vehicleId}`);
 
-  const [vehicleResult, dealershipResult, unitsResult, metaResult, featuresResult] =
+  const [vehicleResult, dealershipResult, unitsResult, metaResult, featuresResult, listingsResult, jobsResult, classifiedConnectionsResult] =
     await Promise.all([
       supabase
         .from("vehicles")
@@ -58,6 +58,22 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
       supabase.rpc("effective_feature_keys_for_active_dealership", {
         p_dealership_id: dealershipId,
       }),
+      supabase
+        .from("vehicle_classifieds_listings")
+        .select("provider, sync_status, last_synced_at, last_error")
+        .eq("vehicle_id", vehicleId)
+        .eq("dealership_id", dealershipId),
+      supabase
+        .from("classifieds_sync_jobs")
+        .select("provider, action, status, last_error, created_at")
+        .eq("vehicle_id", vehicleId)
+        .eq("dealership_id", dealershipId)
+        .order("created_at", { ascending: false })
+        .limit(6),
+      supabase
+        .from("dealership_classifieds_connections")
+        .select("provider, status")
+        .eq("dealership_id", dealershipId),
     ]);
 
   const vehicle = vehicleResult.data;
@@ -123,6 +139,45 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
   const slug = dealershipResult.data?.slug ?? "";
   const layoutId = dealershipResult.data?.layout_id;
 
+  const classifiedsListings =
+    listingsResult.data
+      ?.filter(
+        (row): row is {
+          provider: "olx" | "webmotors";
+          sync_status: "pending" | "published" | "delisted" | "error";
+          last_synced_at: string | null;
+          last_error: string | null;
+        } => row.provider === "olx" || row.provider === "webmotors",
+      )
+      .map((row) => ({
+        provider: row.provider,
+        syncStatus: row.sync_status,
+        lastSyncedAt: row.last_synced_at,
+        lastError: row.last_error,
+      })) ?? [];
+
+  const classifiedsRecentJobs =
+    jobsResult.data
+      ?.filter(
+        (row): row is {
+          provider: "olx" | "webmotors";
+          action: "publish" | "delist";
+          status: string;
+          last_error: string | null;
+        } =>
+          (row.provider === "olx" || row.provider === "webmotors") &&
+          (row.action === "publish" || row.action === "delist"),
+      )
+      .map((row) => ({
+        provider: row.provider,
+        action: row.action,
+        status: row.status,
+        lastError: row.last_error,
+      })) ?? [];
+
+  const classifiedsHasConnectedProvider =
+    classifiedConnectionsResult.data?.some((row) => row.status === "connected") ?? false;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -137,6 +192,10 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
         metaConnected={metaResult.data?.status === "connected"}
         artifactTemplateLabel={artifactTemplateLabel(layoutId)}
         isQrGeneratorEnabled={isDealershipFeatureEnabled(activeFeatures, "qr_generator")}
+        classifiedsSyncEnabled={isDealershipFeatureEnabled(activeFeatures, "classifieds_sync")}
+        classifiedsHasConnectedProvider={classifiedsHasConnectedProvider}
+        classifiedsListings={classifiedsListings}
+        classifiedsRecentJobs={classifiedsRecentJobs}
       />
     </div>
   );

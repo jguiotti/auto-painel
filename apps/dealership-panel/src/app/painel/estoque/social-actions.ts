@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import { dispatchSocialPublishWorker } from "@/lib/integrations/dispatch-social-publish-worker";
 
 type SocialChannel = "instagram_feed" | "facebook_page";
 type ArtifactTemplate = "classic" | "performance" | "tech";
@@ -113,6 +114,8 @@ export async function enqueueVehicleSocialShareAction(
   if (insertError) {
     return { error: insertError.message };
   }
+
+  await dispatchSocialPublishWorker(1);
 
   revalidatePath(`/painel/estoque/${vehicleId}`);
   revalidatePath("/painel/estoque");
