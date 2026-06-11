@@ -106,6 +106,14 @@ export function AdminShell({
     () => commandPaletteEntities.filter((entity) => entity.kind === "plan"),
     [commandPaletteEntities],
   );
+  const moduleEntities = useMemo(
+    () => commandPaletteEntities.filter((entity) => entity.kind === "module"),
+    [commandPaletteEntities],
+  );
+  const navEntities = useMemo(
+    () => commandPaletteEntities.filter((entity) => entity.kind === "nav"),
+    [commandPaletteEntities],
+  );
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -275,18 +283,20 @@ export function AdminShell({
         <CommandInput placeholder="Buscar concessionária, plano ou página..." />
         <CommandList>
           <CommandEmpty>Nada encontrado.</CommandEmpty>
-          <CommandGroup heading="Navegação">
-            {nav.map((item) => (
-              <CommandItem
-                key={item.href}
-                value={`${item.label} navegação página ${item.href}`}
-                onSelect={() => navigateFromPalette(item.href)}
-              >
-                <item.icon className="size-4" />
-                <span>{item.label}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {navEntities.length > 0 ? (
+            <CommandGroup heading="Navegação">
+              {navEntities.map((entity) => (
+                <CommandItem
+                  key={entity.id}
+                  value={entity.searchValue}
+                  onSelect={() => navigateFromPalette(entity.href)}
+                >
+                  <LayoutDashboard className="size-4" />
+                  <span>{entity.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
           {dealershipEntities.length > 0 ? (
             <CommandGroup heading="Concessionárias">
               {dealershipEntities.map((entity) => (
@@ -310,6 +320,20 @@ export function AdminShell({
                   onSelect={() => navigateFromPalette(entity.href)}
                 >
                   <Layers className="size-4" />
+                  <span>{entity.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {moduleEntities.length > 0 ? (
+            <CommandGroup heading="Módulos">
+              {moduleEntities.map((entity) => (
+                <CommandItem
+                  key={entity.id}
+                  value={entity.searchValue}
+                  onSelect={() => navigateFromPalette(entity.href)}
+                >
+                  <Package className="size-4" />
                   <span>{entity.label}</span>
                 </CommandItem>
               ))}

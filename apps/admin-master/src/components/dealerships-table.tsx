@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -34,6 +34,8 @@ import {
   TableHeader,
   TableRow,
 } from "@autopainel/shared/ui";
+
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 
 import { deleteDealershipAction } from "@/actions/dealerships";
 import type { DealershipAdminRow } from "@/types/dealership-admin";
@@ -103,9 +105,11 @@ function resolvePlanLabel(
 export function DealershipsTable({
   rows,
   pricingPlanLabels = {},
+  initialStatusFilter,
 }: {
   rows: DealershipAdminRow[];
   pricingPlanLabels?: Record<string, string>;
+  initialStatusFilter?: DealershipAdminRow["status"];
 }) {
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<DealershipAdminRow | null>(
@@ -115,7 +119,7 @@ export function DealershipsTable({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     DealershipAdminRow["status"] | "all"
-  >("all");
+  >(initialStatusFilter ?? "all");
   const [themeFilter, setThemeFilter] = useState<
     DealershipAdminRow["storefront_theme_mode"] | "all"
   >("all");
@@ -326,10 +330,26 @@ export function DealershipsTable({
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                  {rows.length === 0
-                    ? "Nenhuma concessionária cadastrada."
-                    : "Nenhuma concessionária encontrada com os filtros atuais."}
+                <TableCell colSpan={8} className="p-0">
+                  <EmptyState
+                    className="m-4 border-0 bg-transparent"
+                    icon={Building2}
+                    title={
+                      rows.length === 0
+                        ? "Nenhuma concessionária cadastrada"
+                        : "Nenhum resultado com estes filtros"
+                    }
+                    description={
+                      rows.length === 0
+                        ? "Crie a primeira loja para começar a operação multitenant."
+                        : "Ajuste a busca ou o status para ver outras concessionárias."
+                    }
+                    action={
+                      rows.length === 0
+                        ? { label: "Nova concessionária", href: "/painel/concessionarias/nova" }
+                        : undefined
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (

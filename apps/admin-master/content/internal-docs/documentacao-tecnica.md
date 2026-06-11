@@ -44,10 +44,10 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | --- | --- | --- | --- |
 | **0** | Decisões PM | Business = finance+QR; equipe só admin; Meta Connect; workers first | ✅ Fechado |
 | **2** | Workers integração | Ver tabela abaixo | ✅ Entregue (2026-06-10) |
-| **3** | Produção multitenant | DNS wildcard, TLS, Auth redirects, CI lint/build/E2E | 🟡 CI + checklist + E2E cross-tenant |
-| **4** | Operação admin | Dashboard KPIs, busca global; sem equipe no painel loja | 🟡 Dashboard + ⌘K entidades |
-| **1** | UX mobile + copy | EmptyState shared, Sheet nav admin, pt-BR operador | 🟡 Sheet admin, copy pt-BR, EmptyState |
-| **5** | QA encerramento | QR físico, matriz cross-tenant, lapidação demo | 🟡 E2E cross-tenant + QR print |
+| **3** | Produção multitenant | DNS wildcard, TLS, Auth redirects, CI lint/build/E2E | 🟡 CI + checklist + E2E; go-live DNS manual |
+| **4** | Operação admin | Dashboard KPIs, busca global; sem equipe no painel loja | 🟡 KPIs + tendência leads + ⌘K módulos + filtro URL status |
+| **1** | UX mobile + copy | EmptyState shared, Sheet nav admin, pt-BR operador | 🟡 EmptyState inbox/lojas + copy pt-BR residual |
+| **5** | QA encerramento | QR físico, matriz cross-tenant, lapidação demo | 🟡 E2E 3 lojas demo + QR smoke |
 
 ### Épico 2 — detalhe técnico (workers)
 
@@ -80,8 +80,10 @@ Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live
 | ID | Entrega | Artefactos |
 | --- | --- | --- |
 | **E4-D1** | KPIs ampliados (leads 7d, pending_setup, past_due) | ✅ `platform-metrics.ts`, `dashboard/page.tsx` |
-| **E4-D2** | Command palette com concessionárias e planos | ✅ `command-palette-entities.ts`, `admin-shell.tsx` |
+| **E4-D2** | Command palette com concessionárias, planos e módulos | ✅ `command-palette-entities.ts`, `admin-shell.tsx` |
 | **E4-D3** | Ações rápidas no dashboard | ✅ `dashboard/page.tsx` |
+| **E4-D4** | Filtro `?status=` na listagem de concessionárias | ✅ `concessionarias/page.tsx`, `dealerships-table.tsx` |
+| **E4-D5** | Tendência leads 7d vs período anterior | ✅ `platform-metrics.ts`, dashboard |
 
 ### Épico 1 — UX mobile + copy (2026-06-10)
 
@@ -90,12 +92,14 @@ Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live
 | **E1-N1** | Nav mobile admin via Sheet (substitui scroll horizontal) | ✅ `admin-mobile-nav.tsx` |
 | **E1-C1** | Badge «Plataforma»; copy pt-BR residual | ✅ `admin-shell.tsx`, `conta-inativa/page.tsx`, dashboard loja |
 | **E1-U1** | `EmptyState` compartilhado | ✅ `packages/shared/src/components/empty-state.tsx` |
+| **E1-U2** | EmptyState em concessionárias e inbox contatos | ✅ `dealerships-table.tsx`, `LeadInbox.tsx` |
+| **E1-C2** | Copy pt-BR residual (Meta, colaboradores) | ✅ `integration-user-messages.ts`, `dealership-collaborators.ts` |
 
 ### Épico 5 — QA (2026-06-10)
 
 | ID | Entrega | Artefactos |
 | --- | --- | --- |
-| **E5-Q1** | Matriz cross-tenant guiotti/autoprime | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` |
+| **E5-Q1** | Matriz cross-tenant guiotti/autoprime/ecodrive | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` |
 | **E5-Q2** | Smoke lâmina QR veículo demo | ✅ `e2e/specs/vehicle-qr-print.spec.ts` |
 | **E5-Q3** | Lapidação vitrine demo | ✅ existente `storefront-lapida-qa.spec.ts` |
 

@@ -49,6 +49,24 @@ test.describe("cross-tenant isolation — painel lojista", () => {
     await context.close();
   });
 
+  test("estoque ecodrive não expõe veículos da guiotti", async ({ browser }) => {
+    const port = resolveDealershipPanelPort();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await loginDealershipPanel(page, {
+      slug: "ecodrive",
+      email: "gestor.ecodrive@autopainel.demo",
+      password: demoPassword,
+    });
+
+    await page.goto(`http://ecodrive.localhost:${port}/painel/estoque`);
+    await expect(page.getByRole("link", { name: /BYD|Dolphin/i }).first()).toBeVisible();
+    await expect(page.getByText(/Ferrari F8/i)).toHaveCount(0);
+
+    await context.close();
+  });
+
   test("nome da loja no shell reflete o tenant autenticado", async ({ browser }) => {
     const port = resolveDealershipPanelPort();
 
@@ -73,5 +91,16 @@ test.describe("cross-tenant isolation — painel lojista", () => {
     await autoprimePage.goto(`http://autoprime.localhost:${port}/painel`);
     await expect(autoprimePage.getByText(/AutoPrime/i).first()).toBeVisible();
     await autoprimeContext.close();
+
+    const ecodriveContext = await browser.newContext();
+    const ecodrivePage = await ecodriveContext.newPage();
+    await loginDealershipPanel(ecodrivePage, {
+      slug: "ecodrive",
+      email: "gestor.ecodrive@autopainel.demo",
+      password: demoPassword,
+    });
+    await ecodrivePage.goto(`http://ecodrive.localhost:${port}/painel`);
+    await expect(ecodrivePage.getByText(/EcoDrive/i).first()).toBeVisible();
+    await ecodriveContext.close();
   });
 });

@@ -24,8 +24,21 @@ import { fetchPlatformMetrics } from "@/lib/data/platform-metrics";
 
 export const dynamic = "force-dynamic";
 
+function formatLeadDelta(current: number, previous: number): string {
+  if (previous === 0) {
+    return current > 0 ? "Sem base no período anterior" : "Sem leads no período";
+  }
+  const delta = ((current - previous) / previous) * 100;
+  const sign = delta >= 0 ? "+" : "";
+  return `${sign}${delta.toFixed(1)}% vs. 7 dias anteriores (${previous})`;
+}
+
 export default async function DashboardPage() {
   const m = await fetchPlatformMetrics();
+  const leadsTrendLabel = formatLeadDelta(
+    m.platformLeadsLast7Days,
+    m.platformLeadsPrevious7Days,
+  );
 
   const kpiCards = [
     {
@@ -52,7 +65,7 @@ export default async function DashboardPage() {
     {
       title: "Leads (7 dias)",
       value: m.platformLeadsLast7Days,
-      description: "Contatos e simulações em todas as lojas",
+      description: leadsTrendLabel,
       icon: MessageSquare,
       href: undefined,
     },

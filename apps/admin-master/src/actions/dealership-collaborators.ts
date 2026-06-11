@@ -148,7 +148,7 @@ export async function inviteDealershipCollaboratorAction(
     if (!existingId) {
       return {
         error:
-          "Este e-mail já está registado no Supabase, mas não foi possível localizar o utilizador. Tente novamente ou contacte o suporte.",
+          "Este e-mail já está cadastrado no Supabase, mas não foi possível localizar o usuário. Tente novamente ou entre em contato com o suporte.",
       };
     }
     userId = existingId;

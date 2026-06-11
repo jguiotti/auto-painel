@@ -10,6 +10,7 @@ export interface PlatformMetrics {
   pendingSetupDealerships: number;
   pastDueSubscriptions: number;
   platformLeadsLast7Days: number;
+  platformLeadsPrevious7Days: number;
 }
 
 export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
@@ -25,10 +26,12 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
       pendingSetupDealerships: 0,
       pastDueSubscriptions: 0,
       platformLeadsLast7Days: 0,
+      platformLeadsPrevious7Days: 0,
     };
   }
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     { count: totalDealerships },
@@ -38,6 +41,7 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
     { count: pendingSetup },
     { count: pastDue },
     { count: leadsLast7Days },
+    { count: leadsPrevious7Days },
   ] = await Promise.all([
     supabase.from("dealerships").select("*", { count: "exact", head: true }),
     supabase
@@ -61,6 +65,11 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
       .from("leads")
       .select("*", { count: "exact", head: true })
       .gte("created_at", sevenDaysAgo),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", fourteenDaysAgo)
+      .lt("created_at", sevenDaysAgo),
   ]);
 
   return {
@@ -71,5 +80,6 @@ export async function fetchPlatformMetrics(): Promise<PlatformMetrics> {
     pendingSetupDealerships: pendingSetup ?? 0,
     pastDueSubscriptions: pastDue ?? 0,
     platformLeadsLast7Days: leadsLast7Days ?? 0,
+    platformLeadsPrevious7Days: leadsPrevious7Days ?? 0,
   };
 }

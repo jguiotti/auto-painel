@@ -1,7 +1,9 @@
 "use client";
 
+import { Inbox } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@autopainel/shared/ui";
 
 import { LeadList, type LeadListItem } from "@/components/leads/LeadList";
@@ -42,6 +44,16 @@ export function LeadInbox({
       );
     });
   }, [leads, query, typeFilter]);
+
+  if (leads.length === 0) {
+    return (
+      <EmptyState
+        icon={Inbox}
+        title="Nenhum contato ainda"
+        description="Quando clientes enviarem mensagens ou simulações pela vitrine, eles aparecerão aqui."
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

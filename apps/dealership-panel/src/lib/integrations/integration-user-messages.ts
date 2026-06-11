@@ -50,7 +50,7 @@ export function mapClassifiedsOAuthCallbackError(raw: string | undefined): strin
     return "Login cancelado. Você pode tentar conectar novamente quando quiser.";
   }
   if (normalized.includes("invalid") && normalized.includes("state")) {
-    return "A sessão de login expirou. Clique em Conectar novamente.";
+    return "O login expirou. Clique em Conectar novamente.";
   }
   if (normalized.includes("token endpoint")) {
     return "Não foi possível validar o login com o portal. Tente novamente em alguns minutos.";

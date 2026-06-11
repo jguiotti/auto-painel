@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
   if (sessionError) {
     return NextResponse.json(
-      { error: `Falha ao iniciar sessão Meta: ${sessionError.message}` },
+      { error: `Falha ao iniciar conexão Meta: ${sessionError.message}` },
       { status: 500 },
     );
   }
