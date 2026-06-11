@@ -41,6 +41,15 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+.env.local
+**/.env.local
+apps/**/.env.local
+supabase/.env
+supabase/.env.local
+supabase/.env.*.local
+# Local-only list for git-filter-repo (scripts/git-purge-secrets-from-history.sh)
+.secrets-purge-local.txt
+replacements-purge-secrets.txt
 
 # vercel
 .vercel

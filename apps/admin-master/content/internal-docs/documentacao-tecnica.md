@@ -28,7 +28,11 @@ Projeto remoto linkado: `wcgevmvystdhqpzwuyig` (AutoPainel). Alternar `.env.loca
 
 **Keep-alive hosted (2026-05-27):** RPC `platform_health_ping`, tabela `platform_health_ping_log`, Edge Function `platform-health-ping`, script `npm run supabase:ping`, workflow `.github/workflows/supabase-health-ping.yml` (cron diário). Guia: `packages/shared/docs/SUPABASE_HEALTH_PING.md`. Migração: `supabase/migrations/20260527210000_platform_health_ping.sql`.
 
-**Deploy automatizado (2026-05-27):** `npm run supabase:deploy` + workflows `.github/workflows/supabase-deploy.yml` (push `main` em `supabase/migrations/**`) e `supabase-migrations-check.yml` (PR dry-run). Manifesto: `supabase/deploy.manifest.json`. Guia: `packages/shared/docs/SUPABASE_DEPLOY.md`. Secrets GitHub: `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`, `SUPABASE_ACCESS_TOKEN`.
+**Deploy automatizado (2026-05-27):** `npm run supabase:deploy` + workflows `.github/workflows/supabase-deploy.yml` (push `main` em `supabase/migrations/**`) e `supabase-migrations-check.yml` (PR dry-run). Manifesto: `supabase/deploy.manifest.json`. Guia: `packages/shared/docs/SUPABASE_DEPLOY.md`. Secrets GitHub: `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+
+**Deploy remoto validado (2026-06-10):** repair `20260527013053` (`reverted`) — registo em `supabase/MIGRATION_REPAIR_LOG.md`; push de 5 migrações (`20260526190000` … `20260527210000`); paridade 57/57 local│remoto; Edge Functions republicadas. Ping local falha com URL `127.0.0.1` sem Docker — usar `npm run supabase:ping:remote` com `SUPABASE_ANON_KEY` remota em `.env.local`.
+
+**Segredos (2026-06-10):** `.env.local` reforçado no `.gitignore`; `npm run env:check-tracked`, `git:untrack-env`, `git:purge-secrets` — guia `packages/shared/docs/SECURITY_SECRETS.md`. Deploy script redige password/token nos logs.
 
 ---
 

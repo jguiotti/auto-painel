@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { loadRootEnvLocal, repoRoot } from "./lib/load-root-env.mjs";
+import { redactCliArgs } from "./lib/redact-cli-args.mjs";
 
 const dryRun = process.argv.includes("--dry-run");
 const skipFunctions = process.env.SUPABASE_DEPLOY_SKIP_FUNCTIONS === "true";
@@ -42,23 +43,19 @@ if (!dbPassword) {
 }
 
 function run(command, args, { allowFail = false } = {}) {
-  console.log(`\n→ ${command} ${args.join(" ")}`);
+  console.log(`\n→ ${command} ${redactCliArgs(args).join(" ")}`);
   const result = spawnSync(command, args, {
     cwd: repoRoot,
     encoding: "utf8",
     env: process.env,
-    stdio: ["inherit", "pipe", "pipe"],
+    stdio: "inherit",
   });
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim();
-  if (output.length > 0) {
-    console.log(output);
-  }
   const code = result.status ?? 1;
   if (code !== 0 && !allowFail) {
     console.error(`\nComando falhou (exit ${code}): ${command}`);
     process.exit(code);
   }
-  return { code, output };
+  return { code };
 }
 
 console.log(`AutoPainel Supabase deploy → project ${projectRef}`);

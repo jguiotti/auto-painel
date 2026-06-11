@@ -6,8 +6,10 @@
  *   edge — GET  /functions/v1/platform-health-ping (needs PLATFORM_HEALTH_PING_SECRET if set on project)
  *
  * Env (root .env.local or CI secrets):
- *   NEXT_PUBLIC_SUPABASE_URL
+ *   NEXT_PUBLIC_SUPABASE_URL  (dev local)
+ *   SUPABASE_URL              (remoto — CI / npm run supabase:ping:remote)
  *   NEXT_PUBLIC_SUPABASE_ANON_KEY
+ *   SUPABASE_ANON_KEY         (remoto — alias usado no CI)
  *   PLATFORM_HEALTH_PING_SECRET (optional, for edge mode)
  *   SUPABASE_PING_MODE (optional: rpc | edge)
  */
@@ -15,16 +17,52 @@ import { loadRootEnvLocal } from "./lib/load-root-env.mjs";
 
 loadRootEnvLocal();
 
-const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const useRemote =
+  process.argv.includes("--remote") ||
+  process.env.SUPABASE_PING_TARGET === "remote";
+
+if (useRemote && !process.env.SUPABASE_URL && process.env.SUPABASE_PROJECT_REF) {
+  process.env.SUPABASE_URL = `https://${process.env.SUPABASE_PROJECT_REF}.supabase.co`;
+}
+
+const supabaseUrl = (
+  process.env.SUPABASE_URL ??
+  process.env.SUPABASE_PING_URL ??
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  ""
+).replace(/\/$/, "");
+let anonKey =
+  process.env.SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  "";
+
+if (useRemote && !process.env.SUPABASE_ANON_KEY) {
+  console.error(
+    "Ping remoto exige SUPABASE_ANON_KEY na raiz .env.local (Dashboard → Project Settings → API → anon public).",
+  );
+  console.error(
+    "A chave NEXT_PUBLIC_SUPABASE_ANON_KEY local (Docker) não funciona no projeto hospedado.",
+  );
+  process.exit(1);
+}
+
+if (useRemote) {
+  anonKey = process.env.SUPABASE_ANON_KEY ?? "";
+}
 const pingSecret = process.env.PLATFORM_HEALTH_PING_SECRET ?? "";
 const mode = (process.env.SUPABASE_PING_MODE ?? "rpc").toLowerCase();
 
 if (!supabaseUrl || !anonKey) {
   console.error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY (.env.local or CI secrets).",
+    "Missing Supabase URL/anon key. Use NEXT_PUBLIC_* (local) or SUPABASE_URL + SUPABASE_ANON_KEY (remoto).",
   );
   process.exit(1);
+}
+
+if (supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost")) {
+  console.warn(
+    "Aviso: ping aponta para Supabase local. Para o projeto hospedado: npm run supabase:ping:remote",
+  );
 }
 
 async function pingRpc() {
@@ -83,6 +121,11 @@ try {
 
   if (!response.ok) {
     console.error(`Falhou: HTTP ${response.status} em ${latencyMs}ms`, parsed);
+    if (response.status === 401 && useRemote) {
+      console.error(
+        "401: confira SUPABASE_ANON_KEY (remota) em .env.local — não use a anon key do Docker local.",
+      );
+    }
     process.exit(1);
   }
 
