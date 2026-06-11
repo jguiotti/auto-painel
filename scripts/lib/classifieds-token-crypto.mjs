@@ -1,7 +1,7 @@
 /**
  * AES-GCM encrypt compatible with Supabase Edge classifieds-crypto / shared token crypto.
  */
-import { createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createHash, randomBytes } from "node:crypto";
 
 function toBase64(bytes) {
   return Buffer.from(bytes).toString("base64");

@@ -221,6 +221,8 @@ Migração `20260611143000_sale_receipt_module.sql` aplicada no remoto (2026-06-
 
 Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live por domínio real.
 
+**Deploy Vercel (2026-06-11):** guia `packages/shared/docs/VERCEL_DEPLOY.md` — 4 projectos (`autopainel-marketing`, `autopainel-admin`, `autopainel-panel`, `autopainel-customer`); `vercel.json` por app; DNS Registro.br; painel em `{slug}.loja.autopainel.com.br` (`NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=loja.autopainel.com.br`); vitrine em `{slug}.autopainel.com.br`. Script `npm run vercel:link:all`. **OLX prod:** `platform_classifieds_oauth_providers` actualizado no remoto + Edge secrets via `classifieds:oauth:*:configure`; OAuth start devolve `auth.olx.com.br` com `CLASSIFIEDS_OAUTH_DEV_STUB=false`. Fix `scripts/lib/classifieds-token-crypto.mjs` (`createCipheriv` import).
+
 ### Épico 4 — operação admin (2026-06-10)
 
 | ID | Entrega | Artefactos |

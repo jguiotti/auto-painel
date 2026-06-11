@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci --prefix ../..",
+  "buildCommand": "npm exec --prefix ../.. -- turbo run build --filter=@autopainel/dealership-panel",
+  "framework": "nextjs"
+}

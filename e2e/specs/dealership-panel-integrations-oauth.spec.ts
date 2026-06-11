@@ -51,12 +51,17 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
     await expect(olxCard.getByText("Conectado")).toBeVisible({ timeout: 20000 });
   });
 
-  test("OLX inicia OAuth (dev stub ou 503 sem credenciais)", async ({ page }) => {
+  test("OLX inicia OAuth (dev stub, OLX real ou 503 sem credenciais)", async ({ page }) => {
     const result = await postClassifiedsOAuthStart(page, "olx");
 
     if (devStubEnabled === "true" || devStubEnabled === "1") {
       expect(result.status).toBe(200);
       expect(result.body.authorizationUrl).toMatch(/oauth\/dev\/authorize/);
+      return;
+    }
+
+    if (result.status === 200 && result.body.authorizationUrl) {
+      expect(result.body.authorizationUrl).toMatch(/auth\.olx\.com\.br/);
       return;
     }
 
