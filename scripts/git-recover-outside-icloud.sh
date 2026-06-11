@@ -22,13 +22,8 @@ echo "→ Clone para $DEST (fora do iCloud)..."
 git clone "$REMOTE" "$DEST"
 cd "$DEST"
 
-echo "→ A copiar ficheiros alterados (sem .git, node_modules, .turbo)..."
-rsync -a --delete \
-  --exclude .git \
-  --exclude node_modules \
-  --exclude .turbo \
-  --exclude apps/*/.next \
-  "$SRC/" "$DEST/"
+echo "→ A copiar ficheiros alterados (lista fixa; rsync completo trava no iCloud)..."
+bash "$SRC/scripts/git-sync-changed-files.sh" "$DEST"
 
 echo ""
 echo "OK. Próximos passos:"
