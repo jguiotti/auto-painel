@@ -226,6 +226,14 @@ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=autopainel.com.br
 
 Sem `SUPABASE_SERVICE_ROLE_KEY` no customer-site salvo necessidade futura.
 
+### GTM (todos os apps)
+
+```
+NEXT_PUBLIC_GTM_ID=GTM-MV99ZXW9
+```
+
+Adicionar em **Production** (e Preview, se desejar) nos **4** projectos Vercel. Redeploy obrigatório. Guia completo: `packages/shared/docs/GTM.md`.
+
 ---
 
 ## 5. Supabase Auth (obrigatório)

@@ -173,9 +173,25 @@
       "import": "./src/components/empty-state.tsx",
       "default": "./src/components/empty-state.tsx"
     },
+    "./components/analytics/autopainel-google-tag-manager": {
+      "types": "./src/components/analytics/autopainel-google-tag-manager.tsx",
+      "import": "./src/components/analytics/autopainel-google-tag-manager.tsx",
+      "default": "./src/components/analytics/autopainel-google-tag-manager.tsx"
+    },
+    "./lib/analytics/gtm-container-id": {
+      "types": "./src/lib/analytics/gtm-container-id.ts",
+      "import": "./src/lib/analytics/gtm-container-id.ts",
+      "default": "./src/lib/analytics/gtm-container-id.ts"
+    },
+    "./lib/analytics/extract-dealership-slug-from-host": {
+      "types": "./src/lib/analytics/extract-dealership-slug-from-host.ts",
+      "import": "./src/lib/analytics/extract-dealership-slug-from-host.ts",
+      "default": "./src/lib/analytics/extract-dealership-slug-from-host.ts"
+    },
     "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },
   "peerDependencies": {
+    "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

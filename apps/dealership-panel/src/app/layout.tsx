@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import {
+  AutopainelGoogleTagManagerBody,
+  AutopainelGoogleTagManagerHead,
+} from "@autopainel/shared/components/analytics/autopainel-google-tag-manager";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,7 +33,13 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <AutopainelGoogleTagManagerHead appSurface="dealership_panel" />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <AutopainelGoogleTagManagerBody appSurface="dealership_panel" />
+        {children}
+      </body>
     </html>
   );
 }

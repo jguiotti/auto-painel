@@ -1219,6 +1219,8 @@ _Registro histórico do que já existia antes da execução guiada pelo PRD apro
 
 ## Histórico vivo — decisões técnicas
 
+- **2026-06-12 — Google Tag Manager (multitenant):** snippet GTM centralizado em `packages/shared` (`AutopainelGoogleTagManagerHead` / `Body`); integrado nos root layouts dos 4 apps Next.js; `dataLayer` com `ap_app_surface`, `ap_dealership_slug`, `ap_dealership_id`, `ap_page_hostname` para segmentar marketing/admin/painel/vitrine e lojas novas sem deploy. Env: `NEXT_PUBLIC_GTM_ID` (+ overrides opcionais por superfície). Doc: `packages/shared/docs/GTM.md`.
+
 - **2026-05-08 — Resolução de host e UX de erro:** registadas rotas `/erro/concessionaria` (`dealership-panel`, `customer-site`); migração `20260508240000_resolve_dealership_host_slug_ci.sql` (slug CI); regras **BZ-TERR-*** em `regras-de-negocio.md`; secção «Resolução de host» atualizada acima; doc partilhado `packages/shared/docs/TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md` §2.2.1.
 
 - **Branch / PR:** _pendente_

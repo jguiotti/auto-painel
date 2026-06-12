@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import {
+  AutopainelGoogleTagManagerBody,
+  AutopainelGoogleTagManagerHead,
+} from "@autopainel/shared/components/analytics/autopainel-google-tag-manager";
+
 import "./globals.css";
 
 import { Toaster } from "@autopainel/shared/ui";
@@ -27,9 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <AutopainelGoogleTagManagerHead appSurface="admin" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >
+        <AutopainelGoogleTagManagerBody appSurface="admin" />
         {children}
         <Toaster richColors closeButton position="top-center" />
       </body>
