@@ -1,3 +1,4 @@
+import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 import {
   isClassifiedsProviderModuleEnabled,
 } from "@autopainel/shared/lib/dealership-features";
@@ -11,6 +12,7 @@ import {
   createOAuthState,
   createPkceChallenge,
   createPkceVerifier,
+  providerUsesPkce,
 } from "@/lib/classifieds/oauth-pkce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
@@ -78,6 +80,30 @@ export async function POST(request: NextRequest) {
 
   const panelOrigin = resolveDealershipPanelOrigin(request);
 
+  try {
+    const admin = createSupabaseServiceRoleClient();
+    await admin
+      .from("dealership_classifieds_oauth_sessions")
+      .update({
+        status: "expired",
+        error_reason: "replaced_by_new_attempt",
+      })
+      .eq("dealership_id", dealershipIdFromCookie)
+      .eq("provider", provider)
+      .eq("status", "pending");
+  } catch {
+    await supabase
+      .from("dealership_classifieds_oauth_sessions")
+      .update({
+        status: "expired",
+        error_reason: "replaced_by_new_attempt",
+      })
+      .eq("dealership_id", dealershipIdFromCookie)
+      .eq("provider", provider)
+      .eq("status", "pending")
+      .eq("created_by", user.id);
+  }
+
   let providerConfig;
   try {
     providerConfig = await resolveClassifiedsOAuthProviderConfigForDealership({
@@ -105,8 +131,9 @@ export async function POST(request: NextRequest) {
   }
 
   const state = createOAuthState();
-  const codeVerifier = createPkceVerifier();
-  const codeChallenge = createPkceChallenge(codeVerifier);
+  const usesPkce = providerUsesPkce(provider);
+  const codeVerifier = usesPkce ? createPkceVerifier() : null;
+  const codeChallenge = codeVerifier ? createPkceChallenge(codeVerifier) : null;
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
   const { error: sessionError } = await supabase
@@ -153,9 +180,11 @@ export async function POST(request: NextRequest) {
     client_id: providerConfig.clientId,
     redirect_uri: providerConfig.redirectUri,
     state,
-    code_challenge: codeChallenge,
-    code_challenge_method: "S256",
   });
+  if (usesPkce && codeChallenge) {
+    params.set("code_challenge", codeChallenge);
+    params.set("code_challenge_method", "S256");
+  }
   if (providerConfig.scope) {
     params.set("scope", providerConfig.scope);
   }

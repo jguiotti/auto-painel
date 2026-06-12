@@ -1,9 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
-import { mapClassifiedsOAuthCallbackError } from "@/lib/integrations/integration-user-messages";
 
-const POPUP_ERROR_CODES = new Set([
+type PopupErrorCode =
+  | "invalid_callback"
+  | "session_expired"
+  | "session_invalid"
+  | "cancelled"
+  | "missing_code"
+  | "token_exchange_failed"
+  | "configuration"
+  | "unknown";
+
+const POPUP_ERROR_CODES = new Set<PopupErrorCode>([
   "invalid_callback",
   "session_expired",
   "session_invalid",
@@ -14,44 +23,27 @@ const POPUP_ERROR_CODES = new Set([
   "unknown",
 ]);
 
-function jsonForPopup(payload: Record<string, unknown>): string {
-  return JSON.stringify(payload).replaceAll("</", "<\\/");
+function parsePopupErrorCode(raw: string | null): PopupErrorCode {
+  if (raw && POPUP_ERROR_CODES.has(raw as PopupErrorCode)) {
+    return raw as PopupErrorCode;
+  }
+  return "unknown";
 }
 
-function resolvePopupErrorMessage(code: string | null, providerLabel: string): string {
-  const mapped = mapClassifiedsOAuthCallbackError(code ?? undefined);
-  if (mapped) {
-    return mapped;
-  }
-  switch (code) {
-    case "invalid_callback":
-      return "Não foi possível concluir o login. Clique em Conectar novamente.";
-    case "session_expired":
-    case "session_invalid":
-      return "O login expirou. Clique em Conectar novamente.";
-    case "cancelled":
-      return "Login cancelado. Você pode tentar conectar novamente quando quiser.";
-    case "missing_code":
-      return `Não recebemos confirmação da ${providerLabel}. Tente conectar novamente.`;
-    case "token_exchange_failed":
-      return `Não foi possível validar o login com a ${providerLabel}. Tente novamente em alguns minutos.`;
-    case "configuration":
-      return "Este canal ainda não está disponível para sua loja. Fale com nosso suporte.";
-    default:
-      return `Não foi possível concluir a conexão com a ${providerLabel}. Tente novamente.`;
-  }
+function jsonForPopup(payload: Record<string, unknown>): string {
+  return JSON.stringify(payload).replaceAll("</", "<\\/");
 }
 
 function popupHtml(params: {
   provider: string;
   success: boolean;
-  errorMessage?: string;
+  errorCode?: PopupErrorCode;
 }): string {
   const payload = {
     source: "autopainel_classifieds_oauth",
     provider: params.provider,
     success: params.success,
-    error: params.errorMessage ?? null,
+    error: params.success ? null : (params.errorCode ?? "unknown"),
   };
 
   return `<!doctype html>
@@ -84,15 +76,14 @@ export async function GET(request: NextRequest) {
   const provider = parseClassifiedsProvider(request.nextUrl.searchParams.get("provider"));
   const success = request.nextUrl.searchParams.get("success") === "1";
   const rawErrorCode = request.nextUrl.searchParams.get("error")?.trim() ?? null;
-  const errorCode =
-    rawErrorCode && POPUP_ERROR_CODES.has(rawErrorCode) ? rawErrorCode : "unknown";
+  const errorCode = parsePopupErrorCode(rawErrorCode);
 
   if (!provider) {
     return new NextResponse(
       popupHtml({
         provider: "olx",
         success: false,
-        errorMessage: "Não foi possível concluir o login. Clique em Conectar novamente.",
+        errorCode: "invalid_callback",
       }),
       {
         headers: {
@@ -104,16 +95,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const providerLabel =
-    provider === "olx" ? "OLX" : provider === "icarros" ? "iCarros" : "WebMotors";
-
   return new NextResponse(
     popupHtml({
       provider,
       success,
-      errorMessage: success
-        ? undefined
-        : resolvePopupErrorMessage(errorCode, providerLabel),
+      errorCode: success ? undefined : errorCode,
     }),
     {
       headers: {

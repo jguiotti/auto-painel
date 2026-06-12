@@ -4,6 +4,7 @@ import {
   decryptSecretValue,
   encryptSecretValue,
 } from "../_shared/classifieds-crypto.ts";
+import { normalizeClassifiedsOAuthRedirectUri } from "../_shared/classifieds-oauth-redirect.ts";
 import {
   buildClassifiedsOAuthDevStubTokenPayload,
   CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
@@ -60,9 +61,16 @@ interface OauthAppRow {
   token_url_override: string | null;
 }
 
+function resolveDefaultCallbackUrl(supabaseUrl: string, provider: ProviderKey): string {
+  return normalizeClassifiedsOAuthRedirectUri(
+    provider,
+    `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`,
+  );
+}
+
 function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig {
   const supabaseUrl = requireEnvVar("SUPABASE_URL");
-  const defaultRedirectUri = `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
+  const defaultRedirectUri = resolveDefaultCallbackUrl(supabaseUrl, provider);
 
   if (isClassifiedsOAuthDevStubEnabled()) {
     return {
@@ -80,7 +88,10 @@ function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig 
       tokenUrl: requireEnvVar("OLX_OAUTH_TOKEN_URL"),
       clientId: requireEnvVar("OLX_OAUTH_CLIENT_ID"),
       clientSecret: requireEnvVar("OLX_OAUTH_CLIENT_SECRET"),
-      redirectUri: Deno.env.get("OLX_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
+      redirectUri: normalizeClassifiedsOAuthRedirectUri(
+        provider,
+        Deno.env.get("OLX_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
+      ),
     };
   }
 
@@ -146,15 +157,17 @@ async function tryResolvePlatformProviderConfig(
 
   const envFallback = tryGetProviderConfigFromEnv(provider);
   const supabaseUrl = requireEnvVar("SUPABASE_URL");
-  const defaultRedirectUri = `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
+  const defaultRedirectUri = resolveDefaultCallbackUrl(supabaseUrl, provider);
+
+  const rawRedirectUri =
+    data.redirect_uri?.trim() || envFallback?.redirectUri || defaultRedirectUri;
 
   return {
     provider,
     tokenUrl: data.token_url.trim(),
     clientId: data.oauth_client_id.trim(),
     clientSecret: clientSecretPlain.trim(),
-    redirectUri:
-      data.redirect_uri?.trim() || envFallback?.redirectUri || defaultRedirectUri,
+    redirectUri: normalizeClassifiedsOAuthRedirectUri(provider, rawRedirectUri),
   };
 }
 
@@ -439,9 +452,29 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!oauthSession || oauthSession.provider !== provider) {
+    if (oauthSession?.dealership_id && provider) {
+      await admin.from("dealership_classifieds_connections").upsert(
+        {
+          dealership_id: oauthSession.dealership_id,
+          provider,
+          status: "error",
+          last_error: "session_invalid",
+        },
+        { onConflict: "dealership_id,provider" },
+      );
+    }
+
+    if (oauthSession?.redirect_origin && provider) {
+      return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+        provider,
+        success: false,
+        error: "session_invalid",
+      });
+    }
+
     return htmlPopupResponse(
       {
-        targetOrigin: oauthSession?.redirect_origin ?? "*",
+        targetOrigin: "*",
         provider,
         success: false,
         error: "Sessão OAuth2 expirada ou inválida. Tente novamente.",
@@ -503,6 +536,21 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!code) {
+    console.info("[classifieds-oauth-callback] missing_code", {
+      provider,
+      hasState: Boolean(state),
+      queryKeys: [...url.searchParams.keys()],
+    });
+
+    await admin
+      .from("dealership_classifieds_oauth_sessions")
+      .update({
+        status: "error",
+        error_reason: "missing_code",
+        consumed_at: new Date().toISOString(),
+      })
+      .eq("id", oauthSession.id);
+
     await admin.from("dealership_classifieds_connections").upsert(
       {
         dealership_id: oauthSession.dealership_id,

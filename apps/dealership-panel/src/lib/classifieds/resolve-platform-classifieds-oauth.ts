@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
+import { normalizeClassifiedsOAuthRedirectUri } from "@autopainel/shared/lib/classifieds-oauth-redirect";
 
 import type { ClassifiedsProvider } from "@autopainel/shared/lib/dealership-features";
 import {
@@ -68,14 +69,16 @@ export async function tryResolvePlatformClassifiedsOAuthConfig(
     }
   })();
 
+  const rawRedirectUri =
+    row.redirect_uri?.trim() ||
+    envFallback?.redirectUri ||
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
+
   return {
     provider,
     authorizationUrl: row.authorization_url!.trim(),
     clientId: row.oauth_client_id!.trim(),
     scope: row.scope?.trim() || envFallback?.scope || null,
-    redirectUri:
-      row.redirect_uri?.trim() ||
-      envFallback?.redirectUri ||
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")}/functions/v1/classifieds-oauth-callback?provider=${provider}`,
+    redirectUri: normalizeClassifiedsOAuthRedirectUri(provider, rawRedirectUri),
   };
 }

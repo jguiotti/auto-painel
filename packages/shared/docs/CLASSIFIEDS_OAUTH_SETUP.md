@@ -70,6 +70,7 @@ Documentação oficial: [developers.olx.com.br — OAuth](https://developers.olx
 | Token | `https://auth.olx.com.br/oauth/token` |
 | Scope (anúncios) | `autoupload` |
 | API publish (worker) | `https://apps.olx.com.br/autoupload/import` |
+| PKCE | **Não usar** — OLX usa authorization_code clássico (`client_id` + `client_secret` + `redirect_uri` idêntico no authorize e no token) |
 
 ### 1.3 Redirect URI (callback)
 
@@ -99,7 +100,7 @@ OLX_OAUTH_TOKEN_URL=https://auth.olx.com.br/oauth/token
 OLX_OAUTH_CLIENT_ID=<da OLX>
 OLX_OAUTH_CLIENT_SECRET=<da OLX>
 OLX_OAUTH_SCOPE=autoupload
-OLX_OAUTH_REDIRECT_URI=https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback?provider=olx
+OLX_OAUTH_REDIRECT_URI=https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback
 OLX_LISTINGS_API_URL=https://apps.olx.com.br/autoupload/import
 ```
 
@@ -110,7 +111,7 @@ npm run sync:env
 npm run classifieds:oauth:platform:configure    # gera SQL platform_classifieds_oauth_providers
 npm run classifieds:oauth:platform:configure -- --apply-local   # só Supabase local
 npm run classifieds:oauth:secrets:configure     # secrets Edge
-supabase functions deploy classifieds-oauth-callback --project-ref wcgevmvystdhqpzwuyig
+supabase functions deploy classifieds-oauth-callback --project-ref wcgevmvystdhqpzwuyig --no-verify-jwt
 ```
 
 Aplicar o SQL gerado em `supabase/.generated-platform-classifieds-oauth.sql` no Dashboard remoto se não usar `--apply-local`.

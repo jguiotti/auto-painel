@@ -92,10 +92,10 @@ export function mapClassifiedsOAuthCallbackError(raw: string | undefined): strin
     return "Login cancelado. Você pode tentar conectar novamente quando quiser.";
   }
   if (normalized === "missing_code" || normalized === "invalid_callback") {
-    return "Não foi possível concluir o login. Clique em Conectar novamente.";
+    return "A OLX não devolveu o código de login. Conclua o login na janela e não a feche manualmente — ela deve fechar sozinha.";
   }
   if (normalized === "token_exchange_failed" || normalized.includes("token endpoint")) {
-    return "Não foi possível validar o login com o portal. Tente novamente em alguns minutos.";
+    return "Não foi possível validar o login com a OLX. Confira se o redirect URI cadastrado na OLX é idêntico ao da plataforma e tente novamente.";
   }
   if (
     normalized === "configuration" ||

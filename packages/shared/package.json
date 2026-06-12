@@ -48,6 +48,11 @@
       "import": "./src/lib/classifieds-oauth-dev-stub.ts",
       "default": "./src/lib/classifieds-oauth-dev-stub.ts"
     },
+    "./lib/classifieds-oauth-redirect": {
+      "types": "./src/lib/classifieds-oauth-redirect.ts",
+      "import": "./src/lib/classifieds-oauth-redirect.ts",
+      "default": "./src/lib/classifieds-oauth-redirect.ts"
+    },
     "./lib/classifieds-token-crypto": {
       "types": "./src/lib/classifieds-token-crypto.ts",
       "import": "./src/lib/classifieds-token-crypto.ts",

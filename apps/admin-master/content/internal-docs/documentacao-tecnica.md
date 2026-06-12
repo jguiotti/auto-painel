@@ -76,6 +76,8 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 **INT-0 concluído (2026-06-11):** migrações `20260611172939_classifieds_modules_by_provider.sql` + `20260611173013_classifieds_enqueue_module_gate.sql` aplicadas no remoto; `classifieds_sync` removido; enterprise/trial com os três módulos; código migrado para gating por portal.
 
 **OAuth dev stub (2026-06-11):** ver `packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md`. Credenciais reais OLX: homologação OLX → `OLX_OAUTH_*` → `npm run classifieds:oauth:platform:configure` + `classifieds:oauth:secrets:configure`. WebMotors real = password grant (INT-5b, não popup). Fix UI: removido `noopener` no popup + `GET /api/painel/integracoes/oauth/connection-status`.
+
+**Fix OLX OAuth `missing_code` (2026-06-10):** redirect URI normalizado **sem** `?provider=olx` (`packages/shared/src/lib/classifieds-oauth-redirect.ts`, Edge `classifieds-oauth-callback`, secret `OLX_OAUTH_REDIRECT_URI`, `platform_classifieds_oauth_providers.redirect_uri`); migração `20260610120000_normalize_olx_oauth_redirect_uri.sql`; UI diagnóstico com código de suporte + logs `[AutoPainel OAuth]` no console (`classifieds-integration-cards.tsx`, `classifieds-oauth-error-hints.ts`); expira todas sessões `pending` no `oauth/start` (service role).
 | **INT-1** | Auto-publish pós create/update (P1–P6 **por portal**) | 🔴 pendente | `actions.ts` — filtrar providers por plano **e** conexão |
 | **INT-2** | Delist antes de `deleteVehicleAction` | 🔴 pendente | `actions.ts` — trigger SQL não cobre DELETE |
 | **INT-3** | Provider `icarros` end-to-end | 🔴 pendente | migration enum; `integrations-hub.ts`; adapter Edge; card UI |

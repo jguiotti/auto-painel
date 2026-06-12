@@ -1,4 +1,5 @@
 import { getSupabaseUrl } from "@autopainel/shared/lib/supabase";
+import { normalizeClassifiedsOAuthRedirectUri } from "@autopainel/shared/lib/classifieds-oauth-redirect";
 import {
   buildClassifiedsOAuthDevAuthorizePath,
   buildClassifiedsOAuthDevCallbackPath,
@@ -36,7 +37,10 @@ function requireEnvVar(name: string): string {
 
 function resolveDefaultCallbackUrl(provider: ClassifiedsProvider): string {
   const supabaseUrl = getSupabaseUrl();
-  return `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`;
+  return normalizeClassifiedsOAuthRedirectUri(
+    provider,
+    `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`,
+  );
 }
 
 export function parseClassifiedsProvider(
@@ -72,9 +76,11 @@ function resolveProductionOAuthConfig(provider: ClassifiedsProvider): Classified
       authorizationUrl: requireEnvVar("OLX_OAUTH_AUTHORIZATION_URL"),
       clientId: requireEnvVar("OLX_OAUTH_CLIENT_ID"),
       scope: process.env.OLX_OAUTH_SCOPE?.trim() || null,
-      redirectUri:
+      redirectUri: normalizeClassifiedsOAuthRedirectUri(
+        provider,
         process.env.OLX_OAUTH_REDIRECT_URI?.trim() ||
-        resolveDefaultCallbackUrl(provider),
+          resolveDefaultCallbackUrl(provider),
+      ),
     };
   }
 

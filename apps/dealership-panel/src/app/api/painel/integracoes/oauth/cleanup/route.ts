@@ -6,6 +6,62 @@ import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
 
+async function resetStaleConnectingAttempt(params: {
+  dealershipId: string;
+  provider: string;
+  userId: string;
+}): Promise<void> {
+  const { dealershipId, provider, userId } = params;
+
+  const supabase = await createSupabaseServerClient();
+
+  await supabase
+    .from("dealership_classifieds_oauth_sessions")
+    .update({
+      status: "expired",
+      error_reason: "oauth_popup_closed_or_timeout",
+    })
+    .eq("dealership_id", dealershipId)
+    .eq("provider", provider)
+    .eq("status", "pending")
+    .eq("created_by", userId);
+
+  await supabase
+    .from("dealership_classifieds_connections")
+    .update({
+      status: "disconnected",
+      last_error: "Conexão não concluída. Tente conectar novamente.",
+    })
+    .eq("dealership_id", dealershipId)
+    .eq("provider", provider)
+    .eq("status", "connecting");
+
+  try {
+    const admin = createSupabaseServiceRoleClient();
+    await admin
+      .from("dealership_classifieds_oauth_sessions")
+      .update({
+        status: "expired",
+        error_reason: "oauth_popup_closed_or_timeout",
+      })
+      .eq("dealership_id", dealershipId)
+      .eq("provider", provider)
+      .eq("status", "pending");
+
+    await admin.from("dealership_classifieds_connections").upsert(
+      {
+        dealership_id: dealershipId,
+        provider,
+        status: "disconnected",
+        last_error: "Conexão não concluída. Tente conectar novamente.",
+      },
+      { onConflict: "dealership_id,provider" },
+    );
+  } catch {
+    // Auth-scoped updates above are enough when service role is unavailable.
+  }
+}
+
 export async function POST(request: NextRequest) {
   const provider = parseClassifiedsProvider(request.nextUrl.searchParams.get("provider"));
   if (!provider) {
@@ -25,17 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Concessionária não resolvida." }, { status: 403 });
   }
 
-  let admin;
-  try {
-    admin = createSupabaseServiceRoleClient();
-  } catch {
-    return NextResponse.json(
-      { error: "Servidor sem credenciais para limpar a conexão." },
-      { status: 500 },
-    );
-  }
-
-  const { data: connection } = await admin
+  const { data: connection } = await supabase
     .from("dealership_classifieds_connections")
     .select("status")
     .eq("dealership_id", dealershipId)
@@ -46,35 +92,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reset: false, status: connection?.status ?? "disconnected" });
   }
 
-  const { data: pendingSessions } = await admin
-    .from("dealership_classifieds_oauth_sessions")
-    .select("id")
-    .eq("dealership_id", dealershipId)
-    .eq("provider", provider)
-    .eq("status", "pending");
-
-  if (Array.isArray(pendingSessions) && pendingSessions.length > 0) {
-    await admin
-      .from("dealership_classifieds_oauth_sessions")
-      .update({
-        status: "expired",
-        error_reason: "oauth_popup_closed_or_timeout",
-      })
-      .in(
-        "id",
-        pendingSessions.map((row) => row.id),
-      );
-  }
-
-  await admin.from("dealership_classifieds_connections").upsert(
-    {
-      dealership_id: dealershipId,
-      provider,
-      status: "disconnected",
-      last_error: "Conexão não concluída. Tente conectar novamente.",
-    },
-    { onConflict: "dealership_id,provider" },
-  );
+  await resetStaleConnectingAttempt({
+    dealershipId,
+    provider,
+    userId: user.id,
+  });
 
   return NextResponse.json({ reset: true, status: "disconnected" });
 }

@@ -41,6 +41,36 @@ import {
   classifiedsProviderOAuthPendingMessage,
   mapClassifiedsOAuthCallbackError,
 } from "@/lib/integrations/integration-user-messages";
+import {
+  resolveClassifiedsOAuthErrorDetails,
+} from "@/lib/integrations/classifieds-oauth-error-hints";
+
+const OAUTH_LOG_PREFIX = "[AutoPainel OAuth]";
+
+function logOAuthEvent(event: string, details?: Record<string, unknown>) {
+  if (details) {
+    console.info(OAUTH_LOG_PREFIX, event, details);
+    return;
+  }
+  console.info(OAUTH_LOG_PREFIX, event);
+}
+
+function formatOAuthFeedback(
+  provider: ClassifiedsProvider,
+  rawError?: string | null,
+): string {
+  const details = resolveClassifiedsOAuthErrorDetails(provider, rawError);
+  if (details) {
+    return `${details.title} (código: ${details.supportCode})`;
+  }
+  if (rawError) {
+    return (
+      mapClassifiedsOAuthCallbackError(rawError) ??
+      classifiedsConnectFailureMessage(provider)
+    );
+  }
+  return classifiedsConnectFailureMessage(provider);
+}
 
 type ConnectionStatus =
   | "disconnected"
@@ -113,11 +143,11 @@ function resolveStatusVariant(status: ConnectionStatus): "default" | "secondary"
   return "outline";
 }
 
-function resolveActionLabel(status: ConnectionStatus): string {
-  if (status === "connecting") {
-    return "Conectando...";
+function resolveActionLabel(status: ConnectionStatus, isPending: boolean): string {
+  if (isPending) {
+    return "Abrindo login...";
   }
-  if (status === "error" || status === "reauth_required") {
+  if (status === "connecting" || status === "error" || status === "reauth_required") {
     return "Conectar novamente";
   }
   return "Conectar";
@@ -189,12 +219,18 @@ export function ClassifiedsIntegrationCards({
 
     function onMessage(event: MessageEvent<OAuthMessagePayload>) {
       if (!allowedOrigins.has(event.origin)) {
+        logOAuthEvent("postMessage_ignored_origin", { origin: event.origin });
         return;
       }
       const payload = event.data;
       if (!payload || payload.source !== "autopainel_classifieds_oauth") {
         return;
       }
+      logOAuthEvent("postMessage_received", {
+        provider: payload.provider,
+        success: payload.success,
+        error: payload.error ?? null,
+      });
       oauthMessageReceivedRef.current = true;
       stopPopupWatch();
       popupRef.current = null;
@@ -203,10 +239,7 @@ export function ClassifiedsIntegrationCards({
       if (payload.success) {
         setInlineFeedback(classifiedsConnectSuccessMessage(payload.provider));
       } else {
-        const friendly =
-          mapClassifiedsOAuthCallbackError(payload.error ?? undefined) ??
-          classifiedsConnectFailureMessage(payload.provider);
-        setInlineFeedback(friendly);
+        setInlineFeedback(formatOAuthFeedback(payload.provider, payload.error));
       }
       router.refresh();
     }
@@ -218,11 +251,6 @@ export function ClassifiedsIntegrationCards({
     };
   }, [router]);
 
-  function openConnectDialog(provider: ClassifiedsProvider) {
-    setInlineFeedback(null);
-    setDialogProvider(provider);
-  }
-
   async function cleanupStaleOAuthAttempt(provider: ClassifiedsProvider) {
     try {
       await fetch(`/api/painel/integracoes/oauth/cleanup?provider=${provider}`, {
@@ -230,6 +258,37 @@ export function ClassifiedsIntegrationCards({
       });
     } catch {
       // refresh below still runs
+    }
+  }
+
+  async function prepareConnectDialog(provider: ClassifiedsProvider) {
+    setInlineFeedback(null);
+    const row = connectionMap.get(provider);
+    if (row?.status === "connecting") {
+      await cleanupStaleOAuthAttempt(provider);
+    }
+    setDialogProvider(provider);
+  }
+
+  async function cancelStaleConnection(provider: ClassifiedsOAuthProvider) {
+    setInlineFeedback(null);
+    setDisconnectingProvider(provider);
+    try {
+      await cleanupStaleOAuthAttempt(provider);
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc("disconnect_dealership_classifieds_connection", {
+        p_provider: provider,
+      });
+      if (error) {
+        setInlineFeedback("Não foi possível cancelar a conexão. Tente novamente.");
+        return;
+      }
+      setInlineFeedback("Conexão cancelada. Você pode tentar conectar novamente.");
+      router.refresh();
+    } catch {
+      setInlineFeedback("Não foi possível cancelar a conexão. Tente novamente.");
+    } finally {
+      setDisconnectingProvider(null);
     }
   }
 
@@ -242,15 +301,17 @@ export function ClassifiedsIntegrationCards({
         status?: string;
         lastError?: string | null;
       };
+      logOAuthEvent("connection_status", {
+        provider,
+        status: payload.status ?? "unknown",
+        lastError: payload.lastError ?? null,
+      });
       if (payload.status === "connected") {
         setInlineFeedback(classifiedsConnectSuccessMessage(provider));
         return;
       }
       if (payload.status === "error" && payload.lastError) {
-        setInlineFeedback(
-          mapClassifiedsOAuthCallbackError(payload.lastError) ??
-            classifiedsConnectFailureMessage(provider),
-        );
+        setInlineFeedback(formatOAuthFeedback(provider, payload.lastError));
         return;
       }
       if (payload.status === "connecting") {
@@ -285,6 +346,11 @@ export function ClassifiedsIntegrationCards({
       if (!res.ok || !("authorizationUrl" in payload)) {
         setPendingProvider(null);
         setDialogProvider(null);
+        logOAuthEvent("oauth_start_failed", {
+          provider,
+          status: res.status,
+          body: payload,
+        });
         if ("code" in payload && payload.code === "oauth_not_configured") {
           setUnavailableProvider(provider);
           return;
@@ -296,6 +362,8 @@ export function ClassifiedsIntegrationCards({
         );
         return;
       }
+
+      logOAuthEvent("oauth_start_ok", { provider });
 
       const popup = window.open(
         payload.authorizationUrl,
@@ -322,6 +390,7 @@ export function ClassifiedsIntegrationCards({
           activeOAuthProviderRef.current = null;
 
           if (closedProvider && !oauthMessageReceivedRef.current) {
+            logOAuthEvent("popup_closed_without_message", { provider: closedProvider });
             void cleanupStaleOAuthAttempt(closedProvider)
               .then(() => resolveConnectionAfterPopup(closedProvider))
               .finally(() => {
@@ -377,11 +446,11 @@ export function ClassifiedsIntegrationCards({
         {visibleProviders.map((provider) => {
           const row = connectionMap.get(provider.key);
           const status = row?.status ?? "disconnected";
+          const isOAuthInFlight = pendingProvider === provider.key;
           const isBusy =
-            pendingProvider === provider.key ||
-            disconnectingProvider === provider.key ||
-            status === "connecting";
-          const actionLabel = resolveActionLabel(status);
+            isOAuthInFlight ||
+            disconnectingProvider === provider.key;
+          const actionLabel = resolveActionLabel(status, isOAuthInFlight);
           const connectedAtLabel = formatConnectedAt(row?.connected_at ?? null);
           const oauthReady = providerOAuthReady[provider.key];
           const connectHint = classifiedsProviderConnectHint(provider.key, oauthReady);
@@ -414,12 +483,40 @@ export function ClassifiedsIntegrationCards({
                 ) : null}
 
                 {row?.last_error ? (
-                  <p className="text-xs text-destructive">
-                    {mapClassifiedsOAuthCallbackError(row.last_error) ?? row.last_error}
-                  </p>
+                  (() => {
+                    const errorDetails = resolveClassifiedsOAuthErrorDetails(
+                      provider.key,
+                      row.last_error,
+                    );
+                    if (errorDetails) {
+                      return (
+                        <div className="space-y-1 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+                          <p className="text-sm font-medium text-destructive">
+                            {errorDetails.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{errorDetails.hint}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">
+                            Código para suporte: {errorDetails.supportCode}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-destructive">
+                        {mapClassifiedsOAuthCallbackError(row.last_error) ?? row.last_error}
+                      </p>
+                    );
+                  })()
                 ) : (
                   <p className="text-xs text-muted-foreground">{connectHint}</p>
                 )}
+
+                {status === "connecting" && !isOAuthInFlight ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    A conexão anterior não foi concluída. Clique em Conectar novamente ou
+                    cancele abaixo.
+                  </p>
+                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -430,11 +527,23 @@ export function ClassifiedsIntegrationCards({
                         setUnavailableProvider(provider.key);
                         return;
                       }
-                      openConnectDialog(provider.key);
+                      void prepareConnectDialog(provider.key);
                     }}
                   >
                     {actionLabel}
                   </Button>
+                  {status === "connecting" && !isOAuthInFlight ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isBusy}
+                      onClick={() => {
+                        void cancelStaleConnection(provider.key);
+                      }}
+                    >
+                      Cancelar conexão
+                    </Button>
+                  ) : null}
                   {status === "connected" ? (
                     <Button
                       type="button"
