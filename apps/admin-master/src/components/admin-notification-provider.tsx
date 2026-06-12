@@ -29,16 +29,33 @@ const AdminNotificationContext = createContext<AdminNotificationContextValue | n
 
 const READ_SCOPE = "admin-platform-leads";
 
+function resolveLeadDealership(
+  dealerships:
+    | { name?: string | null; slug?: string | null }
+    | { name?: string | null; slug?: string | null }[]
+    | null
+    | undefined,
+): { name?: string | null; slug?: string | null } | null {
+  if (Array.isArray(dealerships)) {
+    return dealerships[0] ?? null;
+  }
+  return dealerships ?? null;
+}
+
 function mapPlatformLeadRow(row: {
   id?: string;
   client_name?: string | null;
   type?: string | null;
   created_at?: string | null;
-  dealerships?: { name?: string | null; slug?: string | null } | null;
+  dealerships?:
+    | { name?: string | null; slug?: string | null }
+    | { name?: string | null; slug?: string | null }[]
+    | null;
 }): NotificationCenterItem {
-  const dealershipName = row.dealerships?.name?.trim() || "Concessionária";
+  const dealership = resolveLeadDealership(row.dealerships);
+  const dealershipName = dealership?.name?.trim() || "Concessionária";
   const typeLabel = row.type === "simulation" ? "Simulação" : "Contato";
-  const slug = row.dealerships?.slug?.trim();
+  const slug = dealership?.slug?.trim();
 
   return {
     id: row.id ?? crypto.randomUUID(),
