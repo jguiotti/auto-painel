@@ -61,7 +61,7 @@ interface OAuthMessagePayload {
   source: "autopainel_classifieds_oauth";
   provider: ClassifiedsOAuthProvider;
   success: boolean;
-  error?: string;
+  error?: string | null;
 }
 
 export type ClassifiedsProviderOAuthReady = Record<ClassifiedsProvider, boolean>;
@@ -153,6 +153,8 @@ export function ClassifiedsIntegrationCards({
   const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
   const popupWatchRef = useRef<number | null>(null);
+  const oauthMessageReceivedRef = useRef(false);
+  const activeOAuthProviderRef = useRef<ClassifiedsProvider | null>(null);
 
   const connectionMap = useMemo(() => {
     const map = new Map<ClassifiedsProvider, ClassifiedsConnectionRow>();
@@ -193,6 +195,7 @@ export function ClassifiedsIntegrationCards({
       if (!payload || payload.source !== "autopainel_classifieds_oauth") {
         return;
       }
+      oauthMessageReceivedRef.current = true;
       stopPopupWatch();
       popupRef.current = null;
       setPendingProvider(null);
@@ -201,7 +204,7 @@ export function ClassifiedsIntegrationCards({
         setInlineFeedback(classifiedsConnectSuccessMessage(payload.provider));
       } else {
         const friendly =
-          mapClassifiedsOAuthCallbackError(payload.error) ??
+          mapClassifiedsOAuthCallbackError(payload.error ?? undefined) ??
           classifiedsConnectFailureMessage(payload.provider);
         setInlineFeedback(friendly);
       }
@@ -218,6 +221,16 @@ export function ClassifiedsIntegrationCards({
   function openConnectDialog(provider: ClassifiedsProvider) {
     setInlineFeedback(null);
     setDialogProvider(provider);
+  }
+
+  async function cleanupStaleOAuthAttempt(provider: ClassifiedsProvider) {
+    try {
+      await fetch(`/api/painel/integracoes/oauth/cleanup?provider=${provider}`, {
+        method: "POST",
+      });
+    } catch {
+      // refresh below still runs
+    }
   }
 
   async function resolveConnectionAfterPopup(provider: ClassifiedsProvider) {
@@ -242,7 +255,7 @@ export function ClassifiedsIntegrationCards({
       }
       if (payload.status === "connecting") {
         setInlineFeedback(
-          "A conexão ainda está em andamento. Aguarde alguns segundos e atualize a página.",
+          "Conexão não concluída. Feche a janela de login e clique em Conectar novamente.",
         );
       }
     } catch {
@@ -257,6 +270,8 @@ export function ClassifiedsIntegrationCards({
     }
 
     setPendingProvider(provider);
+    oauthMessageReceivedRef.current = false;
+    activeOAuthProviderRef.current = provider;
 
     try {
       const res = await fetch(
@@ -300,12 +315,26 @@ export function ClassifiedsIntegrationCards({
             window.clearInterval(popupWatchRef.current);
             popupWatchRef.current = null;
           }
+          const closedProvider = activeOAuthProviderRef.current;
           popupRef.current = null;
           setPendingProvider(null);
           setDialogProvider(null);
-          void resolveConnectionAfterPopup(provider).finally(() => {
-            router.refresh();
-          });
+          activeOAuthProviderRef.current = null;
+
+          if (closedProvider && !oauthMessageReceivedRef.current) {
+            void cleanupStaleOAuthAttempt(closedProvider)
+              .then(() => resolveConnectionAfterPopup(closedProvider))
+              .finally(() => {
+                router.refresh();
+              });
+            return;
+          }
+
+          if (closedProvider) {
+            void resolveConnectionAfterPopup(closedProvider).finally(() => {
+              router.refresh();
+            });
+          }
         }
       }, 600);
     } catch {

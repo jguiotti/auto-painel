@@ -240,12 +240,94 @@ function popupHtml(params: {
             window.opener.postMessage(payload, targetOrigin);
           }
         } catch (_) {}
-        window.close();
+        setTimeout(function () {
+          window.close();
+        }, 150);
       })();
     </script>
     <p>Login processado. Esta janela pode ser fechada.</p>
   </body>
 </html>`;
+}
+
+const POPUP_HTML_HEADERS: Record<string, string> = {
+  "Content-Type": "text/html; charset=utf-8",
+  "Cache-Control": "no-store",
+  "Content-Security-Policy":
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
+};
+
+type PopupErrorCode =
+  | "invalid_callback"
+  | "session_expired"
+  | "session_invalid"
+  | "cancelled"
+  | "missing_code"
+  | "token_exchange_failed"
+  | "configuration"
+  | "unknown";
+
+function buildPanelPopupResultUrl(
+  redirectOrigin: string,
+  params: {
+    provider: ProviderKey;
+    success: boolean;
+    error?: PopupErrorCode;
+  },
+): string {
+  const url = new URL(
+    `${redirectOrigin.replace(/\/$/, "")}/api/painel/integracoes/oauth/popup-result`,
+  );
+  url.searchParams.set("provider", params.provider);
+  url.searchParams.set("success", params.success ? "1" : "0");
+  if (!params.success && params.error) {
+    url.searchParams.set("error", params.error);
+  }
+  return url.toString();
+}
+
+function redirectToPanelPopupResult(
+  redirectOrigin: string,
+  params: {
+    provider: ProviderKey;
+    success: boolean;
+    error?: PopupErrorCode;
+  },
+): Response {
+  return Response.redirect(buildPanelPopupResultUrl(redirectOrigin, params), 302);
+}
+
+function htmlPopupResponse(
+  params: {
+    targetOrigin: string;
+    provider: ProviderKey | null;
+    success: boolean;
+    error?: string;
+  },
+  status = 200,
+): Response {
+  return new Response(popupHtml(params), {
+    headers: POPUP_HTML_HEADERS,
+    status,
+  });
+}
+
+async function tryResolvePendingSessionByState(
+  admin: SupabaseClient,
+  state: string,
+): Promise<OAuthSessionRow | null> {
+  const { data, error } = await admin
+    .from("dealership_classifieds_oauth_sessions")
+    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at")
+    .eq("state", state)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as OAuthSessionRow;
 }
 
 async function exchangeCodeForTokens(
@@ -304,23 +386,11 @@ async function exchangeCodeForTokens(
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
-  const provider = resolveProvider(url.searchParams.get("provider"));
-  const state = url.searchParams.get("state");
+  let provider = resolveProvider(url.searchParams.get("provider"));
+  const state = url.searchParams.get("state")?.trim() ?? null;
   const code = url.searchParams.get("code");
   const oauthError = url.searchParams.get("error");
   const oauthErrorDescription = url.searchParams.get("error_description");
-
-  if (!provider || !state) {
-    return new Response(
-      popupHtml({
-        targetOrigin: "*",
-        provider,
-        success: false,
-        error: "Callback inválido: provider/state ausente.",
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 400 },
-    );
-  }
 
   let tokenCryptoSecret: string;
   let supabaseUrl: string;
@@ -330,8 +400,8 @@ Deno.serve(async (req: Request) => {
     supabaseUrl = requireEnvVar("SUPABASE_URL");
     serviceRoleKey = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
   } catch (error) {
-    return new Response(
-      popupHtml({
+    return htmlPopupResponse(
+      {
         targetOrigin: "*",
         provider,
         success: false,
@@ -339,8 +409,8 @@ Deno.serve(async (req: Request) => {
           error instanceof Error
             ? error.message
             : "Não foi possível concluir a conexão.",
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 500 },
+      },
+      500,
     );
   }
 
@@ -348,27 +418,38 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: session, error: sessionError } = await admin
-    .from("dealership_classifieds_oauth_sessions")
-    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at")
-    .eq("state", state)
-    .eq("provider", provider)
-    .eq("status", "pending")
-    .single();
+  let oauthSession: OAuthSessionRow | null = null;
+  if (state) {
+    oauthSession = await tryResolvePendingSessionByState(admin, state);
+    if (!provider && oauthSession) {
+      provider = oauthSession.provider;
+    }
+  }
 
-  if (sessionError || !session) {
-    return new Response(
-      popupHtml({
-        targetOrigin: "*",
+  if (!provider || !state) {
+    return htmlPopupResponse(
+      {
+        targetOrigin: oauthSession?.redirect_origin ?? "*",
         provider,
         success: false,
-        error: "Sessão OAuth2 expirada ou inválida. Tente novamente.",
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 400 },
+        error: "Callback inválido: provider/state ausente.",
+      },
+      400,
     );
   }
 
-  const oauthSession = session as OAuthSessionRow;
+  if (!oauthSession || oauthSession.provider !== provider) {
+    return htmlPopupResponse(
+      {
+        targetOrigin: oauthSession?.redirect_origin ?? "*",
+        provider,
+        success: false,
+        error: "Sessão OAuth2 expirada ou inválida. Tente novamente.",
+      },
+      400,
+    );
+  }
+
   const sessionExpired = new Date(oauthSession.expires_at).getTime() < Date.now();
   if (sessionExpired) {
     await admin
@@ -379,15 +460,21 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", oauthSession.id);
 
-    return new Response(
-      popupHtml({
-        targetOrigin: oauthSession.redirect_origin,
+    await admin.from("dealership_classifieds_connections").upsert(
+      {
+        dealership_id: oauthSession.dealership_id,
         provider,
-        success: false,
-        error: "Sessão OAuth2 expirou. Reabra a conexão no painel.",
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 400 },
+        status: "disconnected",
+        last_error: "session_expired",
+      },
+      { onConflict: "dealership_id,provider" },
     );
+
+    return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+      provider,
+      success: false,
+      error: "session_expired",
+    });
   }
 
   if (oauthError) {
@@ -403,32 +490,34 @@ Deno.serve(async (req: Request) => {
         dealership_id: oauthSession.dealership_id,
         provider,
         status: "error",
-        last_error: errorText,
+        last_error: "cancelled",
       },
       { onConflict: "dealership_id,provider" },
     );
 
-    return new Response(
-      popupHtml({
-        targetOrigin: oauthSession.redirect_origin,
-        provider,
-        success: false,
-        error: `Autorização recusada: ${errorText}`,
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 200 },
-    );
+    return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+      provider,
+      success: false,
+      error: "cancelled",
+    });
   }
 
   if (!code) {
-    return new Response(
-      popupHtml({
-        targetOrigin: oauthSession.redirect_origin,
+    await admin.from("dealership_classifieds_connections").upsert(
+      {
+        dealership_id: oauthSession.dealership_id,
         provider,
-        success: false,
-        error: "Callback sem authorization code.",
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 400 },
+        status: "error",
+        last_error: "missing_code",
+      },
+      { onConflict: "dealership_id,provider" },
     );
+
+    return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+      provider,
+      success: false,
+      error: "missing_code",
+    });
   }
 
   try {
@@ -514,24 +603,26 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", oauthSession.id);
 
-    return new Response(
-      popupHtml({
-        targetOrigin: oauthSession.redirect_origin,
-        provider,
-        success: true,
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 200 },
-    );
+    return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+      provider,
+      success: true,
+    });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Erro ao concluir autenticação OAuth2.";
+    const errorCode: PopupErrorCode =
+      error instanceof Error &&
+      (error.message.toLowerCase().includes("indisponível") ||
+        error.message.toLowerCase().includes("missing") ||
+        error.message.toLowerCase().includes("misconfigured") ||
+        error.message.toLowerCase().includes("suporte"))
+        ? "configuration"
+        : "token_exchange_failed";
 
     await admin
       .from("dealership_classifieds_oauth_sessions")
       .update({
         status: "error",
         consumed_at: new Date().toISOString(),
-        error_reason: errorMessage,
+        error_reason: errorCode,
       })
       .eq("id", oauthSession.id);
 
@@ -540,19 +631,15 @@ Deno.serve(async (req: Request) => {
         dealership_id: oauthSession.dealership_id,
         provider,
         status: "error",
-        last_error: errorMessage,
+        last_error: errorCode,
       },
       { onConflict: "dealership_id,provider" },
     );
 
-    return new Response(
-      popupHtml({
-        targetOrigin: oauthSession.redirect_origin,
-        provider,
-        success: false,
-        error: errorMessage,
-      }),
-      { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 500 },
-    );
+    return redirectToPanelPopupResult(oauthSession.redirect_origin, {
+      provider,
+      success: false,
+      error: errorCode,
+    });
   }
 });

@@ -1219,6 +1219,8 @@ _Registro histórico do que já existia antes da execução guiada pelo PRD apro
 
 ## Histórico vivo — decisões técnicas
 
+- **2026-06-12 — OAuth classificados (popup OLX):** callback Edge resolve `provider` via `state` quando a OLX não preserva `?provider=`; após troca de token redireciona para `/api/painel/integracoes/oauth/popup-result` no painel (postMessage mesma origem, evita CSP da Edge); rotas `oauth/cleanup` (reset `connecting`) e `oauth/popup-result`; UI para de loop em «Conectando» ao fechar popup; erros sanitizados em `integration-user-messages.ts`. Redeploy: `classifieds-oauth-callback` + app `dealership-panel`.
+
 - **2026-06-10 — Auth UX + provisionamento gestor:** `PasswordInput` (toggle mostrar/ocultar) nos logins admin e painel loja; páginas `/painel/conta/senha` (admin-master + dealership-panel) com `ChangePasswordForm` (valida senha atual + `updateUser`); `provisionDealershipManagerAction` passou a usar `createSupabaseServiceRoleClient` (deixa de depender da Edge `provision-dealership-user` / `ADMIN_PROVISION_FUNCTION_SECRET` — corrige HTTP 500 quando secret Edge ausente). Requer `SUPABASE_SERVICE_ROLE_KEY` no projeto Vercel `auto-painel-admin-master`.
 
 - **2026-06-12 — Onda A go-live + integradores:** checklist `PRODUCTION_GO_LIVE_WAVE_A.md`; `CLASSIFIEDS_OAUTH_SETUP.md` §2 WebMotors (Sensedia password grant / INT-5b) e §3 iCarros (Keycloak OAuth como OLX); copy painel Integrações por portal; botão Conectar desabilitado quando OAuth da plataforma indisponível.

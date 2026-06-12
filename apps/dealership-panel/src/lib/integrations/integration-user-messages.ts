@@ -76,17 +76,45 @@ export function mapClassifiedsOAuthCallbackError(raw: string | undefined): strin
     return undefined;
   }
   const normalized = raw.toLowerCase();
-  if (normalized.includes("access_denied") || normalized.includes("cancel")) {
-    return "Login cancelado. Você pode tentar conectar novamente quando quiser.";
-  }
-  if (normalized.includes("invalid") && normalized.includes("state")) {
+  if (
+    normalized === "session_expired" ||
+    normalized === "session_invalid" ||
+    (normalized.includes("invalid") && normalized.includes("state")) ||
+    normalized.includes("sessão oauth")
+  ) {
     return "O login expirou. Clique em Conectar novamente.";
   }
-  if (normalized.includes("token endpoint")) {
+  if (
+    normalized === "cancelled" ||
+    normalized.includes("access_denied") ||
+    normalized.includes("cancel")
+  ) {
+    return "Login cancelado. Você pode tentar conectar novamente quando quiser.";
+  }
+  if (normalized === "missing_code" || normalized === "invalid_callback") {
+    return "Não foi possível concluir o login. Clique em Conectar novamente.";
+  }
+  if (normalized === "token_exchange_failed" || normalized.includes("token endpoint")) {
     return "Não foi possível validar o login com o portal. Tente novamente em alguns minutos.";
   }
-  if (normalized.includes("missing") || normalized.includes("ambiente")) {
+  if (
+    normalized === "configuration" ||
+    normalized.includes("missing") ||
+    normalized.includes("ambiente") ||
+    normalized.includes("suporte")
+  ) {
     return "Este canal ainda não está disponível para sua loja. Fale com nosso suporte.";
+  }
+  if (normalized.includes("conexão não concluída")) {
+    return "Conexão não concluída. Feche a janela de login e clique em Conectar novamente.";
+  }
+  if (
+    normalized.includes("supabase.co") ||
+    normalized.includes("client_id") ||
+    normalized.includes("client_secret") ||
+    normalized.includes("token endpoint error")
+  ) {
+    return "Não foi possível validar o login com o portal. Tente novamente em alguns minutos.";
   }
   return undefined;
 }
