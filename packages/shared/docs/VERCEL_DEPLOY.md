@@ -136,7 +136,15 @@ Propagação DNS: até 48 h; normalmente minutos.
 
 ## 4. Variáveis de ambiente (Production)
 
+**Sintoma:** build OK, mas página branca / console `Server Components render` / digest no HTML → quase sempre **env vars ausentes** no projecto Vercel. O admin chama Supabase no servidor já em `/` e `/login`.
+
 Copiar valores do `.env.local` da raiz (Supabase **remoto**, nunca chaves locais `127.0.0.1`).
+
+### Onde configurar na Vercel
+
+Projecto → **Settings** → **Environment Variables** → marcar **Production** (e **Preview**) → **Save** → **Redeploy** obrigatório.
+
+Chaves no Dashboard Supabase: [Project Settings → API](https://supabase.com/dashboard/project/wcgevmvystdhqpzwuyig/settings/api) (`URL`, `anon`, `service_role`).
 
 ### Comuns a todos os apps (browser)
 

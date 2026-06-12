@@ -16,6 +16,8 @@ import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile"
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { LoginForm } from "./login-form";
+import { AdminEnvSetupRequired } from "@/components/admin-env-setup-required";
+import { getAdminEnvSetupError } from "@/lib/env/get-admin-env-setup-error";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -29,6 +31,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const envError = getAdminEnvSetupError();
+  if (envError) {
+    return <AdminEnvSetupRequired message={envError} />;
+  }
+
   const sp = await searchParams;
   const supabase = await createSupabaseServerClient();
   const {
