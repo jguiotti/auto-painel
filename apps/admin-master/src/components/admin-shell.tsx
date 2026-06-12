@@ -3,6 +3,7 @@
 import {
   BookOpen,
   Building2,
+  KeyRound,
   Layers,
   LayoutDashboard,
   Menu,
@@ -180,6 +181,17 @@ export function AdminShell({
           >
             <Menu className="size-4" aria-hidden />
             {collapsed ? null : "Colapsar menu"}
+          </Button>
+          <Button
+            variant="ghost"
+            className="mb-2 w-full justify-start gap-2"
+            size="sm"
+            asChild
+          >
+            <Link href="/painel/conta/senha" title={collapsed ? "Alterar senha" : undefined}>
+              <KeyRound className="size-4 shrink-0" aria-hidden />
+              {collapsed ? null : "Alterar senha"}
+            </Link>
           </Button>
           <form action={logoutAction}>
             <Button

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { Button, Input, Label } from "@autopainel/shared/ui";
+import { Button, Input, Label, PasswordInput } from "@autopainel/shared/ui";
 
 import { loginAction } from "@/actions/auth";
 
@@ -29,10 +29,9 @@ export function LoginForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Senha</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           disabled={pending}

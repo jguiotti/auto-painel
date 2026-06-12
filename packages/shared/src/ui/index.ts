@@ -50,7 +50,9 @@ export {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 export { Input } from "./input";
+export { PasswordInput } from "./password-input";
 export { Label } from "./label";
+export { ChangePasswordForm } from "../components/auth/change-password-form";
 export {
   NavigationMenu,
   NavigationMenuContent,

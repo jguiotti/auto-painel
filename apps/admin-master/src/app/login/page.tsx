@@ -68,6 +68,11 @@ export default async function LoginPage({
             </p>
           ) : null}
           <LoginForm />
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Já entrou no painel? Use o menu lateral em{" "}
+            <span className="font-medium text-foreground">Alterar senha</span> para trocar sem
+            depender do e-mail.
+          </p>
           <p className="mt-6 text-center text-xs text-muted-foreground">
             <Button variant="link" className="h-auto p-0 text-xs" asChild>
               <Link href="/">Voltar ao início</Link>

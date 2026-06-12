@@ -82,11 +82,13 @@ const PROVIDER_CATALOG: Array<{
   },
   {
     key: "webmotors",
-    subtitle: "Envie veículos para a WebMotors com login seguro no portal.",
+    subtitle:
+      "Envie veículos para a WebMotors. A conexão usa o usuário integrador do CRM Cockpit (em homologação).",
   },
   {
     key: "icarros",
-    subtitle: "Publique anúncios no iCarros a partir do seu estoque.",
+    subtitle:
+      "Publique anúncios no iCarros com login seguro em janela — igual à OLX, após homologação.",
   },
 ];
 
@@ -393,8 +395,12 @@ export function ClassifiedsIntegrationCards({
                 <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
-                    disabled={isBusy || status === "connected"}
+                    disabled={isBusy || status === "connected" || !oauthReady}
                     onClick={() => {
+                      if (!oauthReady) {
+                        setUnavailableProvider(provider.key);
+                        return;
+                      }
                       openConnectDialog(provider.key);
                     }}
                   >

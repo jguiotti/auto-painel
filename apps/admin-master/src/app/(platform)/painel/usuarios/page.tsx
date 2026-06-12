@@ -17,8 +17,8 @@ export default async function UsuariosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Usuários da concessionária</h1>
           <p className="text-sm text-muted-foreground">
-            Cadastre o primeiro gestor (dono) da loja. Uma conta de acesso ao painel da
-            concessionária será criada automaticamente via função segura no Supabase.
+            Cadastre o primeiro gestor (dono) da loja. A conta é criada no Supabase Auth com
+            senha temporária exibida uma vez nesta tela.
           </p>
         </div>
       </div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { Button, Input, Label } from "@autopainel/shared/ui";
+import { Button, Input, Label, PasswordInput } from "@autopainel/shared/ui";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -61,10 +61,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Senha</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

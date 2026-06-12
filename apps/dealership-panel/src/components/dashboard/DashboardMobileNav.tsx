@@ -94,7 +94,12 @@ export function DashboardMobileNav({
             </div>
           ) : null}
         </nav>
-        <div className="border-t p-4">
+        <div className="border-t p-4 space-y-2">
+          <Button variant="outline" className="w-full" asChild>
+            <Link href="/painel/conta/senha" onClick={() => setOpen(false)}>
+              Alterar senha
+            </Link>
+          </Button>
           <Button variant="outline" className="w-full" asChild>
             <a href={storefrontUrl} target="_blank" rel="noopener noreferrer">
               Ver vitrine pública

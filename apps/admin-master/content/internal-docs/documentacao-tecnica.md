@@ -1219,6 +1219,10 @@ _Registro histórico do que já existia antes da execução guiada pelo PRD apro
 
 ## Histórico vivo — decisões técnicas
 
+- **2026-06-10 — Auth UX + provisionamento gestor:** `PasswordInput` (toggle mostrar/ocultar) nos logins admin e painel loja; páginas `/painel/conta/senha` (admin-master + dealership-panel) com `ChangePasswordForm` (valida senha atual + `updateUser`); `provisionDealershipManagerAction` passou a usar `createSupabaseServiceRoleClient` (deixa de depender da Edge `provision-dealership-user` / `ADMIN_PROVISION_FUNCTION_SECRET` — corrige HTTP 500 quando secret Edge ausente). Requer `SUPABASE_SERVICE_ROLE_KEY` no projeto Vercel `auto-painel-admin-master`.
+
+- **2026-06-12 — Onda A go-live + integradores:** checklist `PRODUCTION_GO_LIVE_WAVE_A.md`; `CLASSIFIEDS_OAUTH_SETUP.md` §2 WebMotors (Sensedia password grant / INT-5b) e §3 iCarros (Keycloak OAuth como OLX); copy painel Integrações por portal; botão Conectar desabilitado quando OAuth da plataforma indisponível.
+
 - **2026-06-12 — Google Tag Manager (multitenant):** snippet GTM centralizado em `packages/shared` (`AutopainelGoogleTagManagerHead` / `Body`); integrado nos root layouts dos 4 apps Next.js; `dataLayer` com `ap_app_surface`, `ap_dealership_slug`, `ap_dealership_id`, `ap_page_hostname` para segmentar marketing/admin/painel/vitrine e lojas novas sem deploy. Env: `NEXT_PUBLIC_GTM_ID` (+ overrides opcionais por superfície). Doc: `packages/shared/docs/GTM.md`.
 
 - **2026-05-08 — Resolução de host e UX de erro:** registadas rotas `/erro/concessionaria` (`dealership-panel`, `customer-site`); migração `20260508240000_resolve_dealership_host_slug_ci.sql` (slug CI); regras **BZ-TERR-*** em `regras-de-negocio.md`; secção «Resolução de host» atualizada acima; doc partilhado `packages/shared/docs/TENANT_SUBDOMAINS_AND_DEALER_OAUTH.md` §2.2.1.

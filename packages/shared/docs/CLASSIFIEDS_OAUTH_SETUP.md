@@ -123,26 +123,94 @@ Aplicar o SQL gerado em `supabase/.generated-platform-classifieds-oauth.sql` no 
 
 ---
 
-## 2. WebMotors — modelo diferente (atenção)
+## 2. WebMotors — modelo diferente da OLX (importante)
 
-A WebMotors **não** usa o mesmo fluxo de browser OAuth que a OLX na documentação pública atual:
+Documentação oficial: [Manual Integração Revendedor — WebMotors](https://integracao.webmotors.com.br/manualintegracao/index.html)
 
-- Autenticação via **POST** `https://api-webmotors.sensedia.com/oauth/v1/access-token` (homolog: `https://hlg-webmotors.sensedia.com/oauth/v1/access-token`)
-- **Grant type password** + usuário **Integrador de API** criado pelo lojista no CRM Cockpit (um por loja)
-- `client_id` / `client_secret` do app registrado no [portal WebMotors Developers](https://portal-webmotors.sensedia.com/api-portal/documentacao/autenticacao)
+A WebMotors **não** usa o mesmo fluxo de browser OAuth (authorization code + popup) que a OLX:
 
-**Implicação:** o popup OAuth genérico do painel **não** funciona com a API real da WebMotors sem adaptação (formulário usuário/senha integrador por loja ou fluxo custom). Enquanto isso:
+| Aspecto | OLX | WebMotors |
+| --- | --- | --- |
+| Fluxo | Authorization code + popup | **Password grant** (Sensedia) |
+| Quem cria credenciais | AutoPainel (integrador) | App no [portal Sensedia WebMotors](https://portal-webmotors.sensedia.com/api-portal/documentacao/autenticacao) |
+| Credencial da loja | Login OLX do lojista (popup) | **Usuário Integrador de API** criado pelo lojista no **CRM Cockpit** (um por loja) |
+| Token URL (prod) | `https://auth.olx.com.br/oauth/token` | `https://api-webmotors.sensedia.com/oauth/v1/access-token` |
+| Token URL (homolog) | — | `https://hlg-webmotors.sensedia.com/oauth/v1/access-token` |
 
-- **Dev:** `CLASSIFIEDS_OAUTH_DEV_STUB=true` simula conexão WM
-- **Prod WM:** backlog **INT-5b** — implementar auth password grant + credenciais por concessionária
+**Implicação para o lojista:** o botão «Conectar» com popup **não funciona** com a API real da WebMotors até implementarmos **INT-5b** (formulário no painel: usuário + senha do integrador CRM, guardados cifrados por concessionária).
 
-Contato homologação: portal Sensedia → registrar app → solicitar APIs de estoque/canais.
+**Enquanto isso:**
+
+- **Dev:** `CLASSIFIEDS_OAUTH_DEV_STUB=true` simula conexão WM no popup
+- **Prod WM:** card visível se o plano incluir `webmotors_sync`, mas estado «Em homologação» até INT-5b
+
+### 2.1 Passos DevOps / homologação WebMotors
+
+1. Registar aplicação no portal Sensedia WebMotors Developers
+2. Solicitar APIs de estoque/canais (homologação)
+3. Obter `client_id` e `client_secret` da **aplicação AutoPainel** (não confundir com usuário integrador da loja)
+4. Guardar em Edge secrets / `platform_classifieds_oauth_providers` (quando o fluxo password estiver implementado)
+5. Documentar para cada loja: criar **Integrador de API** no CRM Cockpit WebMotors
+
+**Backlog produto:** UI «Conectar WebMotors» → pedir login/senha do integrador CRM (nunca expor `client_secret` da app ao lojista).
 
 ---
 
-## 3. iCarros
+## 3. iCarros — OAuth authorization code (semelhante à OLX)
 
-Sem documentação OAuth pública fechada no repo. Manter dev stub ou aguardar credenciais do parceiro (**INT-3** / **INT-5**).
+Documentação: [iCarros OAuth API](https://www.icarros.com.br/apidocs/apiOauth.html#pp-credenciais)
+
+### 3.1 Como funciona
+
+1. **AutoPainel** obtém `client_id` e `client_secret` junto à **central de atendimento iCarros** (não é self-service público).
+2. Registar **redirect URI** no iCarros (mesmo padrão Supabase Edge):
+   ```text
+   https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback?provider=icarros
+   ```
+3. O **lojista** clica **Conectar** → popup → login iCarros → consentimento → callback troca `code` por tokens (igual OLX).
+
+A doc iCarros também descreve **Resource Owner Password** (`grant_type=password`) — **inadequado** para SaaS multitenant (lojista não deve dar senha iCarros à plataforma). Usar **authorization code + popup**.
+
+### 3.2 URLs fixas (Keycloak / OpenID Connect)
+
+| Campo | Valor |
+| --- | --- |
+| Authorization | `https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/auth` |
+| Token | `https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/token` |
+| Refresh | Mesmo endpoint token com `grant_type=refresh_token` |
+| API (exemplo) | `https://paginasegura.icarros.com.br/rest/...` com header `Authorization: Bearer` |
+
+### 3.3 Variáveis `.env.local` / Vercel / Edge (após credenciais iCarros)
+
+```env
+ICARROS_OAUTH_AUTHORIZATION_URL=https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/auth
+ICARROS_OAUTH_TOKEN_URL=https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/token
+ICARROS_OAUTH_CLIENT_ID=<da central iCarros>
+ICARROS_OAUTH_CLIENT_SECRET=<da central iCarros>
+ICARROS_OAUTH_SCOPE=openid
+ICARROS_OAUTH_REDIRECT_URI=https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback?provider=icarros
+ICARROS_LISTINGS_API_URL=<endpoint de anúncios após homologação>
+```
+
+Depois (mesmo fluxo OLX):
+
+```bash
+npm run classifieds:oauth:platform:configure   # incluir provider icarros + is_enabled=true
+npm run classifieds:oauth:secrets:configure
+```
+
+SQL: `update public.platform_classifieds_oauth_providers set is_enabled = true where provider = 'icarros';`
+
+### 3.4 Modelo de pedido à central iCarros
+
+Assunto: `Homologação integrador AutoPainel — OAuth API estoque`
+
+> Solicitamos credenciais OAuth 2.0 (`client_id`, `client_secret`) para a aplicação **AutoPainel** (plataforma SaaS para concessionárias).
+>
+> - Website: https://autopainel.com.br  
+> - Redirect URI: `https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback?provider=icarros`  
+> - Fluxo: authorization code (login do lojista + consentimento)  
+> - Escopo: publicação/gestão de estoque por loja conectada
 
 ---
 
@@ -156,11 +224,25 @@ Sem documentação OAuth pública fechada no repo. Manter dev stub ou aguardar c
 | 4 | Edge `classifieds-oauth-callback` deployada |
 | 5 | `CLASSIFIEDS_OAUTH_DEV_STUB=false` no Vercel + Edge |
 | 6 | Migração `20260611160000_classifieds_icarros_oauth_provider.sql` aplicada no remoto |
-| 7 | Teste E2E manual: conectar → publicar veículo (dry-run ou API real) |
+| 7 | iCarros: credenciais central + `is_enabled=true` — ver `CLASSIFIEDS_OAUTH_SETUP.md` §3 |
+| 8 | WebMotors: INT-5b (password grant + CRM integrador) — ver §2 |
+| 9 | Teste E2E manual: conectar → publicar veículo (dry-run ou API real) |
 
 ---
 
-## 5. Troubleshooting
+## 5. Resumo para o lojista (UX)
+
+| Portal | O que o gestor faz | O que a AutoPainel faz nos bastidores |
+| --- | --- | --- |
+| OLX | Clica Conectar → login OLX na janela | Credenciais app AutoPainel + OAuth |
+| iCarros | Idem (quando homologado) | Pedir `client_id`/`secret` à central iCarros |
+| WebMotors | *(Em breve)* Informar usuário integrador CRM | App Sensedia + password grant por loja |
+
+Nenhum portal exige que o lojista copie chaves técnicas — excepto WebMotors no futuro (login integrador CRM, não `client_secret`).
+
+---
+
+## 6. Troubleshooting
 
 | Sintoma | Causa provável | Ação |
 | --- | --- | --- |

@@ -165,7 +165,10 @@ export function DashboardShell({
             ) : null}
           </nav>
 
-          <div className="shrink-0 border-t border-border p-4">
+          <div className="shrink-0 border-t border-border p-4 space-y-2">
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <Link href="/painel/conta/senha">Alterar senha</Link>
+            </Button>
             <Button variant="outline" size="sm" className="w-full" asChild>
               <a href={storefrontUrl} target="_blank" rel="noopener noreferrer">
                 Ver vitrine pública

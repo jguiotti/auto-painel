@@ -30,7 +30,13 @@ export function classifiedsProviderUnavailableMessage(
 export function classifiedsProviderOAuthPendingMessage(
   provider: ClassifiedsProvider,
 ): string {
-  return `Seu plano inclui a ${classifiedsProviderLabel(provider)}, mas a conexão OAuth ainda não foi liberada pela plataforma. Nossa equipe configura as credenciais oficiais do portal — tente novamente em breve ou fale com o suporte.`;
+  if (provider === "webmotors") {
+    return "Seu plano inclui a WebMotors. Estamos finalizando a conexão com o login do integrador do CRM Cockpit — diferente da OLX, que já abre login em janela segura. Enquanto isso, use a OLX ou fale com nosso suporte.";
+  }
+  if (provider === "icarros") {
+    return "Seu plano inclui o iCarros. A conexão em janela segura (como na OLX) será liberada assim que a AutoPainel concluir a homologação com a central iCarros. Tente novamente em breve ou fale com o suporte.";
+  }
+  return "Seu plano inclui a OLX, mas a conexão ainda não foi liberada pela plataforma. Nossa equipe configura as credenciais oficiais do portal — tente novamente em breve ou fale com o suporte.";
 }
 
 export function classifiedsProviderConnectHint(
@@ -40,7 +46,13 @@ export function classifiedsProviderConnectHint(
   if (oauthReady) {
     return "Clique em Conectar e faça login na janela que abrir. A conexão é concluída automaticamente.";
   }
-  return "Seu plano inclui este integrador. A conexão será habilitada assim que a plataforma publicar as credenciais OAuth do portal.";
+  if (provider === "webmotors") {
+    return "Incluído no seu plano. A WebMotors usa login do integrador CRM — nossa equipe está habilitando esse fluxo.";
+  }
+  if (provider === "icarros") {
+    return "Incluído no seu plano. A conexão iCarros será igual à OLX (janela de login) após homologação com o portal.";
+  }
+  return "Incluído no seu plano. A conexão será habilitada assim que a plataforma publicar as credenciais OAuth da OLX.";
 }
 
 export function classifiedsConnectSuccessMessage(provider: ClassifiedsProvider): string {
