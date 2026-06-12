@@ -71,6 +71,7 @@ Secrets locais: `supabase secrets set --env-file supabase/.env` (não versionar)
 
 ## Troubleshooting
 
+- **`PGRST301` / `/erro/concessionaria` com `{slug}.localhost`:** confira se `NEXT_PUBLIC_SUPABASE_URL` aponta para `http://127.0.0.1:54321` **e** se `NEXT_PUBLIC_SUPABASE_ANON_KEY` é a chave **local** (`supabase status -o env`), não a do projeto remoto. Variáveis exportadas no shell (`echo $NEXT_PUBLIC_SUPABASE_ANON_KEY`) têm prioridade sobre `.env.local`; o `scripts/inject-monorepo-env.cjs` força a raiz `.env.local` nos apps Next. Se persistir, rode `unset NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_ANON_KEY` e reinicie `npm run dev:dealership-panel`.
 - **Docker não conecta:** abra o Docker Desktop e aguarde ficar *Running*.
 - **`supabase db pull` / shadow DB:** exige Docker + `supabase start` (shadow na porta `54320`).
 - **Health check do storage na 1ª subida:** rode `supabase start` de novo; migrações já aplicadas, containers sobem mais rápido.
