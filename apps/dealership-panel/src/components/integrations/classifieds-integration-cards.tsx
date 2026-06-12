@@ -24,6 +24,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
+  Label,
+  PasswordInput,
 } from "@autopainel/shared/ui";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -44,6 +47,7 @@ import {
 import {
   resolveClassifiedsOAuthErrorDetails,
 } from "@/lib/integrations/classifieds-oauth-error-hints";
+import { classifiedsUsesIntegratorCredentials } from "@/lib/classifieds/classifieds-connect-mode";
 
 const OAUTH_LOG_PREFIX = "[AutoPainel OAuth]";
 
@@ -181,6 +185,8 @@ export function ClassifiedsIntegrationCards({
     null,
   );
   const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
+  const [integratorUsername, setIntegratorUsername] = useState("");
+  const [integratorPassword, setIntegratorPassword] = useState("");
   const popupRef = useRef<Window | null>(null);
   const popupWatchRef = useRef<number | null>(null);
   const oauthMessageReceivedRef = useRef(false);
@@ -263,6 +269,8 @@ export function ClassifiedsIntegrationCards({
 
   async function prepareConnectDialog(provider: ClassifiedsProvider) {
     setInlineFeedback(null);
+    setIntegratorUsername("");
+    setIntegratorPassword("");
     const row = connectionMap.get(provider);
     if (row?.status === "connecting") {
       await cleanupStaleOAuthAttempt(provider);
@@ -321,6 +329,55 @@ export function ClassifiedsIntegrationCards({
       }
     } catch {
       // refresh below still runs
+    }
+  }
+
+  async function startWebMotorsConnectFromDialog() {
+    const provider = dialogProvider;
+    if (provider !== "webmotors") {
+      return;
+    }
+
+    const username = integratorUsername.trim();
+    if (!username || !integratorPassword) {
+      setInlineFeedback("Informe o usuário e a senha do integrador CRM WebMotors.");
+      return;
+    }
+
+    setPendingProvider(provider);
+    logOAuthEvent("webmotors_connect_start");
+
+    try {
+      const res = await fetch("/api/painel/integracoes/webmotors/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password: integratorPassword }),
+      });
+      const payload = (await res.json()) as
+        | { status?: string }
+        | { error: string; code?: string };
+
+      setPendingProvider(null);
+      setDialogProvider(null);
+      setIntegratorPassword("");
+
+      if (!res.ok || !("status" in payload) || payload.status !== "connected") {
+        logOAuthEvent("webmotors_connect_failed", { status: res.status, payload });
+        setInlineFeedback(
+          "error" in payload
+            ? payload.error
+            : classifiedsConnectFailureMessage(provider),
+        );
+        router.refresh();
+        return;
+      }
+
+      logOAuthEvent("webmotors_connect_ok");
+      setInlineFeedback(classifiedsConnectSuccessMessage(provider));
+      router.refresh();
+    } catch {
+      setPendingProvider(null);
+      setInlineFeedback(classifiedsConnectFailureMessage(provider));
     }
   }
 
@@ -582,6 +639,39 @@ export function ClassifiedsIntegrationCards({
                 : null}
             </DialogDescription>
           </DialogHeader>
+
+          {dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider) ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="webmotors-integrator-username">Usuário integrador CRM</Label>
+                <Input
+                  id="webmotors-integrator-username"
+                  type="email"
+                  autoComplete="username"
+                  placeholder="ex.: integrador@sualoja.com.br"
+                  value={integratorUsername}
+                  disabled={pendingProvider !== null}
+                  onChange={(event) => {
+                    setIntegratorUsername(event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="webmotors-integrator-password">Senha do integrador</Label>
+                <PasswordInput
+                  id="webmotors-integrator-password"
+                  autoComplete="current-password"
+                  placeholder="Senha criada no Cockpit WebMotors"
+                  value={integratorPassword}
+                  disabled={pendingProvider !== null}
+                  onChange={(event) => {
+                    setIntegratorPassword(event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
@@ -589,6 +679,7 @@ export function ClassifiedsIntegrationCards({
               disabled={pendingProvider !== null}
               onClick={() => {
                 setDialogProvider(null);
+                setIntegratorPassword("");
               }}
             >
               Cancelar
@@ -597,10 +688,18 @@ export function ClassifiedsIntegrationCards({
               type="button"
               disabled={pendingProvider !== null}
               onClick={() => {
+                if (dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider)) {
+                  void startWebMotorsConnectFromDialog();
+                  return;
+                }
                 void startOAuthFromDialog();
               }}
             >
-              {pendingProvider ? "Abrindo login..." : "Continuar para login"}
+              {pendingProvider
+                ? "Conectando..."
+                : dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider)
+                  ? "Conectar WebMotors"
+                  : "Continuar para login"}
             </Button>
           </DialogFooter>
         </DialogContent>

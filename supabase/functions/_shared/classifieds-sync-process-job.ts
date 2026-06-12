@@ -67,10 +67,6 @@ export async function claimClassifiedsSyncJobs(
       continue;
     }
 
-    if (job.provider !== "olx" && job.provider !== "webmotors") {
-      continue;
-    }
-
     claimed.push(job as ClassifiedsSyncJobRow);
   }
 

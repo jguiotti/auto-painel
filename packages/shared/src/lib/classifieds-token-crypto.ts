@@ -39,3 +39,24 @@ export async function encryptClassifiedsSecretValue(
   const cipherBytes = new Uint8Array(cipherBuffer);
   return `${toBase64(iv)}.${toBase64(cipherBytes)}`;
 }
+
+export async function decryptClassifiedsSecretValue(
+  payload: string,
+  secret: string,
+): Promise<string> {
+  const [ivPart, cipherPart] = payload.split(".");
+  if (!ivPart || !cipherPart) {
+    throw new Error("Invalid encrypted payload format.");
+  }
+
+  const key = await getAesKey(secret);
+  const iv = fromBase64(ivPart);
+  const cipherBytes = fromBase64(cipherPart);
+  const plainBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    cipherBytes,
+  );
+
+  return decoder.decode(plainBuffer);
+}

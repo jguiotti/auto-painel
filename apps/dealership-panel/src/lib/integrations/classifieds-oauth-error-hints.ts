@@ -8,14 +8,6 @@ export interface ClassifiedsOAuthErrorDetails {
   supportCode: string;
 }
 
-function resolveOlxRedirectUriHint(): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  if (!supabaseUrl) {
-    return "https://<projeto>.supabase.co/functions/v1/classifieds-oauth-callback";
-  }
-  return `${supabaseUrl}/functions/v1/classifieds-oauth-callback`;
-}
-
 export function resolveClassifiedsOAuthErrorDetails(
   provider: ClassifiedsProvider,
   rawError: string | null | undefined,
@@ -29,10 +21,16 @@ export function resolveClassifiedsOAuthErrorDetails(
   const label = classifiedsProviderLabel(provider);
 
   if (normalized === "missing_code") {
+    const redirectHint =
+      provider === "icarros"
+        ? "confira se a URL de redirecionamento cadastrada no iCarros inclui ?provider=icarros"
+        : provider === "olx"
+          ? "confira se a URL de redirecionamento cadastrada na OLX inclui ?provider=olx"
+          : "confira se a URL de redirecionamento cadastrada no portal está idêntica à da plataforma";
     return {
       supportCode: "missing_code",
-      title: "Login da OLX não foi concluído",
-      hint: `A OLX devolveu o fluxo sem código de autorização. Mantenha a janela aberta até ela fechar sozinha, conclua o login na OLX e confira se a URL de redirecionamento cadastrada na OLX é exatamente: ${resolveOlxRedirectUriHint()} (sem parâmetros extras).`,
+      title: `Login ${label} não foi concluído`,
+      hint: `O portal devolveu o fluxo sem código de autorização. Mantenha a janela aberta até ela fechar sozinha, conclua o login e ${redirectHint}.`,
     };
   }
 
@@ -52,7 +50,18 @@ export function resolveClassifiedsOAuthErrorDetails(
     return {
       supportCode: "cancelled",
       title: "Login cancelado",
-      hint: "Autorize o acesso na OLX quando a janela de login abrir.",
+      hint: `Autorize o acesso na ${label} quando a janela de login abrir.`,
+    };
+  }
+
+  if (normalized.startsWith("webmotors_")) {
+    return {
+      supportCode: normalized,
+      title: "Não foi possível conectar à WebMotors",
+      hint:
+        normalized === "webmotors_invalid_credentials"
+          ? "Usuário ou senha do integrador CRM inválidos. Crie ou redefina o integrador no Cockpit WebMotors (cockpit.com.br) e tente novamente."
+          : "Verifique se o integrador CRM está ativo e se a aplicação AutoPainel está homologada na Sensedia.",
     };
   }
 
@@ -60,8 +69,7 @@ export function resolveClassifiedsOAuthErrorDetails(
     return {
       supportCode: "token_exchange_failed",
       title: `Não foi possível validar o login na ${label}`,
-      hint:
-        "Credenciais ou redirect URI podem estar divergentes entre OLX, Supabase e AutoPainel. Peça ao suporte para revisar platform_classifieds_oauth_providers e secrets da Edge.",
+      hint: `Credenciais ou redirect URI podem estar divergentes entre ${label}, Supabase e AutoPainel. Peça ao suporte para revisar platform_classifieds_oauth_providers e secrets da Edge.`,
     };
   }
 

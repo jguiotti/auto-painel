@@ -6,6 +6,8 @@ import { isClassifiedsOAuthDevStubEnabled } from "@autopainel/shared/lib/classif
 import type { ClassifiedsOAuthProvider } from "@/lib/classifieds/oauth-provider";
 import { CLASSIFIEDS_OAUTH_PROVIDERS } from "@/lib/classifieds/oauth-provider";
 import { resolveClassifiedsOAuthProviderConfigForDealership } from "@/lib/classifieds/resolve-classifieds-oauth-config";
+import { tryResolveWebMotorsPlatformConfig } from "@/lib/classifieds/resolve-webmotors-platform-config";
+import { classifiedsUsesIntegratorCredentials } from "@/lib/classifieds/classifieds-connect-mode";
 import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
 
 export type ClassifiedsProviderAvailability = Record<ClassifiedsProvider, boolean>;
@@ -35,6 +37,11 @@ export async function getClassifiedsProviderOAuthReady(params: {
 
   await Promise.all(
     oauthProviders.map(async (provider) => {
+      if (classifiedsUsesIntegratorCredentials(provider)) {
+        availability[provider] = (await tryResolveWebMotorsPlatformConfig()) !== null;
+        return;
+      }
+
       try {
         await resolveClassifiedsOAuthProviderConfigForDealership({
           dealershipId: params.dealershipId,

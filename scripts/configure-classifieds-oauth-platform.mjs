@@ -34,6 +34,24 @@ function requireProviderEnv(provider) {
   const scope = process.env[`${prefix}_OAUTH_SCOPE`]?.trim() || null;
   const redirectUri = process.env[`${prefix}_OAUTH_REDIRECT_URI`]?.trim() || null;
 
+  if (provider === "webmotors") {
+    if (!clientId || !clientSecret || !tokenUrl) {
+      console.error(
+        `Missing ${prefix}_OAUTH_CLIENT_ID, ${prefix}_OAUTH_CLIENT_SECRET or ${prefix}_OAUTH_TOKEN_URL`,
+      );
+      process.exit(1);
+    }
+    return {
+      provider,
+      clientId,
+      clientSecret,
+      authorizationUrl: authorizationUrl || tokenUrl,
+      tokenUrl,
+      scope,
+      redirectUri: null,
+    };
+  }
+
   if (!clientId || !clientSecret || !authorizationUrl || !tokenUrl) {
     console.error(
       `Missing ${prefix}_OAUTH_CLIENT_ID, ${prefix}_OAUTH_CLIENT_SECRET, ${prefix}_OAUTH_AUTHORIZATION_URL or ${prefix}_OAUTH_TOKEN_URL`,
@@ -60,9 +78,23 @@ if (
   providers.push(requireProviderEnv("olx"));
 }
 
+if (
+  process.env.ICARROS_OAUTH_CLIENT_ID?.trim() &&
+  process.env.ICARROS_OAUTH_CLIENT_SECRET?.trim()
+) {
+  providers.push(requireProviderEnv("icarros"));
+}
+
+if (
+  process.env.WEBMOTORS_OAUTH_CLIENT_ID?.trim() &&
+  process.env.WEBMOTORS_OAUTH_CLIENT_SECRET?.trim()
+) {
+  providers.push(requireProviderEnv("webmotors"));
+}
+
 if (providers.length === 0) {
   console.error(
-    "No provider credentials found. Fill OLX_OAUTH_* in .env.local (see packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md).",
+    "No provider credentials found. Fill OLX_OAUTH_* and/or ICARROS_OAUTH_* in .env.local (see packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md).",
   );
   process.exit(1);
 }
@@ -135,5 +167,5 @@ Next steps:
 3. Set Edge secrets: npm run classifieds:oauth:secrets:configure
 4. Deploy Edge: supabase functions deploy classifieds-oauth-callback --project-ref wcgevmvystdhqpzwuyig
 5. In .env.local set CLASSIFIEDS_OAUTH_DEV_STUB=false and npm run sync:env
-6. Register redirect URI at OLX: same value as OLX_OAUTH_REDIRECT_URI
+6. Register redirect URI at each portal: same value as PROVIDER_OAUTH_REDIRECT_URI (including ?provider= when required)
 `);

@@ -1,25 +1,12 @@
 type ClassifiedsProvider = "olx" | "webmotors" | "icarros";
 
 /**
- * OLX registers redirect URIs without query strings. Provider is resolved from OAuth `state`.
+ * Classifieds portals register exact redirect URIs (often including `?provider=`).
+ * Keep the URI unchanged so authorize and token exchange match portal registration.
  */
 export function normalizeClassifiedsOAuthRedirectUri(
-  provider: ClassifiedsProvider,
+  _provider: ClassifiedsProvider,
   redirectUri: string,
 ): string {
-  if (provider !== "olx") {
-    return redirectUri;
-  }
-
-  try {
-    const url = new URL(redirectUri);
-    if (url.pathname.includes("classifieds-oauth-callback")) {
-      url.search = "";
-      return url.toString();
-    }
-  } catch {
-    return redirectUri;
-  }
-
   return redirectUri;
 }
