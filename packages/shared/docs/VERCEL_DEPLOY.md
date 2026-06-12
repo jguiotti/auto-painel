@@ -64,6 +64,14 @@ O `vercel.json` em cada app já define:
 
 Production branch: `main`.
 
+### Build com middleware (`--webpack`)
+
+Apps com `middleware.ts` (`admin-master`, `dealership-panel`, `customer-site`) usam `next build --webpack` no `package.json`. O build default com **Turbopack** na Vercel pode falhar com:
+
+`ENOENT ... middleware.js.nft.json`
+
+(bug conhecido Next.js 16 + Turbopack + file tracing). O admin pode passar por cache; o painel falhou de forma consistente até forçar webpack.
+
 ---
 
 ## 3. DNS no Registro.br (modo avançado)
