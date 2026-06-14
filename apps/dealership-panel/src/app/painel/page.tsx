@@ -114,7 +114,7 @@ export default async function DashboardHomePage({
     supabase
       .from("leads")
       .select(
-        "id, client_name, phone, type, created_at, vehicles(brand, model)",
+        "id, client_name, phone, type, created_at, vehicles!leads_vehicle_id_fkey(brand, model)",
       )
       .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false })

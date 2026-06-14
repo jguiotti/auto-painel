@@ -6,30 +6,33 @@
 @source "../**/*.{ts,tsx}";
 
 :root {
-  --marketing-accent: oklch(0.55 0.14 195);
-  --marketing-accent-muted: oklch(0.45 0.1 195);
-  --marketing-hero: oklch(0.16 0.02 260);
+  --marketing-accent: oklch(0.72 0.14 195);
+  --marketing-accent-muted: oklch(0.58 0.11 195);
+  --marketing-hero: oklch(0.12 0.02 260);
+  --marketing-surface: oklch(0.16 0.018 260);
+  --marketing-surface-elevated: oklch(0.2 0.02 260);
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --color-background: oklch(0.99 0.002 260);
-  --color-foreground: oklch(0.18 0.02 260);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.18 0.02 260);
-  --color-primary: oklch(0.22 0.03 260);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.96 0.01 260);
-  --color-secondary-foreground: oklch(0.22 0.03 260);
-  --color-muted: oklch(0.96 0.01 260);
-  --color-muted-foreground: oklch(0.45 0.02 260);
-  --color-accent: oklch(0.94 0.03 195);
-  --color-accent-foreground: oklch(0.22 0.03 260);
-  --color-destructive: oklch(0.577 0.245 27.325);
+  --font-sans: var(--font-mardoto), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  --color-background: oklch(0.11 0.018 260);
+  --color-foreground: oklch(0.96 0.008 260);
+  --color-card: var(--marketing-surface-elevated);
+  --color-card-foreground: oklch(0.96 0.008 260);
+  --color-primary: oklch(0.96 0.008 260);
+  --color-primary-foreground: oklch(0.12 0.02 260);
+  --color-secondary: oklch(0.18 0.02 260);
+  --color-secondary-foreground: oklch(0.92 0.01 260);
+  --color-muted: oklch(0.2 0.018 260);
+  --color-muted-foreground: oklch(0.68 0.02 260);
+  --color-accent: oklch(0.22 0.03 195);
+  --color-accent-foreground: oklch(0.96 0.008 260);
+  --color-destructive: oklch(0.62 0.22 25);
   --color-destructive-foreground: oklch(0.985 0 0);
-  --color-border: oklch(0.9 0.01 260);
-  --color-input: oklch(0.9 0.01 260);
+  --color-border: oklch(0.28 0.02 260);
+  --color-input: oklch(0.24 0.02 260);
   --color-ring: var(--marketing-accent);
   --color-marketing-accent: var(--marketing-accent);
   --color-marketing-hero: var(--marketing-hero);
@@ -41,4 +44,19 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+.font-slogan {
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
 }

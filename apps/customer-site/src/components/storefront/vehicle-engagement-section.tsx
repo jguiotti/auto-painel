@@ -48,6 +48,7 @@ export function VehicleEngagementSection({
         vehicleId={vehicleId}
         simulationSnapshot={simulationSnapshot}
         requireSimulation={showFinance}
+        dealershipName={dealership?.name ?? "nossa loja"}
       />
     </div>
   );

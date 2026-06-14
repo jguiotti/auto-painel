@@ -1,20 +1,91 @@
-import { ExternalLink } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  ExternalLink,
+  Globe,
+  LayoutDashboard,
+  Wrench,
+} from "lucide-react";
 
 import {
   buildDealershipSubdomainSurfaceUrls,
   buildLocalhostDealershipPreviewUrls,
 } from "@autopainel/shared/lib/tenant/dealership-subdomain-surface-urls";
 import { isDealershipPanelSlugBootstrapEnabled } from "@autopainel/shared/lib/tenant/is-dealership-panel-slug-bootstrap-enabled";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@autopainel/shared/ui";
+import { cn } from "@autopainel/shared/lib/utils";
 
 interface DealershipOperatorSurfaceLinksProps {
   slug: string;
+}
+
+interface SurfaceLinkCardProps {
+  href: string;
+  title: string;
+  description: string;
+  urlLabel: string;
+  icon: ReactNode;
+  variant?: "primary" | "secondary";
+}
+
+function SurfaceLinkCard({
+  href,
+  title,
+  description,
+  urlLabel,
+  icon,
+  variant = "secondary",
+}: SurfaceLinkCardProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group flex min-h-[8.5rem] flex-col justify-between rounded-xl border p-5 transition-colors",
+        variant === "primary"
+          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+          : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/30",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            variant === "primary"
+              ? "bg-primary-foreground/15 text-primary-foreground"
+              : "bg-muted text-foreground",
+          )}
+        >
+          {icon}
+        </div>
+        <ExternalLink
+          className={cn(
+            "size-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100",
+            variant === "primary" ? "text-primary-foreground" : "text-muted-foreground",
+          )}
+          aria-hidden
+        />
+      </div>
+      <div className="mt-4 space-y-1">
+        <p className="text-sm font-semibold leading-snug">{title}</p>
+        <p
+          className={cn(
+            "text-xs leading-relaxed",
+            variant === "primary" ? "text-primary-foreground/80" : "text-muted-foreground",
+          )}
+        >
+          {description}
+        </p>
+        <p
+          className={cn(
+            "mt-2 break-all font-mono text-[11px] leading-snug",
+            variant === "primary" ? "text-primary-foreground/70" : "text-muted-foreground",
+          )}
+        >
+          {urlLabel}
+        </p>
+      </div>
+    </a>
+  );
 }
 
 /**
@@ -55,114 +126,72 @@ export function DealershipOperatorSurfaceLinks({
 
   if (!panelHref || !storefrontHref) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">
-            Abrir vitrine e painel desta concessionária
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">
-            Defina{" "}
-            <code className="text-xs">NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN</code> na raiz (
-            <code className="text-xs">.env.local</code>) e rode{" "}
-            <code className="text-xs">npm run sync:env</code>. Em desenvolvimento local, os botões
-            usam também{" "}
-            <code className="text-xs">{`http://{slug}.localhost:{porta}`}</code> quando o slug está
-            preenchido.
-          </p>
-        </CardContent>
-      </Card>
+      <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-base font-semibold text-foreground">
+          Acesso rápido à loja
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Defina{" "}
+          <code className="text-xs">NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN</code> na raiz (
+          <code className="text-xs">.env.local</code>) e rode{" "}
+          <code className="text-xs">npm run sync:env</code>. Em desenvolvimento local, os
+          atalhos usam também{" "}
+          <code className="text-xs">{`http://{slug}.localhost:{porta}`}</code> quando o slug
+          está preenchido.
+        </p>
+      </section>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">
-          Abrir vitrine e painel desta concessionária
-        </CardTitle>
-        <p className="text-muted-foreground text-sm">
-          {devPrimary ? (
-            <>
-              Os botões abrem primeiro os endereços locais{" "}
-              <span className="font-medium text-foreground">{`*.localhost`}</span> nas portas do
-              monorepo — mesmo que{" "}
-              <code className="text-xs">NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN</code> já aponte para o
-              domínio de produção.
-            </>
-          ) : (
-            <>
-              Ligações públicas geradas a partir do slug e de{" "}
-              <code className="text-xs">NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN</code> (e templates opcionais).
-              Confirme DNS / TLS wildcard antes de partilhar com a loja.
-            </>
-          )}
+    <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="space-y-1">
+        <h2 className="text-base font-semibold text-foreground">Acesso rápido à loja</h2>
+        <p className="text-sm text-muted-foreground">
+          {devPrimary
+            ? "Abra o painel ou a vitrine no ambiente local. A ordem prioriza validar a sessão no painel antes do site público."
+            : "Atalhos gerados a partir do slug e do domínio da plataforma. Confirme DNS e TLS antes de partilhar com a loja."}
         </p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="default" size="sm" asChild>
-            <a href={panelHref} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="mr-2 size-4" aria-hidden />
-              Abrir painel da loja
-            </a>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a href={storefrontHref} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="mr-2 size-4" aria-hidden />
-              Abrir site público (vitrine)
-            </a>
-          </Button>
-          {bootstrapHref ? (
-            <Button variant="ghost" size="sm" asChild>
-              <a href={bootstrapHref} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="mr-2 size-4" aria-hidden />
-                Painel (atalho técnico, só dev)
-              </a>
-            </Button>
-          ) : null}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SurfaceLinkCard
+          href={panelHref}
+          title="Painel da loja"
+          description="Gestão de estoque, contatos, equipe e integrações."
+          urlLabel={panelHref}
+          icon={<LayoutDashboard className="size-5" aria-hidden />}
+          variant="primary"
+        />
+        <SurfaceLinkCard
+          href={storefrontHref}
+          title="Site público (vitrine)"
+          description="Página que o cliente final vê — estoque, contato e simulação."
+          urlLabel={storefrontHref}
+          icon={<Globe className="size-5" aria-hidden />}
+        />
+      </div>
+
+      {bootstrapHref ? (
+        <a
+          href={bootstrapHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <Wrench className="size-3.5 shrink-0" aria-hidden />
+          Atalho técnico de painel (somente dev)
+          <span className="font-mono">{bootstrapHref}</span>
+        </a>
+      ) : null}
+
+      {showProductionReference ? (
+        <div className="rounded-lg border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Referência de produção (após DNS)</p>
+          <p className="mt-1 break-all font-mono">Painel: {canonical!.panelUrl}</p>
+          <p className="mt-1 break-all font-mono">Vitrine: {canonical!.storefrontUrl}</p>
         </div>
-
-        <dl className="text-muted-foreground space-y-2 text-xs">
-          <div>
-            <dt className="font-medium text-foreground">
-              {devPrimary ? "Endereços usados pelos botões (local)" : "Painel"}
-            </dt>
-            <dd className="break-all font-mono">{panelHref}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-foreground">
-              {devPrimary ? "Vitrine (local)" : "Vitrine"}
-            </dt>
-            <dd className="break-all font-mono">{storefrontHref}</dd>
-          </div>
-          {showProductionReference ? (
-            <>
-              <div className="border-border mt-2 border-t pt-2">
-                <dt className="font-medium text-foreground">
-                  Referência após DNS / deploy (produção)
-                </dt>
-                <dd className="break-all font-mono">{canonical!.panelUrl}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-foreground">Vitrine (produção)</dt>
-                <dd className="break-all font-mono">{canonical!.storefrontUrl}</dd>
-              </div>
-            </>
-          ) : null}
-        </dl>
-
-        {bootstrapHref ? (
-          <p className="text-muted-foreground text-xs">
-            O terceiro botão só aparece com{" "}
-            <code className="rounded bg-muted px-1">
-              NEXT_PUBLIC_ENABLE_DEALERSHIP_PANEL_SLUG_BOOTSTRAP=true
-            </code>
-            . Uso apenas por equipa técnica em ambiente controlado.
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
+      ) : null}
+    </section>
   );
 }

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import {
   Building2,
   Car,
-  Cloud,
-  Gauge,
-  Headphones,
-  LayoutDashboard,
-  LineChart,
+  Globe,
+  LayoutTemplate,
+  Lock,
   MessageCircle,
   Palette,
+  Search,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,112 +18,147 @@ import { Button, Card, CardDescription, CardHeader, CardTitle } from "@autopaine
 export const metadata: Metadata = {
   title: "Funcionalidades",
   description:
-    "Conheça o que o AutoPainel oferece para estoque, leads, vitrine e operação multitenant.",
+    "Site exclusivo, painel de gestão, estoque isolado, equipe com papéis, 3 layouts de vitrine, SEO e leads — tudo para concessionárias no AutoPainel.",
 };
 
-const features = [
+const featureGroups = [
   {
-    icon: LayoutDashboard,
-    title: "Painel da concessionária",
-    description:
-      "Visão consolidada de estoque, contatos e indicadores para decisões rápidas no dia a dia.",
+    title: "Sua loja, seu ambiente",
+    intro:
+      "Cada concessionária opera com site e painel dedicados. Multitenant de verdade: dados separados, acesso restrito à sua equipe.",
+    items: [
+      {
+        icon: Building2,
+        title: "Site + painel exclusivos",
+        description:
+          "Vitrine pública com a marca da loja e painel administrativo para estoque, leads e operação — um par único por concessionária.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Isolamento total de estoque",
+        description:
+          "Políticas de segurança em banco garantem que outra loja jamais enxergue seus veículos, preços ou contatos.",
+      },
+      {
+        icon: Globe,
+        title: "Domínio próprio ou subdomínio",
+        description:
+          "Resolução segura por host: o visitante sempre cai na vitrine certa, com endereço profissional da sua revenda.",
+      },
+    ],
   },
   {
-    icon: Car,
-    title: "Gestão de estoque",
-    description:
-      "Inclusão e edição de veículos com fotos, preço, slug público e status (disponível, vendido).",
+    title: "Equipe e operação comercial",
+    intro:
+      "O dono define quem entra no painel e o que cada pessoa pode fazer — do gestor ao vendedor de piso.",
+    items: [
+      {
+        icon: Users,
+        title: "Gestão de colaboradores",
+        description:
+          "Cadastre vendedores e gestores com papéis (owner, manager, seller). Permissões claras para publicar, atender leads ou administrar a loja.",
+      },
+      {
+        icon: Car,
+        title: "Estoque e vitrine sincronizados",
+        description:
+          "Cadastre veículos com fotos, preço e página pública. Alterou no painel, reflete no site na hora — sem fila de agência.",
+      },
+      {
+        icon: MessageCircle,
+        title: "Leads centralizados",
+        description:
+          "Interessados chegam com contexto do veículo. Histórico para o comercial responder rápido e não perder oportunidade.",
+      },
+    ],
   },
   {
-    icon: MessageCircle,
-    title: "Leads e contatos",
-    description:
-      "Registro de interessados vinculados aos veículos, com histórico para o time comercial.",
+    title: "Marca e presença digital",
+    intro:
+      "Três layouts elegantes, variações de cor, logo e tipografia — para a vitrine transmitir confiança e diferenciação no mercado.",
+    items: [
+      {
+        icon: LayoutTemplate,
+        title: "3 modelos de vitrine",
+        description:
+          "Escolha o layout que combina com o posicionamento da loja. Tema claro ou escuro, cores e logos aplicados em todo o site.",
+      },
+      {
+        icon: Palette,
+        title: "Whitelabel completo",
+        description:
+          "Logo horizontal no header, destaque no rodapé, favicon e paleta personalizada. O cliente vê a sua concessionária, não a plataforma.",
+      },
+      {
+        icon: Search,
+        title: "SEO para concessionárias",
+        description:
+          "URLs amigáveis por veículo, metadados e estrutura pensada para buscadores — sua loja aparece quando o comprador pesquisa.",
+      },
+      {
+        icon: Lock,
+        title: "Infraestrutura em nuvem",
+        description:
+          "Backend gerenciado, backups e atualizações contínuas. Você foca em vender; a plataforma cuida da base técnica.",
+      },
+    ],
   },
-  {
-    icon: Palette,
-    title: "Branding e vitrine",
-    description:
-      "Identidade por loja: tema, logo e experiência alinhada à sua marca no ambiente digital.",
-  },
-  {
-    icon: Building2,
-    title: "Domínio e multitenant",
-    description:
-      "Suporte a subdomínio na plataforma ou domínio próprio, com resolução segura por host.",
-  },
-  {
-    icon: Users,
-    title: "Equipe e papéis",
-    description:
-      "Perfis para administradores e vendedores, todos restritos aos dados da própria loja.",
-  },
-  {
-    icon: LineChart,
-    title: "Operação orientada a dados",
-    description:
-      "Base preparada para evoluir com métricas e relatórios conforme sua operação cresce.",
-  },
-  {
-    icon: Gauge,
-    title: "Performance e escalabilidade",
-    description:
-      "Arquitetura moderna com foco em tempo de resposta e experiência fluida no painel.",
-  },
-  {
-    icon: Cloud,
-    title: "Infraestrutura em nuvem",
-    description:
-      "Backend gerenciado com backups, segurança em camadas e atualizações contínuas.",
-  },
-  {
-    icon: Headphones,
-    title: "Suporte à adoção",
-    description:
-      "Demonstrações e materiais para sua equipe ganhar confiança na ferramenta desde o primeiro dia.",
-  },
-];
+] as const;
 
 export default function FuncionalidadesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
-      <div className="max-w-2xl">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-          O que o AutoPainel oferece
+      <div className="max-w-3xl">
+        <p className="font-slogan text-sm font-medium uppercase tracking-wider text-marketing-accent">
+          Funcionalidades
+        </p>
+        <h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-white md:text-5xl">
+          Tudo o que sua concessionária precisa para vender online com controle
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Uma suíte pensada para donos e equipes de concessionárias que precisam de
-          organização, segurança e uma presença digital profissional — sem abrir mão
-          da autonomia de cada loja.
+          Site profissional, painel de gestão, equipe organizada e SEO de qualidade —
+          sem depender de agência todo mês e sem risco de misturar dados com outras lojas.
         </p>
       </div>
 
-      <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {features.map(({ icon: Icon, title, description }) => (
-          <Card
-            key={title}
-            className="border-border/80 transition-colors hover:border-marketing-accent/40 hover:shadow-md"
-          >
-            <CardHeader>
-              <Icon className="size-9 text-marketing-accent" aria-hidden />
-              <CardTitle className="text-lg">{title}</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                {description}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+      <div className="mt-16 space-y-20">
+        {featureGroups.map((group) => (
+          <section key={group.title}>
+            <div className="max-w-2xl">
+              <h2 className="font-display text-2xl font-bold text-white md:text-3xl">
+                {group.title}
+              </h2>
+              <p className="mt-2 text-muted-foreground">{group.intro}</p>
+            </div>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {group.items.map(({ icon: Icon, title, description }) => (
+                <Card
+                  key={title}
+                  className="border-white/10 bg-card/60 transition-colors hover:border-marketing-accent/30 hover:shadow-lg hover:shadow-cyan-500/5"
+                >
+                  <CardHeader>
+                    <Icon className="size-9 text-marketing-accent" aria-hidden />
+                    <CardTitle className="font-display text-lg">{title}</CardTitle>
+                    <CardDescription className="text-base leading-relaxed">
+                      {description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
 
-      <div className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm md:p-10">
-        <p className="text-lg font-semibold">
-          Quer ver o AutoPainel na prática na sua operação?
+      <div className="mt-16 rounded-2xl border border-white/10 bg-card/60 p-8 text-center shadow-sm md:p-10">
+        <p className="font-display text-lg font-semibold text-white">
+          Quer ver site, painel e equipe funcionando juntos na sua operação?
         </p>
         <p className="mt-2 text-muted-foreground">
-          Solicite uma demonstração e receba um retorno da nossa equipe.
+          Planos sob consulta — agende uma demonstração e receba retorno da nossa equipe.
         </p>
         <Button
-          className="mt-6 bg-marketing-accent text-white hover:bg-marketing-accent/90"
+          className="mt-6 bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
           size="lg"
           asChild
         >

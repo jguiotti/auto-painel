@@ -1,22 +1,20 @@
 import {
-  Button,
-} from "@autopainel/shared/ui";
-
-import {
   resolveDealershipFooterLogoUrl,
   resolveGoogleFontsHrefFromTheme,
   resolveDealershipHeaderLogoUrl,
 } from "@autopainel/shared/lib/theme/branding";
 import { buildStorefrontCssVariables } from "@autopainel/shared/lib/theme/storefront-css-vars";
 
+import Link from "next/link";
+
 import { DealershipFontsLink } from "@/components/storefront/dealership-fonts-link";
+import { StorefrontCookieConsentBanner } from "@/components/storefront/storefront-cookie-consent-banner";
 import { StorefrontHeaderNav } from "@/components/storefront/storefront-header-nav";
+import { StorefrontWhatsAppFloat } from "@/components/storefront/storefront-whatsapp-float";
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
 
-import { buildStorefrontWhatsAppUrl } from "@/lib/phone/build-storefront-whatsapp-url";
-import type { DealershipPublicRecord } from "@/types/dealership-public";
-
 import { PublicDealershipProvider } from "@/components/storefront/public-dealership-provider";
+import type { DealershipPublicRecord } from "@/types/dealership-public";
 
 interface StorefrontShellProps {
   dealership: DealershipPublicRecord;
@@ -44,14 +42,6 @@ export function StorefrontShell({
     dealership.enabled_features,
     "finance_simulator",
   );
-  const whatsappHref = dealership.whatsapp_number
-    ? buildStorefrontWhatsAppUrl({
-        phone: dealership.whatsapp_number,
-        message: `Olá! Vim pelo site da ${dealership.name} e gostaria de mais informações.`,
-        dealershipSlug: dealership.slug,
-        campaign: "header_cta",
-      })
-    : null;
 
   const panelBase = process.env.NEXT_PUBLIC_DEALERSHIP_PANEL_ORIGIN?.replace(
     /\/$/,
@@ -91,7 +81,6 @@ export function StorefrontShell({
           <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <StorefrontHeaderNav
               showFinanceSimulator={showFinanceSimulator}
-              whatsappHref={whatsappHref}
               panelBase={panelBase ?? null}
               headerLogoSrc={headerLogoSrc}
               dealershipName={dealership.name}
@@ -139,9 +128,25 @@ export function StorefrontShell({
                 </a>
               </p>
             ) : null}
+            <nav
+              className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs"
+              aria-label="Links legais"
+            >
+              <Link href="/politica-de-privacidade" className="hover:text-[var(--dealer-primary)]">
+                Política de Privacidade
+              </Link>
+              <Link href="/termos-de-uso" className="hover:text-[var(--dealer-primary)]">
+                Termos de Uso
+              </Link>
+              <Link href="/politica-de-cookies" className="hover:text-[var(--dealer-primary)]">
+                Política de Cookies
+              </Link>
+            </nav>
             </div>
           </div>
         </footer>
+        <StorefrontCookieConsentBanner />
+        <StorefrontWhatsAppFloat />
       </div>
     </PublicDealershipProvider>
   );

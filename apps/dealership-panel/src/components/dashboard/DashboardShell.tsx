@@ -5,8 +5,7 @@ import {
   isDealershipFeatureEnabled,
 } from "@autopainel/shared/lib/dealership-features";
 import {
-  buildDealershipSubdomainSurfaceUrls,
-  buildLocalhostDealershipPreviewUrls,
+  resolveDealershipStorefrontPublicUrl,
 } from "@autopainel/shared/lib/tenant/dealership-subdomain-surface-urls";
 import {
   Button,
@@ -16,6 +15,8 @@ import {
 
 import { signOutAction } from "@/app/painel/actions";
 
+import { DealershipBrandImage } from "@/components/branding/dealership-brand-image";
+import { DealershipSidebarNav } from "@/components/dashboard/dealership-sidebar-nav";
 import { DashboardMobileNavMount } from "@/components/dashboard/dashboard-mobile-nav-mount";
 import {
   DealershipNotificationProvider,
@@ -26,6 +27,7 @@ interface DashboardShellProps {
   dealershipName: string;
   dealershipSlug: string;
   dealershipLogoUrl: string | null;
+  dealershipLogoCandidateUrls?: string[];
   dealershipId: string;
   activeFeatureKeys: string[];
   /** `profiles.role` for the signed-in user (owner | manager | seller | super_admin). */
@@ -40,17 +42,14 @@ interface NavItem {
 }
 
 function resolveStorefrontUrl(slug: string): string {
-  const canonical = buildDealershipSubdomainSurfaceUrls(slug);
-  if (canonical?.storefrontUrl) {
-    return canonical.storefrontUrl;
-  }
-  return buildLocalhostDealershipPreviewUrls(slug)?.storefrontUrl ?? "/";
+  return resolveDealershipStorefrontPublicUrl(slug);
 }
 
 export function DashboardShell({
   dealershipName,
   dealershipSlug,
   dealershipLogoUrl,
+  dealershipLogoCandidateUrls = [],
   dealershipId,
   activeFeatureKeys,
   viewerRole,
@@ -62,6 +61,11 @@ export function DashboardShell({
     isDealershipFeatureEnabled(activeFeatureKeys, "social_media_kit");
   const alertOnVitrineLeads =
     viewerRole === "owner" || viewerRole === "super_admin";
+
+  const canManageStoreSettings =
+    viewerRole === "owner" ||
+    viewerRole === "manager" ||
+    viewerRole === "super_admin";
 
   const primaryNav: NavItem[] = [
     {
@@ -79,6 +83,20 @@ export function DashboardShell({
       label: "Contatos",
       description: "Leads e simulações",
     },
+    ...(canManageStoreSettings
+      ? [
+          {
+            href: "/painel/loja",
+            label: "Dados da loja",
+            description: "Contato e endereço na vitrine",
+          } satisfies NavItem,
+          {
+            href: "/painel/equipe",
+            label: "Equipe",
+            description: "Colaboradores e comissões",
+          } satisfies NavItem,
+        ]
+      : []),
   ];
 
   const optionalNav: NavItem[] = showIntegrations
@@ -100,12 +118,17 @@ export function DashboardShell({
         <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-card lg:flex">
           <div className="flex h-16 shrink-0 items-center border-b border-border px-5">
             <Link href="/painel" className="flex min-w-0 items-center">
-              {dealershipLogoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL externa configurada por concessionária
-                <img
+              {dealershipLogoUrl || dealershipLogoCandidateUrls.length > 0 ? (
+                <DealershipBrandImage
                   src={dealershipLogoUrl}
+                  candidateUrls={dealershipLogoCandidateUrls}
                   alt={dealershipName}
                   className="h-9 w-auto max-w-[9.5rem] object-contain"
+                  fallback={
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {dealershipName}
+                    </span>
+                  }
                 />
               ) : (
                 <span className="truncate text-sm font-semibold text-foreground">
@@ -115,57 +138,12 @@ export function DashboardShell({
             </Link>
           </div>
 
-          <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-5" aria-label="Menu principal">
-            <div>
-              <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Operação
-              </p>
-              <ul className="mt-2 space-y-1">
-                {primaryNav.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="block rounded-lg px-3 py-2 transition-colors hover:bg-muted"
-                    >
-                      <span className="block text-sm font-medium text-foreground">
-                        {item.label}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {item.description}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <DealershipSidebarNav primaryNav={primaryNav} optionalNav={optionalNav} />
 
-            {optionalNav.length > 0 ? (
-              <div>
-                <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Divulgação
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {optionalNav.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="block rounded-lg px-3 py-2 transition-colors hover:bg-muted"
-                      >
-                        <span className="block text-sm font-medium text-foreground">
-                          {item.label}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {item.description}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </nav>
-
-          <div className="shrink-0 border-t border-border p-4 space-y-2">
+          <div className="shrink-0 space-y-2 border-t border-border p-4">
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <Link href="/painel/conta/perfil">Meu perfil</Link>
+            </Button>
             <Button variant="outline" size="sm" className="w-full" asChild>
               <Link href="/painel/conta/senha">Alterar senha</Link>
             </Button>

@@ -1,9 +1,6 @@
 import {
   ArrowRight,
-  Car,
-  ChartColumn,
-  Lock,
-  Shield,
+  Check,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,15 +14,27 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { MarketingShowcase } from "@/components/marketing-showcase";
+import {
+  DIFFERENTIATORS,
+  HERO_TRUST_POINTS,
+  PILLARS,
+  WORKFLOW_STEPS,
+} from "@/lib/marketing-content";
+
 export default function MarketingHomePage() {
   return (
     <>
       <section className="relative overflow-hidden bg-marketing-hero text-white">
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.35_0.08_195_/_0.25),transparent_55%)]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.2]"
           style={{
-            backgroundImage: `linear-gradient(to right, oklch(1 0 0 / 0.06) 1px, transparent 1px),
-              linear-gradient(to bottom, oklch(1 0 0 / 0.06) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(to right, oklch(1 0 0 / 0.05) 1px, transparent 1px),
+              linear-gradient(to bottom, oklch(1 0 0 / 0.05) 1px, transparent 1px)`,
             backgroundSize: "48px 48px",
           }}
           aria-hidden
@@ -33,137 +42,167 @@ export default function MarketingHomePage() {
         <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 md:pb-28 md:pt-32">
           <Badge
             variant="secondary"
-            className="mb-6 border-white/10 bg-white/10 text-white backdrop-blur-sm"
+            className="font-slogan mb-6 border-white/10 bg-white/5 text-zinc-300 backdrop-blur-sm"
           >
             <Sparkles className="mr-1 size-3" aria-hidden />
-            Feito para donos de concessionária
+            Plataforma completa para concessionárias
           </Badge>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Tecnologia de confiança para vender mais veículos com organização.
+          <h1 className="font-display max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+            Site exclusivo e painel de gestão — só da sua concessionária.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-white/80 md:text-xl">
-            O AutoPainel reúne vitrine, estoque e leads em uma plataforma
-            multitenant segura — cada loja isolada, seus dados protegidos.
+          <p className="font-slogan mt-6 max-w-2xl text-lg text-zinc-400 md:text-xl">
+            Venda mais com vitrine profissional, estoque atualizado e leads organizados.
+            Cada loja opera no seu ambiente: ninguém de fora acessa seu estoque nem seus
+            contatos.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
             <Button
               size="lg"
-              className="bg-marketing-accent text-white shadow-lg hover:bg-marketing-accent/90"
+              className="bg-marketing-accent text-zinc-950 shadow-lg shadow-cyan-500/20 hover:bg-marketing-accent/90"
               asChild
             >
               <Link href="/contato">
-                Agendar demonstração
+                Agendar demonstração gratuita
                 <ArrowRight className="size-4" aria-hidden />
               </Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-white/30 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10"
+              className="border-white/20 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10"
               asChild
             >
-              <Link href="/funcionalidades">Ver funcionalidades</Link>
+              <Link href="/planos">Ver planos e módulos</Link>
             </Button>
           </div>
-          <ul className="mt-16 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                icon: Shield,
-                title: "Isolamento por loja",
-                text: "RLS e políticas que impedem acesso cruzado entre concessionárias.",
-              },
-              {
-                icon: Lock,
-                title: "Dados sob controle",
-                text: "Autenticação, papéis e trilhas claras para equipe e gestão.",
-              },
-              {
-                icon: ChartColumn,
-                title: "Operação integrada",
-                text: "Estoque, contatos e presença digital no mesmo painel.",
-              },
-            ].map(({ icon: Icon, title, text }) => (
+          <ul className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
+            {HERO_TRUST_POINTS.map((point) => (
               <li
-                key={title}
-                className="rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+                key={point}
+                className="flex items-center gap-2 text-sm text-zinc-400"
               >
-                <Icon className="size-8 text-marketing-accent" aria-hidden />
-                <p className="mt-3 font-semibold">{title}</p>
-                <p className="mt-1 text-sm text-white/75">{text}</p>
+                <Check className="size-4 shrink-0 text-marketing-accent" aria-hidden />
+                {point}
               </li>
             ))}
           </ul>
         </div>
       </section>
 
+      <section className="border-b border-white/10 bg-zinc-950/80 py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-2xl">
+            <p className="font-slogan text-sm font-medium uppercase tracking-wider text-marketing-accent">
+              Por que donos escolhem o AutoPainel
+            </p>
+            <h2 className="font-display mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">
+              Sua operação digital, fechada para o mundo — aberta para vender
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Chega de depender de agência para mudar preço ou foto. Você comanda site,
+              equipe e leads com a mesma ferramenta que sua revenda usa no dia a dia.
+            </p>
+          </div>
+          <ul className="mt-14 grid gap-6 md:grid-cols-3">
+            {PILLARS.map(({ icon: Icon, title, description }) => (
+              <li
+                key={title}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+              >
+                <Icon className="size-9 text-marketing-accent" aria-hidden />
+                <p className="font-display mt-4 text-lg font-semibold text-white">{title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <MarketingShowcase />
+
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-            Tudo o que a sua equipe precisa no dia a dia
+          <h2 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl">
+            Marca forte, SEO de verdade, equipe alinhada
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Menos planilhas soltas, mais previsibilidade na captação e no
-            acompanhamento de interessados.
+            Três temas de vitrine, personalização de cores e logo, posicionamento nos
+            buscadores e gestão de pessoas — tudo pensado para gerar confiança e
+            oportunidade comercial.
           </p>
         </div>
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {[
-            {
-              icon: Car,
-              title: "Estoque e vitrine",
-              description:
-                "Cadastro de veículos com slug público, mídias e status — pronto para divulgar.",
-            },
-            {
-              icon: Sparkles,
-              title: "Leads organizados",
-              description:
-                "Contatos chegam centralizados; sua equipe responde com contexto do veículo.",
-            },
-            {
-              icon: Shield,
-              title: "Multitenant nativo",
-              description:
-                "Uma infraestrutura, várias lojas: cada uma com seu branding e domínio.",
-            },
-          ].map(({ icon: Icon, title, description }) => (
-            <Card key={title} className="border-border/80 transition-shadow hover:shadow-md">
+        <div className="mt-14 grid gap-6 md:grid-cols-2">
+          {DIFFERENTIATORS.map(({ icon: Icon, title, description }) => (
+            <Card
+              key={title}
+              className="border-white/10 bg-card/60 transition-shadow hover:border-marketing-accent/30 hover:shadow-lg hover:shadow-cyan-500/5"
+            >
               <CardHeader>
                 <Icon className="size-10 text-marketing-accent" aria-hidden />
-                <CardTitle className="text-lg">{title}</CardTitle>
-                <CardDescription className="text-base">{description}</CardDescription>
+                <CardTitle className="font-display text-lg text-white">{title}</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  {description}
+                </CardDescription>
               </CardHeader>
             </Card>
           ))}
         </div>
-        <div className="mt-14 flex justify-center">
-          <Button size="lg" asChild>
-            <Link href="/funcionalidades">
-              Explorar todas as funcionalidades
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          </Button>
+      </section>
+
+      <section className="border-y border-white/10 bg-marketing-hero py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl">
+              Do primeiro login à primeira venda
+            </h2>
+            <p className="mt-4 text-zinc-400">
+              Onboarding enxuto: em dias, não meses, sua loja está no ar com identidade
+              profissional e equipe treinada no painel.
+            </p>
+          </div>
+          <ol className="mt-12 grid gap-8 md:grid-cols-3">
+            {WORKFLOW_STEPS.map(({ step, title, text }) => (
+              <li key={step} className="relative">
+                <span className="font-display text-4xl font-bold text-marketing-accent/40">
+                  {step}
+                </span>
+                <p className="font-display mt-2 text-lg font-semibold text-white">{title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{text}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      <section className="border-y border-border bg-secondary/30 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="rounded-2xl border border-marketing-accent/20 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent p-8 md:p-12">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-                Pronto para modernizar a gestão da sua concessionária?
+            <div className="max-w-xl">
+              <h2 className="font-display text-2xl font-bold tracking-tight text-white md:text-3xl">
+                Veja como fica na sua concessionária
               </h2>
-              <p className="mt-2 max-w-xl text-muted-foreground">
-                Fale com a gente e agende uma demonstração personalizada.
+              <p className="mt-3 text-muted-foreground">
+                Planos sob consulta — Starter, Business ou Enterprise conforme porte e
+                módulos. Agende uma demo e receba proposta personalizada, sem compromisso.
               </p>
             </div>
-            <Button
-              size="lg"
-              className="shrink-0 bg-marketing-accent text-white hover:bg-marketing-accent/90"
-              asChild
-            >
-              <Link href="/contato">Quero uma demonstração</Link>
-            </Button>
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                className="bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
+                asChild
+              >
+                <Link href="/contato">Quero uma demonstração</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                asChild
+              >
+                <Link href="/funcionalidades">Explorar funcionalidades</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>

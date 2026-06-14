@@ -38,6 +38,16 @@
       "import": "./src/lib/viacep.ts",
       "default": "./src/lib/viacep.ts"
     },
+    "./lib/br/format-input-masks": {
+      "types": "./src/lib/br/format-input-masks.ts",
+      "import": "./src/lib/br/format-input-masks.ts",
+      "default": "./src/lib/br/format-input-masks.ts"
+    },
+    "./lib/dealership/parse-hq-address-from-form": {
+      "types": "./src/lib/dealership/parse-hq-address-from-form.ts",
+      "import": "./src/lib/dealership/parse-hq-address-from-form.ts",
+      "default": "./src/lib/dealership/parse-hq-address-from-form.ts"
+    },
     "./lib/dealership-features": {
       "types": "./src/lib/dealership-features.ts",
       "import": "./src/lib/dealership-features.ts",
@@ -168,6 +178,11 @@
       "import": "./src/types/sale-receipt.ts",
       "default": "./src/types/sale-receipt.ts"
     },
+    "./types/lead-crm": {
+      "types": "./src/types/lead-crm.ts",
+      "import": "./src/types/lead-crm.ts",
+      "default": "./src/types/lead-crm.ts"
+    },
     "./lib/validators/buyer-document": {
       "types": "./src/lib/validators/buyer-document.ts",
       "import": "./src/lib/validators/buyer-document.ts",
@@ -177,6 +192,11 @@
       "types": "./src/components/empty-state.tsx",
       "import": "./src/components/empty-state.tsx",
       "default": "./src/components/empty-state.tsx"
+    },
+    "./components/brazilian-address-fields": {
+      "types": "./src/components/brazilian-address-fields.tsx",
+      "import": "./src/components/brazilian-address-fields.tsx",
+      "default": "./src/components/brazilian-address-fields.tsx"
     },
     "./components/analytics/autopainel-google-tag-manager": {
       "types": "./src/components/analytics/autopainel-google-tag-manager.tsx",

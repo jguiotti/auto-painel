@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { LOGO_HORIZONTAL_SRC } from "@/lib/brand";
 import { fetchProfileRowForUserId } from "@/lib/auth/fetch-profile-for-admin";
 import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -51,10 +52,20 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 px-4 py-10">
+      <div className="mb-8 flex flex-col items-center gap-3 text-center">
+        <img
+          src={LOGO_HORIZONTAL_SRC}
+          alt="AutoPainel"
+          className="h-11 w-auto max-w-[260px] object-contain sm:h-12"
+        />
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Painel mestre da plataforma
+        </p>
+      </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">AutoPainel Admin</CardTitle>
+          <CardTitle className="text-2xl">Entrar</CardTitle>
           <CardDescription>
             Área restrita à equipe central. Entre com o e-mail e a senha da conta
             cadastrada como super administradora.

@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AutoPainel",
+  title: "Painel da loja",
   description:
     "Gestão e vitrines digitais para concessionárias de veículos seminovos.",
 };

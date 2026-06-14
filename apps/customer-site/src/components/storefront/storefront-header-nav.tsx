@@ -8,7 +8,6 @@ import { cn } from "@autopainel/shared/lib/utils";
 
 interface StorefrontHeaderNavProps {
   showFinanceSimulator: boolean;
-  whatsappHref: string | null;
   panelBase: string | null;
   headerLogoSrc: string | null;
   dealershipName: string;
@@ -16,7 +15,6 @@ interface StorefrontHeaderNavProps {
 
 export function StorefrontHeaderNav({
   showFinanceSimulator,
-  whatsappHref,
   panelBase,
   headerLogoSrc,
   dealershipName,
@@ -69,17 +67,13 @@ export function StorefrontHeaderNav({
       </nav>
 
       <div className="flex items-center gap-2">
-        {whatsappHref ? (
-          <Button
-            size="sm"
-            className="hidden bg-[var(--dealer-accent)] px-4 text-white hover:opacity-95 sm:inline-flex"
-            asChild
-          >
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-              WhatsApp
-            </a>
-          </Button>
-        ) : null}
+        <Button
+          size="sm"
+          className="hidden bg-[var(--dealer-accent)] px-4 text-white hover:opacity-95 sm:inline-flex"
+          asChild
+        >
+          <Link href="/contato">Contato</Link>
+        </Button>
 
         {panelBase ? (
           <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
@@ -109,17 +103,13 @@ export function StorefrontHeaderNav({
       >
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-8">
           {navLinks}
-          {whatsappHref ? (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 rounded-md bg-[var(--dealer-accent)] px-3 py-2 text-center text-sm font-medium text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              Falar no WhatsApp
-            </a>
-          ) : null}
+          <Link
+            href="/contato"
+            className="mt-2 rounded-md bg-[var(--dealer-accent)] px-3 py-2 text-center text-sm font-medium text-white"
+            onClick={() => setMobileOpen(false)}
+          >
+            Fale conosco
+          </Link>
           {panelBase ? (
             <a
               href={`${panelBase}/painel`}

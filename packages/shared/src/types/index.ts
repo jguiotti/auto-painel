@@ -11,6 +11,8 @@ export * from "./finance-simulation";
 export * from "./social-carousel";
 export * from "./integrations-hub";
 export * from "./sale-receipt";
+export * from "./lead-crm";
+export * from "./dealership-employee";
 
 export type BrandSlug = string;
 
@@ -30,4 +32,8 @@ export interface SaasProspectInsert {
   message?: string | null;
   source?: string;
   metadata?: Record<string, unknown>;
+  privacy_policy_accepted_at: string;
+  privacy_policy_version: string;
+  marketing_consent: boolean;
+  marketing_consent_at?: string | null;
 }

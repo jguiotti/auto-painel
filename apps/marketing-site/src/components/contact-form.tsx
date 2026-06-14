@@ -18,6 +18,7 @@ import {
   submitSaasProspectAction,
   type SubmitSaasProspectState,
 } from "@/actions/submit-saas-prospect";
+import { ConsentCheckboxGroup } from "@/components/consent-checkbox-group";
 
 const initialState: SubmitSaasProspectState | null = null;
 
@@ -28,7 +29,7 @@ export function ContactForm() {
   );
 
   return (
-    <Card className="border-border/80 shadow-lg">
+    <Card className="border-white/10 bg-card/80 shadow-xl shadow-black/20">
       <CardHeader>
         <CardTitle className="text-xl">Solicitar demonstração</CardTitle>
         <CardDescription>
@@ -111,6 +112,7 @@ export function ContactForm() {
                 disabled={isPending}
               />
             </div>
+            <ConsentCheckboxGroup disabled={isPending} />
             <Button
               type="submit"
               className="w-full bg-marketing-accent text-white hover:bg-marketing-accent/90"

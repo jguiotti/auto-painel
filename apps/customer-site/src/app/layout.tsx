@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import {
-  AutopainelGoogleTagManagerBody,
-  AutopainelGoogleTagManagerHead,
-} from "@autopainel/shared/components/analytics/autopainel-google-tag-manager";
-
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,13 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <head>
-        <AutopainelGoogleTagManagerHead appSurface="customer_storefront" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
-        <AutopainelGoogleTagManagerBody appSurface="customer_storefront" />
         {children}
       </body>
     </html>

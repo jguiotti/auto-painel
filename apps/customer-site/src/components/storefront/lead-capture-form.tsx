@@ -14,18 +14,21 @@ import { Input } from "@autopainel/shared/ui";
 import { Label } from "@autopainel/shared/ui";
 
 import { submitPublicLeadAction } from "@/app/actions/public-lead";
+import { StorefrontConsentFields } from "@/components/storefront/storefront-consent-fields";
 import type { FinanceSimulationSnapshot } from "@/types/finance-simulation";
 
 interface LeadCaptureFormProps {
   vehicleId: string;
   simulationSnapshot: FinanceSimulationSnapshot | null;
   requireSimulation?: boolean;
+  dealershipName: string;
 }
 
 export function LeadCaptureForm({
   vehicleId,
   simulationSnapshot,
   requireSimulation = false,
+  dealershipName,
 }: LeadCaptureFormProps) {
   const [leadType, setLeadType] = useState<"contact" | "simulation">(
     requireSimulation ? "simulation" : "contact",
@@ -52,6 +55,10 @@ export function LeadCaptureForm({
 
     formData.set("vehicle_id", vehicleId);
     formData.set("type", effectiveType);
+    formData.set(
+      "source",
+      effectiveType === "simulation" ? "finance_simulator" : "vehicle_page",
+    );
 
     if (effectiveType === "simulation" && simulationSnapshot) {
       formData.set("simulation_data", JSON.stringify(simulationSnapshot));
@@ -147,6 +154,8 @@ export function LeadCaptureForm({
               placeholder="(11) 99999-9999"
             />
           </div>
+
+          <StorefrontConsentFields dealershipName={dealershipName} disabled={isSubmitting} />
 
           {errorMessage ? (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">

@@ -75,6 +75,16 @@ export async function requireDashboardSession(
     redirect("/conta-inativa");
   }
 
+  if (profile.role !== "super_admin") {
+    const { data: isActive, error: activeError } = await supabase.rpc(
+      "is_dealership_panel_user_active",
+      { p_user_id: user.id },
+    );
+    if (!activeError && isActive === false) {
+      redirect("/conta-desativada");
+    }
+  }
+
   return {
     supabase,
     user,

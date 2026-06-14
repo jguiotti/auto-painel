@@ -57,7 +57,9 @@ Usuários Auth demo (script existente):
 npm run seed:demo-users
 ```
 
-Requer `SUPABASE_SERVICE_ROLE_KEY` da instância ativa (local ou remota).
+Requer `SUPABASE_SERVICE_ROLE_KEY` da instância ativa (local ou remota). Também atribui os leads demo da Guiotti ao gestor e cria `lead_notes` (migração `20260614200000_seed_demo_crm_leads.sql`).
+
+**Funil CRM demo (Guiotti):** após reset + seed, abra `http://guiotti.localhost:3002/painel/contatos` — 6 contatos cobrindo status `new`, `contacted`, `hot`, `won`, `lost` (fontes vitrine + manual + simulação).
 
 ## Edge Functions locais
 
@@ -77,14 +79,44 @@ Secrets locais: `supabase secrets set --env-file supabase/.env` (não versionar)
 - **Health check do storage na 1ª subida:** rode `supabase start` de novo; migrações já aplicadas, containers sobem mais rápido.
 - **Versões de imagem vs remoto:** aviso do CLI sobre `storage-api` — opcional `supabase link` + atualizar CLI; não bloqueia dev local.
 - **Reset completo:** `supabase stop --no-backup` e depois `supabase start`.
+- **Contatos/Equipe com erro de coluna ou RPC (`client_email does not exist`, `list_dealership_employees_for_panel` no schema cache):** o Postgres local ficou **fora de paridade** com `supabase/migrations/` (histórico marcado como aplicado sem DDL). Corrija com:
+  ```bash
+  npm run supabase:reset
+  npm run seed:demo-users
+  ```
+  Depois faça login de novo no painel (`gestor.guiotti@autopainel.demo` / `LojaDemo123!` se usar seed demo). Confirme `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`.
 
 ## Remoto vs local
 
 | Cenário | Recomendação |
 | --- | --- |
-| Dev diário com dados reais/demo hosted | `.env.local` → projeto remoto |
-| Migrações, `db pull`, testes offline | `.env.local` → local + `supabase db reset` |
-| CI / E2E | Remoto ou local conforme pipeline |
+| **Editar dados reais da loja (logo, contato, estoque)** | `.env.local` → projeto **remoto** (`NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co` + chaves do Dashboard ou `supabase projects api-keys`) |
+| **Testar migrações / CRM demo / offline** | `.env.local` → **local** (`127.0.0.1:54321`) + `supabase db reset` |
+| **Local com dados iguais à produção (uma loja)** | Após reset local: `npm run sync:dealership-from-remote -- guiotti` |
+
+**Importante:** `supabase db reset` **apaga** o Postgres local e reaplica migrações — nunca afeta o remoto. O slug `guiotti` existe na produção **e** no seed demo; migrações de seed usam `ON CONFLICT DO NOTHING` para não sobrescrever lojas já cadastradas no remoto.
+
+**Admin master (`super_admin`):** credenciais via env (não commitar senha):
+
+```bash
+SUPER_ADMIN_EMAIL=seu@email.com SUPER_ADMIN_PASSWORD='...' \
+  NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co \
+  SUPABASE_SERVICE_ROLE_KEY=<service_role remoto> \
+  npm run provision:super-admin
+```
+
+Depois do login, troque a senha em `/painel/conta/senha`.
+
+**Login local (admin + painel):** usuários Auth **não** são copiados do remoto no `db reset`. Para o mesmo e-mail no Docker local:
+
+```bash
+SUPER_ADMIN_EMAIL=seu@email.com SUPER_ADMIN_PASSWORD='...' \
+  NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
+  SUPABASE_SERVICE_ROLE_KEY=<local service_role> \
+  npm run provision:super-admin
+```
+
+Painel da loja demo: `npm run seed:demo-users` (`gestor.guiotti@autopainel.demo` / `LojaDemo123!`).
 
 Projeto linkado: **AutoPainel** (`wcgevmvystdhqpzwuyig`, São Paulo).
 

@@ -27,18 +27,24 @@ execute function public.set_updated_at_timestamp();
 
 alter table public.dealership_classifieds_integrator_accounts enable row level security;
 
+drop policy if exists "dealership_classifieds_integrator_accounts_deny_select"
+  on public.dealership_classifieds_integrator_accounts;
 create policy "dealership_classifieds_integrator_accounts_deny_select"
 on public.dealership_classifieds_integrator_accounts
 for select
 to anon, authenticated
 using (false);
 
+drop policy if exists "dealership_classifieds_integrator_accounts_deny_insert"
+  on public.dealership_classifieds_integrator_accounts;
 create policy "dealership_classifieds_integrator_accounts_deny_insert"
 on public.dealership_classifieds_integrator_accounts
 for insert
 to anon, authenticated
 with check (false);
 
+drop policy if exists "dealership_classifieds_integrator_accounts_deny_update"
+  on public.dealership_classifieds_integrator_accounts;
 create policy "dealership_classifieds_integrator_accounts_deny_update"
 on public.dealership_classifieds_integrator_accounts
 for update
@@ -46,6 +52,8 @@ to anon, authenticated
 using (false)
 with check (false);
 
+drop policy if exists "dealership_classifieds_integrator_accounts_deny_delete"
+  on public.dealership_classifieds_integrator_accounts;
 create policy "dealership_classifieds_integrator_accounts_deny_delete"
 on public.dealership_classifieds_integrator_accounts
 for delete

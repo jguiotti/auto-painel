@@ -62,6 +62,87 @@ export interface EnqueueClassifiedsSyncJobsResult {
   message?: string;
 }
 
+/** `public.create_public_storefront_lead` — vitrine lead with LGPD consent. */
+export interface CreatePublicStorefrontLeadArgs {
+  p_dealership_id: string;
+  p_client_name: string;
+  p_phone: string;
+  p_type: "contact" | "simulation";
+  p_source: "vehicle_page" | "finance_simulator" | "contact_page" | "whatsapp_float";
+  p_privacy_policy_version: string;
+  p_marketing_consent: boolean;
+  p_vehicle_id?: string | null;
+  p_client_email?: string | null;
+  p_message?: string | null;
+  p_simulation_data?: Record<string, unknown>;
+}
+
+/** `public.is_dealership_panel_user_active` — BZ-EMP-003 panel access gate. */
+export interface IsDealershipPanelUserActiveArgs {
+  p_user_id?: string | null;
+}
+
+/** `public.list_dealership_employees_for_panel` */
+export interface ListDealershipEmployeesForPanelArgs {
+  p_dealership_id: string;
+}
+
+/** `public.upsert_dealership_employee_profile` */
+export interface UpsertDealershipEmployeeProfileArgs {
+  p_user_id: string;
+  p_full_name: string;
+  p_phone?: string | null;
+  p_cpf?: string | null;
+  p_rg?: string | null;
+  p_photo_url?: string | null;
+  p_address?: Record<string, unknown>;
+  p_base_salary?: number | null;
+  p_commission_percent?: number | null;
+  p_commission_fixed_per_vehicle?: number | null;
+  p_is_active?: boolean;
+}
+
+/** `public.get_dealership_sales_ranking` */
+export interface GetDealershipSalesRankingArgs {
+  p_dealership_id: string;
+  p_days?: number;
+}
+
+/** `public.create_dealership_manual_lead` — panel manual CRM lead. */
+export interface CreateDealershipManualLeadArgs {
+  p_client_name: string;
+  p_phone: string;
+  p_client_email?: string | null;
+  p_message?: string | null;
+  p_vehicle_id?: string | null;
+  p_assign_to_self?: boolean;
+}
+
+/** `public.list_dealership_public_units` — contact page unit addresses. */
+export type ListDealershipPublicUnitsResult = Array<{
+  id: string;
+  name: string;
+  address: Record<string, unknown>;
+  sort_order: number;
+}>;
+
+/** `public.list_public_pricing_marketing_catalog` — marketing-site /planos module matrix. */
+export type ListPublicPricingMarketingCatalogResult = {
+  plans: Array<{
+    slug: string;
+    name: string;
+    description: string | null;
+    price_amount: number | string;
+    currency_code: string;
+  }>;
+  modules: Array<{
+    key: string;
+    label: string;
+    description: string;
+    plan_slugs: string[];
+  }>;
+};
+
 /** `public.platform_health_ping` — harmless keep-alive for scheduled cron. */
 export interface PlatformHealthPingResult {
   ok: boolean;

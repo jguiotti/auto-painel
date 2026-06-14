@@ -78,6 +78,45 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 **OAuth dev stub (2026-06-11):** ver `packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md`. Credenciais reais OLX: homologação OLX → `OLX_OAUTH_*` → `npm run classifieds:oauth:platform:configure` + `classifieds:oauth:secrets:configure`. WebMotors real = password grant (INT-5b, não popup). Fix UI: removido `noopener` no popup + `GET /api/painel/integracoes/oauth/connection-status`.
 
 **Fix OLX OAuth `missing_code` (2026-06-10):** redirect URI **com** `?provider=olx`; UI diagnóstico + logs `[AutoPainel OAuth]`. **iCarros (2026-06-12):** doc `api.icarros.com.br/oauth-api` usa **password grant** (não popup Keycloak) — UI integrador pendente; tabela `dealership_classifieds_integrator_accounts` preparada. **WebMotors INT-5b (2026-06-12):** formulário integrador CRM + `POST /api/painel/integracoes/webmotors/connect` + migração `20260612170000_webmotors_integrator_accounts.sql`.
+
+### Marketing-site Sprint A — legal + LGPD + tema escuro (2026-06-12)
+
+**PRD:** força-tarefa marketing/SEO (Sprint A aprovada). **App:** `apps/marketing-site` (`auto-painel-site` Vercel).
+
+| Entrega | Paths |
+| --- | --- |
+| Páginas legais (Meta + LGPD) | `/politica-de-privacidade`, `/termos-de-uso`, `/exclusao-de-dados`, `/politica-de-cookies` |
+| Cookie banner + GTM gated | `cookie-consent-banner.tsx`, `layout.tsx` (cookie `ap-cookie-consent`; GTM só com `analytics`) |
+| Opt-in formulário contacto | `consent-checkbox-group.tsx`, `submit-saas-prospect.ts` |
+| Migração consent prospects | `20260612230000_saas_prospects_consent.sql` — colunas `privacy_policy_*`, `marketing_consent*` + RLS |
+| Tema premium escuro | `globals.css`, home/header/footer |
+| E-mail privacidade | `privacidade@autopainel.com.br` em `lib/legal/constants.ts` |
+
+**Marketing-site Sprint B (2026-06-13, deploy produção):** branding Oswald + Mardoto; logos `logo-autopainel-horizontal.png` (header), `logo-autopainel-destaques.png` (footer), `favicon-autopainel.png` (marketing-site + dealership-panel); `/planos` comparador Starter/Business/Enterprise; `sitemap.ts`, `robots.ts`, `public/llms.txt`, `MarketingJsonLd` (Organization + FAQ em `/planos`).
+
+**Marketing-site (2026-06-13):** logos horizontal + destaques atualizados; showcase Guiotti só vitrine pública (painel sem URL); botão flutuante WhatsApp `+5511974274416`; contato com `contato@autopainel.com.br`.
+
+**Customer-site Fase A (2026-06-13):** `/contato` + mapa da sede; lista **Unidades** só com 2+ filiais (texto, sem mapa embed por unidade); WhatsApp flutuante com formulário + opt-in; leads unificados via RPC `create_public_storefront_lead`; migração `20260613160000_storefront_leads_contact_phase_a.sql`.
+
+**Dealership-panel Fase B CRM (2026-06-13):** migração `20260613170000_storefront_crm_phase_b.sql` — colunas `leads.status`, `next_follow_up_at`, `converted_vehicle_id`, `created_by`; tabela `lead_notes`; RPC `create_dealership_manual_lead`; UI `/painel/contatos` (status, detalhe, comentários, follow-up, vínculo venda). Tipos `@autopainel/shared/types/lead-crm`.
+
+**Dealership-panel Fase C (2026-06-13):** `/painel/loja` — owner/manager editam `contact_email`, `whatsapp_number`, `content_config.hq_address` (RLS existente em `dealerships`); componentes `@autopainel/shared/components/brazilian-address-fields`, `@autopainel/shared/lib/dealership/parse-hq-address-from-form`.
+
+**Dealership-panel Fase D (2026-06-13):** migração `20260613180000_dealership_employee_profiles_phase_d.sql` — tabela `dealership_employee_profiles`; RPCs `list_dealership_employees_for_panel`, `upsert_dealership_employee_profile`, `get_dealership_sales_ranking`, `is_dealership_panel_user_active`; UI `/painel/equipe` (gestores), `/painel/conta/perfil` (vendedor), `/conta-desativada` (BZ-EMP-003); gate em `require-dashboard-session.ts`. Tipos `@autopainel/shared/types/dealership-employee`.
+
+**Branding painéis (2026-06-14):** `admin-master` usa `logo-autopainel-horizontal-color.png` (asset oficial, sem wrapper) no shell e login. Login `dealership-panel` resolve logo/favicon da loja via host, cookie `ap-dealership-id` ou `DEVELOPMENT_TENANT_SLUG` (`resolve-auth-dealership-branding.ts`, `AuthPageShell`).
+
+**Migrações remoto (2026-06-13):** repair `20260612233857` → reverted; renomeado `20260610120000` → `20260610120500`; deploy aplicou até `20260613180000` (Fase D). **2026-06-14:** `20260614140000_reload_postgrest_schema_cache.sql` (cache PostgREST após `lead_notes`).
+
+**Contatos painel loja (2026-06-14):** embed veículo com `vehicles!leads_vehicle_id_fkey`; seed CRM `20260614200000`. **Painel raiz `/`:** redireciona para `/painel` ou `/login` (remove vitrine duplicada no app `:3002`). Link sidebar **Ver vitrine pública** → `resolveDealershipStorefrontPublicUrl` (`https://{slug}.autopainel.com.br`).
+
+**Branding loja — favicon/logo (2026-06-14):** `collectDealershipLogoCandidateUrls`, fallback favicon; migração `20260614194000` **não** remove mais URLs de storage (correção); `20260614213000_restore_dealership_branding_and_hq.sql` repõe `header_logo_url` e `hq_address` quando ausentes. Script `npm run sync:dealership-from-remote -- <slug>` copia loja remota → local. Seed demo `20260514120000` usa `ON CONFLICT DO NOTHING` para não sobrescrever produção.
+
+**Épico operação comercial (PRD aprovado 2026-06-13):** Fases A→B→C→D — ver `regras-de-negocio.md` secção «Operação comercial e CRM».
+
+**Marketing-site copy v2 (2026-06-13):** home e `/funcionalidades` reescritas — site+painel exclusivos, isolamento multitenant, gestão de colaboradores, 3 layouts whitelabel, SEO; logo horizontal atualizado (slogan no lockup); header com logo ~10–11px maior.
+
+**Meta Developers:** após deploy, validar URLs legais (HTTP 200) antes de «Salvar alterações» em Configurações → Básico.
 | **INT-1** | Auto-publish pós create/update (P1–P6 **por portal**) | 🔴 pendente | `actions.ts` — filtrar providers por plano **e** conexão |
 | **INT-2** | Delist antes de `deleteVehicleAction` | 🔴 pendente | `actions.ts` — trigger SQL não cobre DELETE |
 | **INT-3** | Provider `icarros` end-to-end | 🔴 pendente | migration enum; `integrations-hub.ts`; adapter Edge; card UI |
@@ -332,7 +371,7 @@ Ordem de entrega acordada pelo time: **começar pelo Simulador de financiamento*
 - `public.get_dealership_id_by_slug_for_dashboard` — só bootstrap `GET /painel/acesso/:slug` com flag dev.
 - Resolução de raiz: `resolveEffectivePlatformRootDomain` (`packages/shared/src/lib/tenant/effective-platform-root-domain.ts`); hosts normalizados sem porta nas RPCs (`normalizeHost` + migrações listadas abaixo na cadeia longa desta seção).
 
-**Admin — ordem dos atalhos (UX 13 / PRD)** — `DealershipOperatorSurfaceLinks` (`apps/admin-master/src/components/dealership-operator-surface-links.tsx`) já renderiza **Abrir painel da loja** antes de **Abrir site público (vitrine)**; nenhuma alteração obrigatória de layout nesta fase.
+**Admin — formulário concessionária (2026-06-14):** abas em `dealership-form.tsx` ocultam seções com CSS (`hidden`) em vez de desmontar inputs — corrige erro ao salvar Vitrine/Plano/Unidades sem campos da aba Geral. Atalhos `DealershipOperatorSurfaceLinks` redesenhados (cards). Header admin `h-16` alinhado ao sidebar.
 
 **Domínio próprio — O1 (301 www→ápice)**
 
@@ -1731,6 +1770,59 @@ Status: [ ] manual pendente
 | **Hydration** | `vehicle-filters-panel.tsx` usa `panelId` fixo na página de estoque; filtros duplicados removidos da home |
 
 **Nota Supabase:** se `db push` falhou em `20260527120000` (revoke de overload inexistente), marcar repair conforme CLI e aplicar `20260527140000` no remoto.
+
+---
+
+## Sprint Review — Operação comercial + CRM + branding (2026-06-14)
+
+**Workflow:** `.cursor/commands/squad.md` (Fases 1–7 entregues; Fase 8 QA parcial).
+
+### Entregue (código + migrações versionadas)
+
+| Área | Itens |
+| --- | --- |
+| **Vitrine Fase A** | `/contato`, legal/cookies, WhatsApp flutuante com opt-in, leads unificados (`create_public_storefront_lead`) |
+| **CRM Fase B** | `/painel/contatos` — pipeline, comentários, follow-up, lead manual, vínculo venda; fix embed `vehicles!leads_vehicle_id_fkey` |
+| **Loja Fase C** | `/painel/loja` — e-mail, WhatsApp, endereço sede |
+| **Equipe Fase D** | `/painel/equipe`, `/painel/conta/perfil`, `/conta-desativada`, ranking vendas |
+| **UX painel** | `/` → redirect `/painel`; link vitrine canónico `https://{slug}.autopainel.com.br`; vitrine legada removida do app `:3002` |
+| **Branding** | Logo/favicon loja no login e painel; admin com asset oficial; fallbacks `branding.ts`; migrações repair branding/HQ |
+| **DevOps local** | `provision:super-admin`, `sync:dealership-from-remote`, seed CRM demo; guia `SUPABASE_LOCAL.md` |
+| **Marketing-site** | Sprint A/B — legal, planos, SEO, branding Oswald/Mardoto |
+
+### Migrações a aplicar no remoto (push `main` ou `npm run supabase:deploy`)
+
+| Migração | Propósito |
+| --- | --- |
+| `20260613160000` … `20260613180000` | Fases A–D CRM/equipe (se ainda pendentes) |
+| `20260614140000` | Reload cache PostgREST (`lead_notes`) |
+| `20260614150000` | Repair colunas CRM em `leads` |
+| `20260614194000` | Repair URLs logo demo (não apaga storage) |
+| `20260614200000` | Seed leads demo CRM |
+| `20260614213000` | Restaurar `header_logo_url` / `hq_address` quando ausentes |
+
+### Pendências pós-deploy (operador)
+
+| Item | Ação |
+| --- | --- |
+| WhatsApp Guiotti remoto | Validar número completo em `/painel/loja` ou admin (evitar truncamento) |
+| QA manual | Checklist abaixo — simulação → contatos, planos demo, cross-tenant |
+| Fase 8 formal | Matriz tenant isolation + E2E CRM completo (Playwright) |
+| INT-1 auto-publish | Fora deste épico — ver roadmap integradores |
+
+### Checklist QA (manual)
+
+- [x] `/painel/contatos` carrega sem erro PostgREST (embed veículo)
+- [x] `/painel/equipe` lista colaboradores demo
+- [x] Login painel mostra logo da loja (não só favicon AutoPainel)
+- [x] `/contato` vitrine — 1 unidade: só mapa sede; sem secção Unidades duplicada
+- [ ] Simular financiamento na vitrine → lead em `/painel/contatos`
+- [ ] Planos demo: gating starter/business/enterprise nas 3 lojas
+- [ ] Admin `jana.guiotti@gmail.com` — trocar senha temporária em `/painel/conta/senha`
+
+### Deploy Vercel (4 apps)
+
+Push em `main` dispara build nos projectos ligados ao repo (`autopainel-marketing`, `autopainel-admin`, `autopainel-panel`, `autopainel-customer`). Ver `packages/shared/docs/VERCEL_DEPLOY.md`.
 
 ---
 

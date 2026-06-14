@@ -54,6 +54,48 @@ Preferir **sempre** `npm run supabase:deploy` ou commit em `supabase/migrations/
 
 ---
 
+## 20260612233857 — saas_prospects consent (Dashboard ad-hoc)
+
+| Campo | Valor |
+| --- | --- |
+| **Versão remota** | `20260612233857` |
+| **Equivalente git** | `20260612230000_saas_prospects_consent.sql` |
+| **Detectado em** | 2026-06-13 (`npm run supabase:deploy`) |
+| **Sintoma** | `db push` bloqueado: *Remote migration versions not found in local migrations directory* |
+| **Ação aplicada** | `supabase migration repair --status reverted 20260612233857`; depois `db push` aplicou `20260612230000` (idempotente) |
+| **Extra** | Colisão `20260610120000` (duas migrações locais) — renomeada OLX redirect para `20260610120500` |
+
+### Comandos
+
+```bash
+supabase migration repair --status reverted 20260612233857
+SUPABASE_DB_PUSH_INCLUDE_ALL=true npm run supabase:deploy
+```
+
+---
+
+## 20260610120000 — timestamp duplicado (OLX redirect vs classifieds worker)
+
+| Campo | Valor |
+| --- | --- |
+| **Problema** | Dois ficheiros `20260610120000_*.sql`; remoto só tinha `classifieds_sync_worker` |
+| **Ação** | Renomear `normalize_olx_oauth_redirect_uri` → `20260610120500_normalize_olx_oauth_redirect_uri.sql` |
+
+---
+
+## 2026-06-14 — Postgres local fora de paridade (CRM Fases A–D)
+
+| Campo | Valor |
+| --- | --- |
+| **Versões** | `20260613160000` … `20260614150000` |
+| **Detectado em** | 2026-06-14 (dev com `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`) |
+| **Sintoma** | `/painel/contatos`: `column leads.client_email does not exist`; `/painel/equipe`: RPC `list_dealership_employees_for_panel` ausente |
+| **Causa** | Histórico local marcava migrações CRM como aplicadas sem DDL correspondente |
+| **Ação aplicada** | `supabase db reset` + `npm run seed:demo-users` |
+| **Remoto** | Schema OK em `wcgevmvystdhqpzwuyig` |
+
+---
+
 ```markdown
 ## YYYYMMDDHHMMSS — título curto
 

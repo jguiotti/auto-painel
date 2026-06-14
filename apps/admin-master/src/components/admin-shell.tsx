@@ -34,6 +34,8 @@ import {
   PageContainer,
 } from "@autopainel/shared/ui";
 
+import { LOGO_HORIZONTAL_SRC } from "@/lib/brand";
+
 import { logoutAction } from "@/actions/auth";
 import {
   AdminNotificationProvider,
@@ -143,9 +145,9 @@ export function AdminShell({
       >
         <div className="flex h-16 shrink-0 items-center border-b border-zinc-200 bg-white px-4">
           <img
-            src="/autopainel-logo.png"
+            src={LOGO_HORIZONTAL_SRC}
             alt="AutoPainel"
-            className="h-8 w-auto bg-transparent"
+            className="h-8 w-auto max-w-[170px] object-contain"
           />
           <span className="ml-2 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
             Plataforma
@@ -211,9 +213,9 @@ export function AdminShell({
           <div className="flex min-w-0 items-center gap-2">
             <AdminMobileNav items={nav} />
             <img
-              src="/autopainel-logo.png"
+              src={LOGO_HORIZONTAL_SRC}
               alt="AutoPainel"
-              className="h-7 w-auto bg-transparent"
+              className="h-7 w-auto max-w-[150px] object-contain"
             />
           </div>
           <div className="flex items-center gap-1">
@@ -234,14 +236,16 @@ export function AdminShell({
             </form>
           </div>
         </header>
-        <div className="hidden shrink-0 border-b border-zinc-200 bg-white md:block">
-          <PageContainer size="xl" className="py-4">
-            <div className="flex items-center justify-between gap-4">
+        <div className="hidden h-16 shrink-0 border-b border-zinc-200 bg-white md:block">
+          <PageContainer size="xl" className="flex h-full items-center">
+            <div className="flex w-full items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Painel administrativo
                 </p>
-                <p className="mt-1 truncate text-xl font-semibold tracking-tight">{pageTitle}</p>
+                <p className="truncate text-lg font-semibold leading-tight tracking-tight">
+                  {pageTitle}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 <Button

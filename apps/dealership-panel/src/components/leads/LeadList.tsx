@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 import {
+  LEAD_SOURCE_LABELS,
+  type LeadNoteItem,
+} from "@autopainel/shared/types/lead-crm";
+import {
   Button,
   Table,
   TableBody,
@@ -9,6 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@autopainel/shared/ui";
+
+import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
 
 import { formatDatePt } from "@/lib/format/format-date-pt";
 import {
@@ -26,8 +32,15 @@ export interface LeadListItem {
   client_name: string;
   phone: string;
   type: string;
+  source?: string | null;
+  status: string;
+  client_email?: string | null;
+  message?: string | null;
   created_at: string;
+  next_follow_up_at?: string | null;
+  converted_vehicle_id?: string | null;
   assigned_user_id: string | null;
+  notes?: LeadNoteItem[];
   vehicles: {
     id: string;
     brand: string;
@@ -41,6 +54,7 @@ interface LeadListProps {
   viewerRole: string;
   canManageAssignments: boolean;
   assignees: LeadAssigneeOption[];
+  onOpenDetail?: (lead: LeadListItem) => void;
 }
 
 const typeLabel: Record<string, string> = {
@@ -53,6 +67,7 @@ export function LeadList({
   viewerRole,
   canManageAssignments,
   assignees,
+  onOpenDetail,
 }: LeadListProps) {
   if (leads.length === 0) {
     const sellerHint =
@@ -76,9 +91,11 @@ export function LeadList({
               <TableHead>Cliente</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Origem</TableHead>
               <TableHead>Veículo</TableHead>
               {canManageAssignments ? <TableHead>Responsável</TableHead> : null}
-              <TableHead className="text-right">WhatsApp</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -103,6 +120,12 @@ export function LeadList({
                   <TableCell>{lead.phone}</TableCell>
                   <TableCell>{typeLabel[lead.type] ?? lead.type}</TableCell>
                   <TableCell>
+                    <LeadStatusBadge status={lead.status} />
+                  </TableCell>
+                  <TableCell>
+                    {lead.source ? LEAD_SOURCE_LABELS[lead.source] ?? lead.source : "—"}
+                  </TableCell>
+                  <TableCell>
                     {vehicle ? (
                       <Link
                         href={`/veiculo/${vehicle.id}`}
@@ -126,11 +149,23 @@ export function LeadList({
                     </TableCell>
                   ) : null}
                   <TableCell className="text-right">
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" asChild>
-                      <a href={wa} target="_blank" rel="noopener noreferrer">
-                        Responder
-                      </a>
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      {onOpenDetail ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onOpenDetail(lead)}
+                        >
+                          Detalhes
+                        </Button>
+                      ) : null}
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" asChild>
+                        <a href={wa} target="_blank" rel="noopener noreferrer">
+                          WhatsApp
+                        </a>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -161,16 +196,31 @@ export function LeadList({
                 <div>
                   <p className="font-semibold text-foreground">{lead.client_name}</p>
                   <p className="text-sm text-muted-foreground">{lead.phone}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatDatePt(lead.created_at)} ·{" "}
-                    {typeLabel[lead.type] ?? lead.type}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <LeadStatusBadge status={lead.status} />
+                    <p className="text-xs text-muted-foreground">
+                      {formatDatePt(lead.created_at)} ·{" "}
+                      {typeLabel[lead.type] ?? lead.type}
+                    </p>
+                  </div>
                 </div>
-                <Button size="sm" className="shrink-0 bg-emerald-600 hover:bg-emerald-700" asChild>
-                  <a href={wa} target="_blank" rel="noopener noreferrer">
-                    WhatsApp
-                  </a>
-                </Button>
+                <div className="flex shrink-0 gap-2">
+                  {onOpenDetail ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onOpenDetail(lead)}
+                    >
+                      Detalhes
+                    </Button>
+                  ) : null}
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" asChild>
+                    <a href={wa} target="_blank" rel="noopener noreferrer">
+                      WhatsApp
+                    </a>
+                  </Button>
+                </div>
               </div>
               {vehicle ? (
                 <p className="mt-3 text-sm">

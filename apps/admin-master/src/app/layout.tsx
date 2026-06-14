@@ -6,6 +6,8 @@ import {
   AutopainelGoogleTagManagerHead,
 } from "@autopainel/shared/components/analytics/autopainel-google-tag-manager";
 
+import { FAVICON_SRC } from "@/lib/brand";
+
 import "./globals.css";
 
 import { Toaster } from "@autopainel/shared/ui";
@@ -23,6 +25,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AutoPainel — Admin",
   description: "Painel mestre da plataforma.",
+  icons: {
+    icon: FAVICON_SRC,
+    shortcut: FAVICON_SRC,
+    apple: FAVICON_SRC,
+  },
 };
 
 export default function RootLayout({

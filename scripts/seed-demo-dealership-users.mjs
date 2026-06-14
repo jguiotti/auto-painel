@@ -120,6 +120,70 @@ async function ensureUser(admin, { email, fullName, dealershipId }) {
   console.log(`profile linked: ${email} -> ${dealershipId}`);
 }
 
+const GUIOTTI_CRM_LEAD_IDS = [
+  "22222222-2222-4222-8222-222222222201",
+  "22222222-2222-4222-8222-222222222202",
+  "22222222-2222-4222-8222-222222222203",
+  "22222222-2222-4222-8222-222222222204",
+  "22222222-2222-4222-8222-222222222205",
+  "22222222-2222-4222-8222-222222222206",
+];
+
+const GUIOTTI_CRM_NOTES = [
+  {
+    id: "33333333-3333-4333-8333-333333333301",
+    lead_id: "22222222-2222-4222-8222-222222222202",
+    body: "Retornamos pelo WhatsApp. Cliente pediu horário na sexta às 15h.",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333302",
+    lead_id: "22222222-2222-4222-8222-222222222204",
+    body: "Venda concluída. Recibo emitido no estoque.",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333303",
+    lead_id: "22222222-2222-4222-8222-222222222203",
+    body: "Cliente pediu nova simulação com 48x. Follow-up amanhã.",
+  },
+];
+
+async function seedDemoCrmFollowUps(admin, { guiottiDealershipId, gestorUserId }) {
+  const { error: assignError } = await admin
+    .from("leads")
+    .update({ assigned_user_id: gestorUserId })
+    .eq("dealership_id", guiottiDealershipId)
+    .in("id", GUIOTTI_CRM_LEAD_IDS);
+
+  if (assignError) {
+    throw new Error(`Failed to assign demo CRM leads: ${assignError.message}`);
+  }
+
+  const { error: createdByError } = await admin
+    .from("leads")
+    .update({ created_by: gestorUserId })
+    .eq("id", "22222222-2222-4222-8222-222222222204");
+
+  if (createdByError) {
+    throw new Error(`Failed to set demo won lead created_by: ${createdByError.message}`);
+  }
+
+  const notes = GUIOTTI_CRM_NOTES.map((note) => ({
+    ...note,
+    dealership_id: guiottiDealershipId,
+    author_id: gestorUserId,
+  }));
+
+  const { error: notesError } = await admin.from("lead_notes").upsert(notes, {
+    onConflict: "id",
+  });
+
+  if (notesError) {
+    throw new Error(`Failed to upsert demo lead notes: ${notesError.message}`);
+  }
+
+  console.log("demo CRM leads assigned + lead_notes synced for guiotti");
+}
+
 async function main() {
   const env = loadEnvLocal();
   const url = env.get("NEXT_PUBLIC_SUPABASE_URL");
@@ -159,6 +223,13 @@ async function main() {
     });
   }
 
+  const guiottiDealershipId = slugToId.get("guiotti");
+  const gestorUserId = await findUserIdByEmail(admin, "gestor.guiotti@autopainel.demo");
+
+  if (guiottiDealershipId && gestorUserId) {
+    await seedDemoCrmFollowUps(admin, { guiottiDealershipId, gestorUserId });
+  }
+
   console.log("\nDemo users ready (password for all):", DEMO_PASSWORD);
   console.log("Panel URLs:");
   console.log("- http://guiotti.localhost:3002/login");
@@ -168,6 +239,7 @@ async function main() {
   console.log("- http://guiotti.localhost:3003");
   console.log("- http://autoprime.localhost:3003");
   console.log("- http://ecodrive.localhost:3003");
+  console.log("CRM demo: /painel/contatos on guiotti (6 leads across pipeline statuses)");
 }
 
 main().catch((error) => {

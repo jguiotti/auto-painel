@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 import {
+  collectDealershipLogoCandidateUrls,
   resolveDealershipFaviconUrl,
-  resolveDealershipHeaderLogoUrl,
 } from "@autopainel/shared/lib/theme/branding";
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
@@ -27,12 +27,15 @@ async function readDealershipVisualContext() {
 
   const dealershipName = dealership?.name ?? "Painel";
   const dealershipSlug = dealership?.slug ?? "";
-  const dealershipLogoUrl = resolveDealershipHeaderLogoUrl(
+  const columnLogoUrl = dealership?.logo_url ?? null;
+  const dealershipLogoCandidateUrls = collectDealershipLogoCandidateUrls(
     dealership?.theme_config ?? null,
-    dealership?.logo_url ?? null,
+    columnLogoUrl,
   );
+  const dealershipLogoUrl = dealershipLogoCandidateUrls[0] ?? null;
   const dealershipFaviconUrl = resolveDealershipFaviconUrl(
     dealership?.theme_config ?? null,
+    columnLogoUrl,
   );
 
   return {
@@ -41,6 +44,7 @@ async function readDealershipVisualContext() {
     dealershipName,
     dealershipSlug,
     dealershipLogoUrl,
+    dealershipLogoCandidateUrls,
     dealershipFaviconUrl,
     activeFeatureKeys,
   };
@@ -71,6 +75,7 @@ export default async function PainelLayout({
     dealershipName,
     dealershipSlug,
     dealershipLogoUrl,
+    dealershipLogoCandidateUrls,
     activeFeatureKeys,
   } = await readDealershipVisualContext();
 
@@ -79,6 +84,7 @@ export default async function PainelLayout({
       dealershipName={dealershipName}
       dealershipSlug={dealershipSlug}
       dealershipLogoUrl={dealershipLogoUrl}
+      dealershipLogoCandidateUrls={dealershipLogoCandidateUrls}
       dealershipId={dealershipId}
       activeFeatureKeys={activeFeatureKeys}
       viewerRole={profile.role}

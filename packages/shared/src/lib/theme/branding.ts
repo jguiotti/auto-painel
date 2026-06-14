@@ -130,20 +130,68 @@ function quotedGoogleFontCssStack(familyName: string): string {
  * Horizontal / wide logo for storefront header (`theme_config.header_logo_url`).
  * Fallback: legacy `theme_config.logo_url`, then `dealerships.logo_url` column.
  */
+/**
+ * Ordered logo candidates: header → legacy theme → column.
+ * Skips Supabase storage URLs from a different project than `NEXT_PUBLIC_SUPABASE_URL`.
+ */
+export function collectDealershipLogoCandidateUrls(
+  theme_config: unknown,
+  columnLogoUrl?: string | null | undefined,
+): string[] {
+  const tc = asRecord(theme_config);
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+
+  function push(raw: string | undefined) {
+    const value = raw?.trim();
+    if (!value || seen.has(value) || !isBrandAssetUrlAccessible(value)) {
+      return;
+    }
+    seen.add(value);
+    candidates.push(value);
+  }
+
+  push(readString(tc, "header_logo_url"));
+  push(readString(tc, "logo_url"));
+  push(columnLogoUrl?.trim() || undefined);
+
+  return candidates;
+}
+
 export function resolveDealershipHeaderLogoUrl(
   theme_config: unknown,
   columnLogoUrl: string | null | undefined,
 ): string | null {
-  const tc = asRecord(theme_config);
-  const header = readString(tc, "header_logo_url");
-  if (header) {
-    return header;
+  return collectDealershipLogoCandidateUrls(theme_config, columnLogoUrl)[0] ?? null;
+}
+
+/** Skips remote Supabase storage URLs when the app points at another project/host (common after db reset). */
+function isBrandAssetUrlAccessible(url: string): boolean {
+  const supabaseOrigin = readSupabaseProjectOrigin();
+  if (!supabaseOrigin) {
+    return true;
   }
-  const legacy = readString(tc, "logo_url");
-  if (legacy) {
-    return legacy;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("supabase.co") && !parsed.hostname.includes("127.0.0.1")) {
+      return true;
+    }
+    return parsed.origin === supabaseOrigin;
+  } catch {
+    return true;
   }
-  return columnLogoUrl?.trim() || null;
+}
+
+function readSupabaseProjectOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) {
+    return null;
+  }
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -179,8 +227,16 @@ export function resolveGoogleFontsHrefFromTheme(
   return buildGoogleFontsStylesheetHref([h, b]);
 }
 
-export function resolveDealershipFaviconUrl(theme_config: unknown): string | null {
-  return readString(asRecord(theme_config), "favicon_url") ?? null;
+export function resolveDealershipFaviconUrl(
+  theme_config: unknown,
+  columnLogoUrl?: string | null | undefined,
+): string | null {
+  const tc = asRecord(theme_config);
+  const favicon = readString(tc, "favicon_url");
+  if (favicon && isBrandAssetUrlAccessible(favicon)) {
+    return favicon;
+  }
+  return resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl);
 }
 
 const FONT_STACKS: Record<

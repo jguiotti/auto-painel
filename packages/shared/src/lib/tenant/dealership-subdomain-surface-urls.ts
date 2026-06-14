@@ -97,3 +97,42 @@ export function buildLocalhostDealershipPreviewUrls(
     storefrontUrl: `${protocol}://${trimmed}.localhost:${storefrontPort}`,
   };
 }
+
+const DEFAULT_PUBLIC_STOREFRONT_ROOT = "autopainel.com.br";
+
+/**
+ * Public vitrine URL for operator links (sidebar "Ver vitrine pública").
+ * Always targets the customer-site host (e.g. https://guiotti.autopainel.com.br),
+ * never the legacy public routes baked into dealership-panel.
+ */
+export function resolveDealershipStorefrontPublicUrl(slug: string): string {
+  const trimmed = slug.trim().toLowerCase();
+  if (!trimmed) {
+    return "/";
+  }
+
+  const storefrontTemplate =
+    process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL_TEMPLATE?.trim();
+  const protocol =
+    process.env.NEXT_PUBLIC_PLATFORM_URL_USE_HTTP === "true" ? "http" : "https";
+  const root =
+    process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN?.trim().toLowerCase() ||
+    DEFAULT_PUBLIC_STOREFRONT_ROOT;
+
+  if (storefrontTemplate) {
+    return applyTemplate(storefrontTemplate, {
+      protocol,
+      slug: trimmed,
+      root,
+    });
+  }
+
+  if (root !== "localhost") {
+    const built = buildDealershipSubdomainSurfaceUrls(trimmed);
+    if (built?.storefrontUrl && !built.storefrontUrl.includes(".localhost")) {
+      return built.storefrontUrl;
+    }
+  }
+
+  return `${protocol}://${trimmed}.${DEFAULT_PUBLIC_STOREFRONT_ROOT}`;
+}

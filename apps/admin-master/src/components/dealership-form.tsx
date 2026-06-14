@@ -302,6 +302,10 @@ export function DealershipForm({
     activeTab === "plano" ||
     activeTab === "unidades";
 
+  function editTabPanelClass(tab: DealershipEditTab): string {
+    return cn(mode === "edit" && activeTab !== tab && "hidden");
+  }
+
   function finishAfterSuccess() {
     router.push("/painel/concessionarias");
     router.refresh();
@@ -365,7 +369,7 @@ export function DealershipForm({
 
       {mode === "edit" ? (
         <nav
-          className="mb-6 flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1"
+          className="mb-6 flex flex-wrap gap-1 rounded-xl border border-border bg-muted/30 p-1"
           aria-label="Seções da concessionária"
         >
           {EDIT_TABS.map((tab) => (
@@ -374,10 +378,10 @@ export function DealershipForm({
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 activeTab === tab.id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {tab.label}
@@ -433,8 +437,8 @@ export function DealershipForm({
           </div>
         ) : null}
 
-        {(mode === "create" || activeTab === "geral") && (
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className={editTabPanelClass("geral")}>
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <p className="text-sm font-semibold text-foreground">Dados gerais</p>
           <div className="space-y-2">
             <Label htmlFor="d-name">Nome da concessionária</Label>
@@ -535,11 +539,11 @@ export function DealershipForm({
             </select>
           </div>
         </div>
-        )}
+        </div>
 
-        {(mode === "create" || activeTab === "vitrine") && (
-        <>
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className={editTabPanelClass("vitrine")}>
+        <div className="space-y-6">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <p className="text-sm font-semibold text-foreground">
             Identidade visual (whitelabel)
           </p>
@@ -628,7 +632,7 @@ export function DealershipForm({
           </div>
         </div>
 
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">
               Aparência do site
@@ -662,7 +666,7 @@ export function DealershipForm({
           />
         </div>
 
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <p className="text-sm font-semibold text-foreground">
             Conteúdo institucional
           </p>
@@ -714,11 +718,12 @@ export function DealershipForm({
             </div>
           </div>
         </div>
-        </>
-        )}
+        </div>
+        </div>
 
-        {(mode === "create" || activeTab === "plano") && mode === "edit" ? (
-          <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        {mode === "edit" ? (
+          <div className={editTabPanelClass("plano")}>
+          <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground">Plano comercial</p>
               <p className="text-xs text-muted-foreground">
@@ -754,10 +759,11 @@ export function DealershipForm({
               planNameById={planNameById}
             />
           </div>
+          </div>
         ) : null}
 
-        {(mode === "create" || activeTab === "unidades") && (
-        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className={editTabPanelClass("unidades")}>
+        <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">
               Unidades da concessionária
@@ -773,7 +779,7 @@ export function DealershipForm({
             disabled={pending}
           />
         </div>
-        )}
+        </div>
 
         <div className="flex flex-wrap gap-3 border-t border-border pt-6">
           <Button type="submit" disabled={pending} className="min-w-[9rem]">

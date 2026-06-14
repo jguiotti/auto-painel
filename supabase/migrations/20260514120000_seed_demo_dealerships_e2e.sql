@@ -49,7 +49,7 @@ seed_dealerships as (
         '11111111-1111-4111-8111-111111111101'::uuid,
         'Guiotti Multimarcas',
         'guiotti',
-        'https://images.unsplash.com/photo-1619767886555-ef069784966c?w=400&h=120&fit=crop',
+        'https://placehold.co/400x120/1a1a1a/C5A059?text=Guiotti+Multimarcas',
         '5511999990001',
         'contato@guiotti.demo',
         1::smallint,
@@ -93,7 +93,7 @@ seed_dealerships as (
         '11111111-1111-4111-8111-111111111103'::uuid,
         'EcoDrive Seminovos',
         'ecodrive',
-        'https://images.unsplash.com/photo-1593941707882-a5bba14938bc?w=400&h=120&fit=crop',
+        'https://placehold.co/400x120/2563EB/ffffff?text=EcoDrive',
         '5511999990003',
         'contato@ecodrive.demo',
         3::smallint,
@@ -123,17 +123,7 @@ seed_dealerships as (
     theme_config,
     content_config
   )
-  on conflict (slug) do update set
-    name = excluded.name,
-    logo_url = excluded.logo_url,
-    whatsapp_number = excluded.whatsapp_number,
-    contact_email = excluded.contact_email,
-    status = excluded.status,
-    layout_id = excluded.layout_id,
-    theme_settings = excluded.theme_settings,
-    theme_config = excluded.theme_config,
-    content_config = excluded.content_config,
-    updated_at = now()
+  on conflict (slug) do nothing
   returning id, slug
 )
 insert into public.dealership_units (dealership_id, name)

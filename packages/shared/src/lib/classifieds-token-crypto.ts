@@ -50,8 +50,8 @@ export async function decryptClassifiedsSecretValue(
   }
 
   const key = await getAesKey(secret);
-  const iv = fromBase64(ivPart);
-  const cipherBytes = fromBase64(cipherPart);
+  const iv = new Uint8Array(fromBase64(ivPart));
+  const cipherBytes = new Uint8Array(fromBase64(cipherPart));
   const plainBuffer = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv },
     key,

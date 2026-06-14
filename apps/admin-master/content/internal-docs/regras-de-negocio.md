@@ -123,7 +123,7 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | **BZ-DEMO-005** | Alterações de veículo/whitelabel no painel refletem imediatamente no Supabase e na vitrine após refresh. |
 
 | **BZ-DEMO-006** | Lojas demo usam planos distintos para validar gating: `guiotti` → enterprise, `autoprime` → business, `ecodrive` → starter. |
-| **BZ-DEMO-007** | CTAs de contato na vitrine abrem WhatsApp (`wa.me`) com mensagem pré-preenchida e parâmetros UTM (`utm_source=vitrine`, `utm_medium=whatsapp`, `utm_campaign`, `utm_content={slug}`) — não existe rota `/contato` no `customer-site`. |
+| **BZ-DEMO-007** | Vitrine expõe `/contato` (sede + unidades quando ≥2 filiais); header direciona para essa rota (BZ-CRM-006). WhatsApp flutuante e CTAs secundários usam `wa.me` com UTM (`utm_source=vitrine`, `utm_medium=whatsapp`, `utm_campaign`, `utm_content={slug}`). |
 | **BZ-DEMO-008** | Filtro público de estoque inclui `vehicle_type` conforme tipos cadastrados no painel da loja (automóvel, motocicleta, van, etc.). Guiotti demo inclui automóveis e motocicletas. |
 | **BZ-DEMO-009** | A home da vitrine (3 templates) exibe apenas teaser de destaques; o estoque completo com filtros avançados fica em `/estoque` (marca, modelo, preço, ano, tipo, km, combustível, câmbio, cor, cilindrada, marchas, ordenação). |
 | **BZ-DEMO-010** | Cadastro de veículos no painel da loja inclui **especificações técnicas por tipo** (motos: marchas, cilindrada, motor, refrigeração, estilo, partida, freios, alimentação; caminhões: tração, eixos, peso, cabine, carroceria; vans/ônibus: lugares e campos complementares). Dados persistidos em `vehicles`, exibidos na vitrine e nos filtros — **sem mock em TS**. |
@@ -1075,3 +1075,86 @@ Descreva o problema da pessoa usuária ou da operação.
 
 - **CA-001:** …
 - **CA-002:** …
+
+---
+
+### 2026-06-13 — Operação comercial e CRM (PRD aprovado)
+
+| Campo | Valor |
+| --- | --- |
+| **Nome** | Operação comercial: equipe, vitrine/contato, leads e conversão |
+| **Status** | **Fases A–D implementadas** (código + migrações); aplicar `20260613180000` no remoto se ainda pendente |
+| **Apps** | `customer-site`, `dealership-panel`, `admin-master`, Supabase |
+
+#### Decisões PM (fechadas)
+
+| # | Questão | Decisão |
+| --- | --- | --- |
+| D1 | Comissão | **Percentual sobre venda e fixo por veículo** — ambos configuráveis por funcionário |
+| D2 | Atribuição de lead | **Gestor manual** — leads entram sem responsável; owner/manager atribui no painel |
+| D3 | Endereço vitrine | **Sede** em `content_config` + **unidades** (`dealership_units`) listadas em `/contato` quando houver endereço |
+| D4 | Acesso ao painel | **Somente funcionários cadastrados** recebem login (auth + profile) |
+
+#### Ordem de entrega
+
+| Fase | Escopo | Status |
+| --- | --- | --- |
+| **A** | `/contato`, WhatsApp flutuante + opt-in, leads unificados, legal/cookies vitrine | ✅ Código + migração |
+| **B** | CRM: estados, comentários, quente, follow-up, lead manual, vínculo venda/recibo | ✅ Código + migração (aplicar remoto) |
+| **C** | Gestor edita e-mail, telefone e endereço da loja no painel | ✅ Código (`/painel/loja`) |
+| **D** | Cadastro robusto de funcionários + dashboard ranking + RLS salário/comissão | ✅ Código + migração (`/painel/equipe`, `/painel/conta/perfil`) |
+
+#### Regras de negócio
+
+| ID | Regra |
+| --- | --- |
+| **BZ-CRM-001** | Todo ponto de contato na vitrine exige aceite da Política de Privacidade (versão registrada no lead). |
+| **BZ-CRM-002** | Marketing opcional (`marketing_consent`) registrado com timestamp quando marcado. |
+| **BZ-CRM-003** | Leads de vitrine usam `source`: `vehicle_page`, `finance_simulator`, `contact_page`, `whatsapp_float`. |
+| **BZ-CRM-004** | Atribuição de lead: apenas **owner/manager** designa `assigned_user_id`; vendedor vê leads atribuídos a si. |
+| **BZ-CRM-005** | WhatsApp flutuante: grava lead **antes** de abrir `wa.me` com mensagem montada. |
+| **BZ-CRM-006** | Header da vitrine direciona para `/contato` (não link direto WhatsApp). |
+| **BZ-CRM-007** (Fase B) | Pipeline do lead: `new` → `contacted` → `hot` → `won` \| `lost`. |
+| **BZ-CRM-008** (Fase B) | Vendedor/gestor registra comentários internos (`lead_notes`); vendedor só em leads atribuídos a si. |
+| **BZ-CRM-009** (Fase B) | Lead manual (`source=manual`) cadastrado no painel; vendedor pode auto-atribuir a si. |
+| **BZ-CRM-010** (Fase B) | Lead `won` pode vincular `converted_vehicle_id` (veículo vendido) → recibo em `/painel/estoque/[id]/recibo`. |
+| **BZ-CRM-011** (Fase C) | Apenas **owner/manager** editam `contact_email`, `whatsapp_number` e `content_config.hq_address` no painel (`/painel/loja`). |
+| **BZ-CRM-012** (Fase C) | Vendedor **não** acessa edição de dados institucionais da loja. |
+| **BZ-EMP-001** (Fase D) | Funcionário com perfil completo (nome, endereço, telefone, e-mail, CPF, RG, foto, salário, comissões). |
+| **BZ-EMP-002** (Fase D) | Vendedor **não** visualiza salário/comissão de colegas; gestor sim. |
+| **BZ-EMP-003** (Fase D) | Apenas usuários com conta ativa acessam o painel. |
+
+#### Cenários de aceite (Fase A)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-CRM-A1** | Given visitante — When preenche `/contato` sem aceitar privacidade — Then erro e lead não criado. |
+| **CA-CRM-A2** | Given visitante — When envia formulário válido — Then lead em `leads` com `source=contact_page`. |
+| **CA-CRM-A3** | Given WhatsApp cadastrado — When usa botão flutuante — Then lead criado e abre conversa no número da loja. |
+| **CA-CRM-A4** | Given gestor — When abre Contatos — Then vê coluna Origem e pode atribuir vendedor manualmente. |
+
+#### Cenários de aceite (Fase B)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-CRM-B1** | Given vendedor — When cadastra contato manual — Then lead com `source=manual` e status `new`. |
+| **CA-CRM-B2** | Given gestor — When altera status para quente e define follow-up — Then campos persistidos e visíveis no detalhe. |
+| **CA-CRM-B3** | Given vendedor atribuído — When adiciona comentário — Then nota aparece no histórico do lead. |
+| **CA-CRM-B4** | Given lead ganho — When vincula veículo vendido — Then link abre ficha/recibo do veículo. |
+
+#### Cenários de aceite (Fase C)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-CRM-C1** | Given gestor autenticado — When abre `/painel/loja` — Then edita e-mail, WhatsApp e endereço da sede. |
+| **CA-CRM-C2** | Given vendedor — When tenta abrir `/painel/loja` — Then redirecionado (sem acesso). |
+| **CA-CRM-C3** | Given gestor salva endereço — When visitante abre `/contato` na vitrine — Then vê dados atualizados. |
+
+#### Cenários de aceite (Fase D)
+
+| ID | Cenário |
+| --- | --- |
+| **CA-CRM-D1** | Given gestor — When abre `/painel/equipe` — Then vê lista de colaboradores e ranking de vendas (leads `won`). |
+| **CA-CRM-D2** | Given gestor — When edita colaborador (RH + comissão + ativo/inativo) — Then dados persistem via RPC `upsert_dealership_employee_profile`. |
+| **CA-CRM-D3** | Given vendedor — When abre `/painel/conta/perfil` — Then vê própria remuneração; **não** vê salário/comissão de colegas no ranking. |
+| **CA-CRM-D4** | Given colaborador com `is_active=false` — When tenta acessar o painel — Then redirecionado para `/conta-desativada`. |

@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Car,
+  LayoutDashboard,
+  Menu,
+  MessageSquare,
+  Plug,
+  Store,
+  Users,
+} from "lucide-react";
 
 import {
   Button,
@@ -22,6 +31,21 @@ interface DashboardMobileNavProps {
   storefrontUrl: string;
 }
 
+const PRIMARY_ICONS: Record<string, LucideIcon> = {
+  "/painel": LayoutDashboard,
+  "/painel/estoque": Car,
+  "/painel/contatos": MessageSquare,
+  "/painel/loja": Store,
+  "/painel/equipe": Users,
+};
+
+const OPTIONAL_ICONS: Record<string, LucideIcon> = {
+  "/painel/integracoes": Plug,
+};
+
+const linkBase =
+  "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors";
+
 export function DashboardMobileNav({
   primaryNav,
   optionalNav,
@@ -39,24 +63,29 @@ export function DashboardMobileNav({
 
   function renderLink(item: { href: string; label: string; description: string }) {
     const active = isNavItemActive(item.href);
+    const Icon = PRIMARY_ICONS[item.href] ?? OPTIONAL_ICONS[item.href] ?? LayoutDashboard;
     return (
       <Link
         key={item.href}
         href={item.href}
         className={cn(
-          "block rounded-lg px-3 py-2.5 transition-colors",
-          active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+          linkBase,
+          active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
         onClick={() => setOpen(false)}
+        aria-current={active ? "page" : undefined}
       >
-        <span className="block text-sm font-medium">{item.label}</span>
-        <span
-          className={cn(
-            "block text-xs",
-            active ? "text-primary-foreground/80" : "text-muted-foreground",
-          )}
-        >
-          {item.description}
+        <Icon className="size-4 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          <span className="block">{item.label}</span>
+          <span
+            className={cn(
+              "block text-xs font-normal",
+              active ? "text-primary-foreground/80" : "text-muted-foreground",
+            )}
+          >
+            {item.description}
+          </span>
         </span>
       </Link>
     );

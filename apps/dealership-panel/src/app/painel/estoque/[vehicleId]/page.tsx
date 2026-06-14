@@ -9,8 +9,7 @@ import {
   type ClassifiedsProvider,
 } from "@autopainel/shared/lib/dealership-features";
 import {
-  buildDealershipSubdomainSurfaceUrls,
-  buildLocalhostDealershipPreviewUrls,
+  resolveDealershipStorefrontPublicUrl,
 } from "@autopainel/shared/lib/tenant/dealership-subdomain-surface-urls";
 import { Button } from "@autopainel/shared/ui";
 
@@ -26,11 +25,7 @@ interface VehicleViewPageProps {
 }
 
 function resolveStorefrontUrl(slug: string): string {
-  const canonical = buildDealershipSubdomainSurfaceUrls(slug);
-  if (canonical?.storefrontUrl) {
-    return canonical.storefrontUrl;
-  }
-  return buildLocalhostDealershipPreviewUrls(slug)?.storefrontUrl ?? "/";
+  return resolveDealershipStorefrontPublicUrl(slug);
 }
 
 export default async function VehicleViewPage({ params }: VehicleViewPageProps) {

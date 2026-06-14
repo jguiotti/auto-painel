@@ -2,6 +2,8 @@
 
 import { createSupabaseAnonClient } from "@autopainel/shared/lib/supabase";
 
+import { PRIVACY_POLICY_VERSION } from "@/lib/legal/constants";
+
 export interface SubmitSaasProspectState {
   success?: boolean;
   error?: string;
@@ -19,6 +21,12 @@ export async function submitSaasProspectAction(
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const companyNameRaw = String(formData.get("company_name") ?? "").trim();
   const messageRaw = String(formData.get("message") ?? "").trim();
+  const privacyConsent = formData.get("privacy_consent") === "true";
+  const marketingConsent = formData.get("marketing_consent") === "true";
+
+  if (!privacyConsent) {
+    return { error: "Para enviar, aceite a Política de Privacidade." };
+  }
 
   if (fullName.length < 2) {
     return { error: "Informe seu nome completo." };
@@ -47,6 +55,8 @@ export async function submitSaasProspectAction(
     return { error: "Configuração do servidor incompleta. Tente mais tarde." };
   }
 
+  const nowIso = new Date().toISOString();
+
   const { error } = await supabase.from("saas_prospects").insert({
     full_name: fullName,
     email,
@@ -54,7 +64,13 @@ export async function submitSaasProspectAction(
     company_name: companyNameRaw.length > 0 ? companyNameRaw : null,
     message: messageRaw.length > 0 ? messageRaw : null,
     source: "marketing_site",
-    metadata: {} as Record<string, unknown>,
+    metadata: {
+      privacy_policy_version: PRIVACY_POLICY_VERSION,
+    } as Record<string, unknown>,
+    privacy_policy_accepted_at: nowIso,
+    privacy_policy_version: PRIVACY_POLICY_VERSION,
+    marketing_consent: marketingConsent,
+    marketing_consent_at: marketingConsent ? nowIso : null,
   });
 
   if (error) {
