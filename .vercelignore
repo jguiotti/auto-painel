@@ -4,9 +4,6 @@ node_modules
 .git
 .cursor
 **/*.log
-apps/admin-master
-apps/dealership-panel
-apps/customer-site
 e2e
 supabase/.branches
 supabase/.temp
