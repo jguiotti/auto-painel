@@ -31,10 +31,12 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 
 Os testes **não** gravam dados por padrão — verificam resolução de host, middleware e fluxos de leitura.
 
-**Login E2E (painel lojista):** `e2e/helpers/dealership-panel-login.ts` + `e2e/specs/dealership-panel-integrations-oauth.spec.ts`. Credenciais demo (após `npm run seed:demo-users`):
+**Login E2E (painel lojista):** `e2e/helpers/dealership-panel-login.ts` + specs CRM/integrações. Credenciais demo (após `npm run seed:demo-users`):
 
 - E-mail: `gestor.guiotti@autopainel.demo`
 - Senha: `LojaDemo123!`
 - URL: `http://guiotti.localhost:3002/login`
 
-Variáveis opcionais: `E2E_DEALERSHIP_EMAIL`, `E2E_DEALERSHIP_PASSWORD`.
+Variáveis opcionais: `E2E_DEALERSHIP_EMAIL`, `E2E_DEALERSHIP_PASSWORD`, `E2E_DEALERSHIP_SLUG`.
+
+**Skip vs fail:** vitrine inativa ou Supabase ausente → skip (use `E2E_STRICT_STOREFRONT_ACTIVE=true` para falhar). Login painel sem seed → skip (use `E2E_STRICT_PANEL_AUTH=true` para falhar). Helper: `e2e/helpers/storefront-tenant.ts`.

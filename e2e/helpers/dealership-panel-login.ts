@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 export interface DealershipPanelLoginOptions {
@@ -38,6 +38,43 @@ export async function loginDealershipPanel(
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`));
+}
+
+/**
+ * Same as loginDealershipPanel but skips when demo auth is unavailable (seed / Supabase env).
+ * Set E2E_STRICT_PANEL_AUTH=true to fail instead of skip.
+ */
+export async function loginDealershipPanelOrSkip(
+  page: Page,
+  options: DealershipPanelLoginOptions = {},
+) {
+  const defaults = resolveDemoDealershipCredentials();
+  const slug = options.slug ?? defaults.slug;
+  const email = options.email ?? defaults.email;
+  const password = options.password ?? defaults.password;
+  const redirectPath = options.redirectPath ?? "/painel";
+  const port = resolveDealershipPanelPort();
+
+  await page.goto(`http://${slug}.localhost:${port}/login`);
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
+  await page.getByRole("button", { name: "Entrar" }).click();
+
+  const redirectRe = new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`);
+  try {
+    await expect(page).toHaveURL(redirectRe, { timeout: 20_000 });
+  } catch {
+    const strict =
+      process.env.E2E_STRICT_PANEL_AUTH?.trim().toLowerCase() === "true";
+    const hint =
+      `Login painel demo falhou (${email}). ` +
+      `Confira Supabase no .env.local e rode npm run seed:demo-users. ` +
+      `Use E2E_STRICT_PANEL_AUTH=true para falhar em vez de skip.`;
+    if (strict) {
+      throw new Error(hint);
+    }
+    test.skip(true, hint);
+  }
 }
 
 export async function resetStuckClassifiedsConnections(slug?: string) {

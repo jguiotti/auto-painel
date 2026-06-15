@@ -3,11 +3,16 @@ import { expect, test } from "@playwright/test";
 import {
   loginDealershipPanel,
   postClassifiedsOAuthStart,
-  resolveDemoDealershipCredentials,
 } from "../helpers/dealership-panel-login";
+import {
+  clickStorefrontContatoNav,
+  gotoStorefront,
+  resolveStorefrontPort,
+  skipIfStorefrontTenantUnavailable,
+} from "../helpers/storefront-tenant";
 
-const storefrontPort = process.env.E2E_CUSTOMER_SITE_PORT ?? "3003";
-const demoSlug = resolveDemoDealershipCredentials().slug;
+const demoSlug = process.env.E2E_DEALERSHIP_SLUG?.trim() || "guiotti";
+const storefrontPort = resolveStorefrontPort();
 
 test.describe("storefront lapidação — WhatsApp, filtros e header mobile", () => {
   test.beforeEach(async ({ context }) => {
@@ -22,12 +27,11 @@ test.describe("storefront lapidação — WhatsApp, filtros e header mobile", ()
       }
     });
 
-    await page.goto(`http://${demoSlug}.localhost:${storefrontPort}/`);
+    const slug = await gotoStorefront(page, "/", demoSlug);
+    await skipIfStorefrontTenantUnavailable(page, slug);
     await expect(page.locator("body")).toBeVisible();
 
-    const contatoLink = page.getByRole("link", { name: "Contato" });
-    await expect(contatoLink).toBeVisible();
-    await contatoLink.click();
+    await clickStorefrontContatoNav(page);
     await expect(page).toHaveURL(/\/contato$/);
     expect(brokenContato).toEqual([]);
   });
