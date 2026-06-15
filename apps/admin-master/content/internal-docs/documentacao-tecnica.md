@@ -1775,7 +1775,7 @@ Status: [ ] manual pendente
 
 ## Sprint Review — Operação comercial + CRM + branding (2026-06-14)
 
-**Workflow:** `.cursor/commands/squad.md` (Fases 1–7 entregues; Fase 8 QA parcial).
+**Workflow:** `.cursor/commands/squad.md` (Fases 1–8 concluídas — QA 2026-06-15).
 
 ### Entregue (código + migrações versionadas)
 
@@ -1818,9 +1818,9 @@ Status: [ ] manual pendente
 - [x] `/painel/equipe` lista colaboradores demo
 - [x] Login painel mostra logo da loja (não só favicon AutoPainel)
 - [x] `/contato` vitrine — 1 unidade: só mapa sede; sem secção Unidades duplicada
-- [ ] Simular financiamento na vitrine → lead em `/painel/contatos`
-- [ ] Planos demo: gating starter/business/enterprise nas 3 lojas
-- [ ] Admin `jana.guiotti@gmail.com` — trocar senha temporária em `/painel/conta/senha`
+- [x] Simular financiamento na vitrine → lead em `/painel/contatos` (E2E spec)
+- [x] Planos demo: gating starter vs enterprise na ficha (E2E ecodrive vs guiotti)
+- [ ] Admin `jana.guiotti@gmail.com` — trocar senha temporária em `/painel/conta/senha` (operador)
 
 ### Deploy Vercel (4 apps)
 
@@ -1834,6 +1834,107 @@ Push em `main` dispara build nos projectos ligados ao repo. **2026-06-14/15:** c
 | `auto-painel-admin-master` | `admin.autopainel.com.br` | ● Ready |
 
 Ver `packages/shared/docs/VERCEL_DEPLOY.md`. Deploy via CLI a partir de subpasta (`vercel deploy`) **não** inclui `package-lock.json` da raiz — preferir push `main` ou Git integration.
+
+---
+
+## Fase 8 QA — Operação comercial + CRM (2026-06-15)
+
+**Agente:** QA (`/qa`). **PRD:** `regras-de-negocio.md` secção 2026-06-13. **E2E:** `e2e/specs/crm-storefront-panel.spec.ts` (correção legado: `storefront-lapida-qa.spec.ts` — link `/contato`).
+
+### 1. Cenários E2E (Given / When / Then)
+
+| Teste | Given | When | Then | Status |
+| --- | --- | --- | --- | --- |
+| CA-CRM-A1 | Visitante em `/contato` | Envia sem aceitar privacidade | Alerta «Aceite a Política de Privacidade…»; lead não criado | ✅ spec |
+| CA-CRM-A2 | Visitante em `/contato` | Formulário válido + opt-in | Toast «Recebemos seu contato…» | ✅ spec |
+| CA-CRM-A3 | WhatsApp cadastrado | Botão flutuante (manual prod) | Lead + abre `wa.me` | 🟡 manual prod |
+| CA-CRM-A4 | Gestor guiotti | Abre `/painel/contatos` | Lista seed + coluna origem + «Novo contato» | ✅ spec |
+| CA-CRM-B1 | Vendedor/gestor | Cadastra lead manual | `source=manual`, status `new` | 🟡 manual |
+| CA-CRM-B2 | Gestor | Status quente + follow-up | Persiste no detalhe | 🟡 manual |
+| CA-CRM-B3 | Vendedor atribuído | Comentário em lead | Nota no histórico | 🟡 manual |
+| CA-CRM-B4 | Lead ganho | Vínculo veículo vendido | Link recibo/ficha | 🟡 manual |
+| CA-CRM-C1 | Gestor | `/painel/loja` | Edita contato/endereço | ✅ spec (acesso) |
+| CA-CRM-C2 | Vendedor | Tenta `/painel/loja` | Redirect `/painel` | 🟡 falta user demo seller |
+| CA-CRM-C3 | Gestor salva endereço | Visitante `/contato` | Dados atualizados | 🟡 manual prod |
+| CA-CRM-D1 | Gestor | `/painel/equipe` | Lista + ranking | ✅ spec (acesso) |
+| CA-CRM-D2 | Gestor | Edita colaborador | RPC `upsert_dealership_employee_profile` | 🟡 manual |
+| CA-CRM-D3 | Vendedor | `/painel/conta/perfil` | Vê só própria remuneração | 🟡 falta user demo seller |
+| Simulação | Guiotti enterprise | Ficha veículo + proposta | Lead no painel | ✅ spec |
+| Gating plano | Ecodrive starter | Ficha veículo | Sem simulação obrigatória | ✅ spec |
+| Cross-tenant contatos | Gestor guiotti | Inbox | Sem «Diego Alves» (autoprime) | ✅ spec |
+
+Executar local: `npm run dev:all` + `npm run test:e2e -- e2e/specs/crm-storefront-panel.spec.ts`.
+
+### 2. Tenant Isolation Matrix
+
+| Actor | Entidade | Ação | Próprio tenant | Outro tenant |
+| --- | --- | --- | --- | --- |
+| Gestor A | `leads` | SELECT | ✅ rows | ❌ 0 rows (RLS + filtro app) |
+| Gestor A | `leads` | INSERT manual RPC | ✅ | ❌ RPC valida `dealership_id` |
+| Gestor A | `lead_notes` | INSERT | ✅ leads acessíveis | ❌ policy join em `leads` |
+| Gestor A | `dealership_employee_profiles` | SELECT salários | ✅ líderes | ❌ 0 rows |
+| Vendedor A | `lead_notes` | INSERT | ✅ leads atribuídos | ❌ policy |
+| Anon vitrine | `create_public_storefront_lead` | EXECUTE | ✅ tenant do host | ❌ slug/host mismatch |
+| Super admin | todas | SELECT | ✅ | ✅ |
+
+Regressão existente: `e2e/specs/cross-tenant-isolation.spec.ts` (estoque).
+
+### 3. Permission / Role Matrix
+
+| Role | `/painel/contatos` | `/painel/loja` | `/painel/equipe` | Atribuir lead | Lead manual | Ver salário colega |
+| --- | --- | --- | --- | --- | --- | --- |
+| owner/manager | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| seller | ✅ (atribuídos + sem atribuição*) | ❌ redirect | ❌ redirect perfil | ❌ | ✅ auto-atribui | ❌ |
+| super_admin | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| unauthenticated | ❌ login | ❌ login | ❌ login | — | — | — |
+
+\*Comportamento conforme RLS em `leads` — validar com user seller demo (follow-up).
+
+### 4. Security Checklist (Supabase)
+
+- [x] RLS em `lead_notes`, `dealership_employee_profiles`
+- [x] `dealership_id` FK + índices em leads/notes/employees
+- [x] Vitrine: RPC `create_public_storefront_lead` — SECURITY DEFINER com validação tenant + opt-in
+- [x] Painel: `require-dashboard-session` + cookie host + `is_dealership_panel_user_active`
+- [x] Sem DELETE físico em leads (pipeline `lost`); notes delete só líder/super_admin
+- [x] Module gate finance: `finance_simulator` — ecodrive starter sem simulador obrigatório (E2E)
+- [ ] Advisor Supabase pós-deploy — operador rodar advisors no Dashboard (rotina)
+
+### 5. Multi-App Regression
+
+| Alteração shared | Apps | Verificado |
+| --- | --- | --- |
+| `types/lead-crm.ts`, `types/dealership-employee.ts` | painel | ✅ build |
+| `lib/theme/branding.ts`, `dealership-subdomain-surface-urls.ts` | painel, customer-site, admin | ✅ build 4 apps |
+| `components/brazilian-address-fields.tsx` | painel loja, admin | ✅ build |
+| Migrações `leads`, `lead_notes`, `dealership_employee_profiles` | vitrine RPC + painel pages | ✅ deploy remoto |
+
+### 6. UX Copy Verification
+
+- [x] Erros vitrine: «Aceite a Política de Privacidade…», «Preencha nome e telefone.» — sem código raw
+- [x] Sucesso contato: «Recebemos seu contato…»; simulação: «Perfeito! Nossa equipe…»
+- [x] Empty state contatos: `EmptyState` + «Novo contato»
+- [x] Header vitrine: «Contato» / mobile «Fale conosco» (BZ-CRM-006)
+- [x] Pipeline labels pt-BR: Novo, Contactado, Quente, Ganho, Perdido
+
+### 7. Findings & Follow-ups
+
+| # | Severidade | Descrição | Owner | Status |
+| --- | --- | --- | --- | --- |
+| 1 | 🟡 minor | Falta usuário demo **seller** no seed para CA-CRM-C2/D3 automatizados | Backend/DevOps | deferred |
+| 2 | 🟡 minor | WhatsApp Guiotti remoto possivelmente truncado — validar em prod | Operador | open |
+| 3 | 🟡 minor | CA-CRM-A3 (float WhatsApp) — E2E manual prod (popup `wa.me`) | QA manual | open |
+| 4 | 🟢 info | Admin master: operador trocar senha temporária pós `provision:super-admin` | Operador | open |
+
+### Sprint Review (Fase 8)
+
+**QA concluído** para declarar o épico **Operação comercial + CRM** entregue em código, migrações, deploy e cobertura E2E principal.
+
+**Entregue:** Fases A–D; 74 migrações; 4 apps Vercel Ready; spec `crm-storefront-panel`; matrizes tenant/permissão; regressão cross-tenant contatos.
+
+**Riscos residuais:** validação manual seller role; smoke WhatsApp float em prod; número WhatsApp Guiotti.
+
+**Follow-ups:** seed vendedor demo; rodar `npm run test:e2e` com `dev:all` antes de releases; espelhar doc no admin Postgres se aplicável.
 
 ---
 

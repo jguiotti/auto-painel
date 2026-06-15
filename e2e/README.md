@@ -26,6 +26,7 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 - **Cross-tenant:** `e2e/specs/cross-tenant-isolation.spec.ts` — estoque guiotti vs autoprime + nome no shell (requer seed demo).
 - **Integrações UX (Épico 2):** `e2e/specs/dealership-panel-integrations-ux.spec.ts` — gating plano (`autoprime` vs `guiotti`), hub `/painel/integracoes`, ficha Ferrari, formulário «Salvar e divulgar».
 - **Integrações OAuth:** `e2e/specs/dealership-panel-integrations-oauth.spec.ts` — hub enterprise + 503 canal indisponível OLX/WM.
+- **CRM (Operação comercial):** `e2e/specs/crm-storefront-panel.spec.ts` — `/contato`, contatos painel, loja/equipe, simulação, cross-tenant leads, gating plano.
 - **QR:** `e2e/specs/vehicle-qr-print.spec.ts` — lâmina QR do Ferrari demo (skip se módulo `qr_generator` off).
 
 Os testes **não** gravam dados por padrão — verificam resolução de host, middleware e fluxos de leitura.

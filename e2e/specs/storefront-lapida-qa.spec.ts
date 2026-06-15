@@ -14,7 +14,7 @@ test.describe("storefront lapidação — WhatsApp, filtros e header mobile", ()
     await context.clearCookies();
   });
 
-  test("home não referencia rota /contato inexistente", async ({ page }) => {
+  test("header expõe link Contato válido (BZ-CRM-006)", async ({ page }) => {
     const brokenContato: string[] = [];
     page.on("response", (response) => {
       if (response.url().includes("/contato") && response.status() === 404) {
@@ -25,8 +25,10 @@ test.describe("storefront lapidação — WhatsApp, filtros e header mobile", ()
     await page.goto(`http://${demoSlug}.localhost:${storefrontPort}/`);
     await expect(page.locator("body")).toBeVisible();
 
-    const contatoLinks = page.locator('a[href="/contato"], a[href*="://"][href*="/contato"]');
-    await expect(contatoLinks).toHaveCount(0);
+    const contatoLink = page.getByRole("link", { name: "Contato" });
+    await expect(contatoLink).toBeVisible();
+    await contatoLink.click();
+    await expect(page).toHaveURL(/\/contato$/);
     expect(brokenContato).toEqual([]);
   });
 

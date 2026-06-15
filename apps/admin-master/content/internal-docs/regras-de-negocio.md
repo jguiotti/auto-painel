@@ -1083,7 +1083,7 @@ Descreva o problema da pessoa usuária ou da operação.
 | Campo | Valor |
 | --- | --- |
 | **Nome** | Operação comercial: equipe, vitrine/contato, leads e conversão |
-| **Status** | **Fases A–D implementadas** (código + migrações); aplicar `20260613180000` no remoto se ainda pendente |
+| **Status** | **Fases A–D concluídas** — migrações em paridade remoto (2026-06-15); **Fase 8 QA aprovada** (2026-06-15) |
 | **Apps** | `customer-site`, `dealership-panel`, `admin-master`, Supabase |
 
 #### Decisões PM (fechadas)
@@ -1099,10 +1099,10 @@ Descreva o problema da pessoa usuária ou da operação.
 
 | Fase | Escopo | Status |
 | --- | --- | --- |
-| **A** | `/contato`, WhatsApp flutuante + opt-in, leads unificados, legal/cookies vitrine | ✅ Código + migração |
-| **B** | CRM: estados, comentários, quente, follow-up, lead manual, vínculo venda/recibo | ✅ Código + migração (aplicar remoto) |
-| **C** | Gestor edita e-mail, telefone e endereço da loja no painel | ✅ Código (`/painel/loja`) |
-| **D** | Cadastro robusto de funcionários + dashboard ranking + RLS salário/comissão | ✅ Código + migração (`/painel/equipe`, `/painel/conta/perfil`) |
+| **A** | `/contato`, WhatsApp flutuante + opt-in, leads unificados, legal/cookies vitrine | ✅ Código + migração + QA |
+| **B** | CRM: estados, comentários, quente, follow-up, lead manual, vínculo venda/recibo | ✅ Código + migração + QA |
+| **C** | Gestor edita e-mail, telefone e endereço da loja no painel | ✅ Código (`/painel/loja`) + QA |
+| **D** | Cadastro robusto de funcionários + dashboard ranking + RLS salário/comissão | ✅ Código + migração + QA |
 
 #### Regras de negócio
 
