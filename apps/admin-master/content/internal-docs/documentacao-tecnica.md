@@ -1801,6 +1801,8 @@ Status: [ ] manual pendente
 | `20260614200000` | Seed leads demo CRM |
 | `20260614213000` | Restaurar `header_logo_url` / `hq_address` quando ausentes |
 
+**Status remoto (2026-06-15):** 74/74 migrações em paridade local│remoto (`npm run supabase:migrations:status`).
+
 ### Pendências pós-deploy (operador)
 
 | Item | Ação |
@@ -1822,7 +1824,16 @@ Status: [ ] manual pendente
 
 ### Deploy Vercel (4 apps)
 
-Push em `main` dispara build nos projectos ligados ao repo (`autopainel-marketing`, `autopainel-admin`, `autopainel-panel`, `autopainel-customer`). Ver `packages/shared/docs/VERCEL_DEPLOY.md`.
+Push em `main` dispara build nos projectos ligados ao repo. **2026-06-14/15:** corrigido `.vercelignore` na raiz — excluía `apps/customer-site`, `apps/dealership-panel` e `apps/admin-master`, quebrando `turbo run build --filter=@autopainel/*` nos deploys Git.
+
+| Projecto Vercel | Domínio produção | Commit `8a8053c` |
+| --- | --- | --- |
+| `auto-painel-site` | `autopainel.com.br` | ● Ready |
+| `auto-painel-customer-site` | `*.autopainel.com.br` | ● Ready |
+| `auto-painel-dealership-panel` | `*.loja.autopainel.com.br` | ● Ready |
+| `auto-painel-admin-master` | `admin.autopainel.com.br` | ● Ready |
+
+Ver `packages/shared/docs/VERCEL_DEPLOY.md`. Deploy via CLI a partir de subpasta (`vercel deploy`) **não** inclui `package-lock.json` da raiz — preferir push `main` ou Git integration.
 
 ---
 
