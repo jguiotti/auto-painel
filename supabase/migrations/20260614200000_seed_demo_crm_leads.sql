@@ -7,6 +7,21 @@
   notes: idempotent by fixed lead/note UUIDs; safe to re-run on local reset and remote deploy
 */
 
+-- ensure manual panel source is allowed (repair if phase_b constraint was not applied on remote)
+alter table public.leads
+  drop constraint if exists leads_source_check;
+
+alter table public.leads
+  add constraint leads_source_check check (
+    source in (
+      'vehicle_page',
+      'finance_simulator',
+      'contact_page',
+      'whatsapp_float',
+      'manual'
+    )
+  );
+
 -- ---------------------------------------------------------------------------
 -- guiotti: mark one vehicle sold for "won" lead conversion demo
 -- ---------------------------------------------------------------------------
