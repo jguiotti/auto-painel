@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; aviso?: string }>;
 }) {
   const envError = getAdminEnvSetupError();
   if (envError) {
@@ -78,8 +78,23 @@ export default async function LoginPage({
               (sem concessionária vinculada) podem usar este painel.
             </p>
           ) : null}
+          {sp.error === "confirmacao" ? (
+            <p className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Não foi possível validar o link do e-mail. Solicite um novo em Recuperar senha.
+            </p>
+          ) : null}
+          {sp.aviso === "definir-senha" ? (
+            <p className="mb-4 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+              Abra o link enviado por e-mail para definir sua senha ou faça login se já concluiu.
+            </p>
+          ) : null}
           <LoginForm />
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-sm">
+            <Button variant="link" className="h-auto p-0 text-sm" asChild>
+              <Link href="/recuperar-senha">Esqueci minha senha</Link>
+            </Button>
+          </p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
             Já entrou no painel? Use o menu lateral em{" "}
             <span className="font-medium text-foreground">Alterar senha</span> para trocar sem
             depender do e-mail.

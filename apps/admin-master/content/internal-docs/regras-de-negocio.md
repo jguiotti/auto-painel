@@ -207,4 +207,20 @@ Arquivado em `historico-prds.md` e `historico-tecnico.md` no repositório. Desen
 
 Abra **Documentação interna → Documentação técnica** no Admin — lá estão instalação, APIs, integrações e deploy para desenvolvedores.
 
+---
+
+## Comunicação por e-mail (régua)
+
+Especificação completa da squad (convites, boas-vindas, recuperar senha, marca AutoPainel vs marca da loja): **`packages/shared/docs/EMAIL_COMMUNICATION_REGUA.md`**.
+
+**Resumo operacional:**
+
+| Quem recebe | Marca no e-mail | Disparo principal |
+| --- | --- | --- |
+| Operador **Admin** | AutoPainel | Convite + recuperar senha |
+| Colaborador **painel da loja** | Logo/tema da concessionária | Convite (definir senha) + recuperar senha |
+| Cliente **gestor** (onboarding) | AutoPainel (manual) | E-mail com URLs vitrine + painel após DNS |
+
+**Hoje:** convite de colaborador **novo** ainda mostra senha temporária só no Admin — e-mail automático de boas-vindas está **pendente** (ver régua §4.1).
+
 *Última atualização: junho/2026*

@@ -134,6 +134,7 @@ applyProject("auto-painel-admin-master", "apps/admin-master", {
   ...commonPublic,
   SUPABASE_SERVICE_ROLE_KEY: serviceRole,
   NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "autopainel.com.br",
+  NEXT_PUBLIC_ADMIN_AUTH_REDIRECT_ORIGIN: "https://admin.autopainel.com.br",
   NEXT_PUBLIC_DEALERSHIP_PANEL_URL_TEMPLATE:
     "https://{slug}.loja.autopainel.com.br",
   NEXT_PUBLIC_CUSTOMER_SITE_URL_TEMPLATE: "https://{slug}.autopainel.com.br",
@@ -145,8 +146,9 @@ applyProject("auto-painel-dealership-panel", "apps/dealership-panel", {
   ...commonPublic,
   SUPABASE_SERVICE_ROLE_KEY: serviceRole,
   NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "loja.autopainel.com.br",
-  NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN:
-    "https://guiotti.loja.autopainel.com.br",
+  NEXT_PUBLIC_DEALERSHIP_PANEL_URL_TEMPLATE:
+    "https://{slug}.loja.autopainel.com.br",
+  NEXT_PUBLIC_CUSTOMER_SITE_URL_TEMPLATE: "https://{slug}.autopainel.com.br",
   CLASSIFIEDS_OAUTH_DEV_STUB: "false",
   CLASSIFIEDS_SYNC_DRY_RUN: process.env.CLASSIFIEDS_SYNC_DRY_RUN?.trim() || "true",
   CLASSIFIEDS_TOKENS_CRYPTO_SECRET: classifiedsCrypto,

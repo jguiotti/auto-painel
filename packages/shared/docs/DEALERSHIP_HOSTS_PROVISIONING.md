@@ -84,14 +84,18 @@ Adequado para: poucas lojas (demo, Guiotti, clientes piloto).
 ### B. Cloudflare + wildcards (recomendado multitenant)
 
 1. Registro.br → alterar **servidores DNS** para NS da Cloudflare (zona `autopainel.com.br`)
-2. Uma vez na Cloudflare:
+2. Uma vez na Cloudflare (zona `autopainel.com.br`, **proxy desligado** / DNS only):
 
-| Tipo | Nome | Target |
+| Tipo | Nome (relativo à zona) | Target Vercel |
 | --- | --- | --- |
-| CNAME | `*.autopainel.com.br` | target vitrine Vercel |
-| CNAME | `*.loja.autopainel.com.br` | target painel Vercel |
+| CNAME | `*` | `366da117763ba4e3.vercel-dns-017.com` (vitrine) |
+| CNAME | `*.loja` | `297c3c7eae6649e4.vercel-dns-017.com` (painel) |
+| CNAME | `admin` | target admin Vercel (projecto `auto-painel-admin-master`) |
+| A | `@` | `76.76.21.21` (marketing apex) |
 
-3. Cada loja nova: **só** `npm run dealership:hosts:provision -- {slug}` (Vercel); DNS já cobre qualquer slug.
+Targets exactos: correr `npm run dealership:hosts:provision -- demo` (imprime CNAME vitrine/painel).
+
+3. Cada loja nova: **só** `npm run dealership:hosts:provision -- {slug}` (Vercel); DNS wildcard já cobre qualquer slug.
 
 Env para automatizar Cloudflare no script:
 
@@ -120,7 +124,7 @@ Apontar NS do domínio para `ns1.vercel-dns.com` / `ns2.vercel-dns.com` e gerir 
 | Integrações | https://demo.loja.autopainel.com.br/painel/integracoes |
 | Credenciais | `gestor.demo@autopainel.demo` / `LojaDemo123!` |
 
-Domínios **já registados na Vercel** (2026-06-17). Falta confirmar CNAME no Registro.br (mesmos targets que `guiotti` se partilham projecto).
+Domínios **já registados na Vercel** (2026-06-17). NS em Cloudflare (`leonidas` / `barbara`). Confirmar wildcards `*` e `*.loja` na Cloudflare (ver secção B acima).
 
 ---
 

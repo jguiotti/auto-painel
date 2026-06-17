@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getSupabasePublicEnv } from "@autopainel/shared/lib/supabase";
+import { sendPasswordSetupEmail } from "@autopainel/shared/lib/auth/send-password-setup-email";
+import { resolveDealershipPanelAuthRedirectOrigin } from "@autopainel/shared/lib/auth/resolve-auth-redirect-origins";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireAdminSession } from "@/lib/auth/require-admin";
@@ -73,23 +73,18 @@ async function findAuthUserIdByEmail(
 }
 
 /**
- * Triggers Supabase's built-in recovery email (anon client). Requires redirect URL allow-list in Dashboard.
+ * Sends password setup / recovery email pointing at the dealership panel host for this slug.
  */
-async function trySendDealershipPasswordSetupEmail(email: string): Promise<boolean> {
-  const baseRaw =
-    process.env.NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN?.trim() ??
-    process.env.NEXT_PUBLIC_DEALERSHIP_PANEL_URL?.trim();
-  if (!baseRaw) {
+async function trySendDealershipPasswordSetupEmail(
+  email: string,
+  dealershipSlug: string,
+): Promise<boolean> {
+  const origin = resolveDealershipPanelAuthRedirectOrigin(dealershipSlug);
+  if (!origin) {
     return false;
   }
-  const base = baseRaw.replace(/\/$/, "");
-  const { supabaseUrl, supabaseAnonKey } = getSupabasePublicEnv();
-  const pub = createClient(supabaseUrl, supabaseAnonKey);
-  const nextPath = encodeURIComponent("/definir-senha");
-  const { error } = await pub.auth.resetPasswordForEmail(email, {
-    redirectTo: `${base}/auth/confirm?next=${nextPath}`,
-  });
-  return !error;
+  const result = await sendPasswordSetupEmail({ email, redirectOrigin: origin });
+  return result.ok;
 }
 
 export async function inviteDealershipCollaboratorAction(
@@ -118,13 +113,15 @@ export async function inviteDealershipCollaboratorAction(
 
   const { data: dealership, error: dealershipError } = await supabase
     .from("dealerships")
-    .select("id")
+    .select("id, slug")
     .eq("id", dealershipId)
     .maybeSingle();
 
-  if (dealershipError || !dealership) {
+  if (dealershipError || !dealership?.slug) {
     return { error: "Concessionária não encontrada." };
   }
+
+  const dealershipSlug = String(dealership.slug);
 
   const tempPassword =
     crypto.randomUUID().replaceAll("-", "").slice(0, 16) + "Aa1!";
@@ -137,12 +134,10 @@ export async function inviteDealershipCollaboratorAction(
   });
 
   let userId: string | undefined;
-  let temporaryPasswordOut: string | undefined;
   let linkedExistingUser = false;
 
   if (!createErr && created?.user?.id) {
     userId = created.user.id;
-    temporaryPasswordOut = tempPassword;
   } else if (createErr && isDuplicateAuthEmailError(createErr)) {
     const existingId = await findAuthUserIdByEmail(supabase, email);
     if (!existingId) {
@@ -219,17 +214,16 @@ export async function inviteDealershipCollaboratorAction(
     };
   }
 
-  let password_reset_email_sent = false;
-  if (linkedExistingUser) {
-    password_reset_email_sent = await trySendDealershipPasswordSetupEmail(email);
-  }
+  const password_reset_email_sent = await trySendDealershipPasswordSetupEmail(
+    email,
+    dealershipSlug,
+  );
 
   REVALIDATE.forEach((p) => revalidatePath(p));
   revalidatePath(`/painel/concessionarias/${dealershipId}/editar`);
   revalidatePath(`/painel/concessionarias/${dealershipId}`);
   return {
     success: true,
-    temporary_password: temporaryPasswordOut,
     linked_existing_user: linkedExistingUser,
     password_reset_email_sent,
   };

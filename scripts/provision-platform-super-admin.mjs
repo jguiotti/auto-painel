@@ -126,7 +126,29 @@ async function main() {
   }
 
   console.log(`super_admin profile ready: ${email} (${userId})`);
-  console.log("Login at admin-master /login — change password via /painel/conta/senha after first access.");
+
+  const adminOrigin =
+    process.env.NEXT_PUBLIC_ADMIN_AUTH_REDIRECT_ORIGIN?.trim() ||
+    "https://admin.autopainel.com.br";
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    env.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")?.trim();
+
+  if (anonKey && process.env.SEND_PROVISION_EMAIL !== "false") {
+    const pub = createClient(url, anonKey);
+    const next = encodeURIComponent("/definir-senha");
+    const { error: mailErr } = await pub.auth.resetPasswordForEmail(email, {
+      redirectTo: `${adminOrigin.replace(/\/$/, "")}/auth/confirm?next=${next}`,
+    });
+    if (mailErr) {
+      console.warn(`password setup email failed: ${mailErr.message}`);
+      console.log("Login at admin-master /login — set password via /recuperar-senha or /painel/conta/senha.");
+    } else {
+      console.log(`password setup email sent to ${email}`);
+    }
+  } else {
+    console.log("Login at admin-master /login — change password via /painel/conta/senha or /recuperar-senha.");
+  }
 }
 
 main().catch((err) => {

@@ -10,6 +10,7 @@
  *   npm run dealership:hosts:provision -- demo
  *   npm run dealership:hosts:provision -- demo guiotti --dry-run
  *   npm run dealership:hosts:provision -- demo --cloudflare
+ *   npm run dealership:hosts:provision -- --wildcards-only --cloudflare
  *
  * Env (optional Cloudflare — skips manual Registro.br per slug when wildcards exist):
  *   CLOUDFLARE_API_TOKEN
@@ -22,6 +23,7 @@ loadRootEnvLocal();
 
 const dryRun = process.argv.includes("--dry-run");
 const useCloudflare = process.argv.includes("--cloudflare");
+const wildcardsOnly = process.argv.includes("--wildcards-only");
 const slugs = process.argv
   .slice(2)
   .filter((arg) => !arg.startsWith("--"))
@@ -41,6 +43,7 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function usage() {
   console.log(`Usage: npm run dealership:hosts:provision -- <slug> [slug2 ...] [--dry-run] [--cloudflare]
+       npm run dealership:hosts:provision -- --wildcards-only --cloudflare
 
 Registers:
   https://{slug}.${PLATFORM_ROOT}
@@ -192,24 +195,27 @@ function printRegistroBrRows(rows) {
 async function ensureCloudflareWildcards(storefrontTarget, panelTarget) {
   console.log("\nCloudflare — wildcards (uma vez por zona):\n");
   await ensureCloudflareCname({
-    name: `*.${PLATFORM_ROOT}`,
+    name: "*",
     content: storefrontTarget,
-    comment: "AutoPainel vitrine multitenant",
+    comment: "AutoPainel vitrine multitenant (*.autopainel.com.br)",
   });
   await ensureCloudflareCname({
-    name: `*.${PANEL_ROOT}`,
+    name: "*.loja",
     content: panelTarget,
-    comment: "AutoPainel painel loja multitenant",
+    comment: "AutoPainel painel loja multitenant (*.loja.autopainel.com.br)",
   });
 }
 
 async function main() {
-  if (slugs.length === 0) {
+  const effectiveSlugs =
+    slugs.length > 0 ? slugs : wildcardsOnly ? ["demo"] : [];
+
+  if (effectiveSlugs.length === 0) {
     usage();
     process.exit(1);
   }
 
-  for (const slug of slugs) {
+  for (const slug of effectiveSlugs) {
     if (!SLUG_RE.test(slug)) {
       throw new Error(`Slug inválido: "${slug}" (use minúsculas, números e hífens)`);
     }
@@ -221,13 +227,15 @@ async function main() {
   }
 
   console.log(`Team: ${TEAM_SLUG}`);
-  console.log(`Slugs: ${slugs.join(", ")}\n`);
+  console.log(
+    `Slugs: ${effectiveSlugs.join(", ")}${wildcardsOnly ? " (wildcards-only probe)" : ""}\n`,
+  );
 
   const registroRows = [];
   let storefrontTarget = null;
   let panelTarget = null;
 
-  for (const slug of slugs) {
+  for (const slug of effectiveSlugs) {
     const hosts = hostnamesForSlug(slug);
     console.log(`→ ${slug}`);
 
@@ -250,20 +258,22 @@ async function main() {
 
   if (useCloudflare && storefrontTarget && panelTarget) {
     await ensureCloudflareWildcards(storefrontTarget, panelTarget);
-    for (const slug of slugs) {
-      const hosts = hostnamesForSlug(slug);
-      await ensureCloudflareCname({
-        name: hosts.storefront,
-        content: storefrontTarget,
-        comment: `AutoPainel vitrine ${slug}`,
-      });
-      await ensureCloudflareCname({
-        name: hosts.panel,
-        content: panelTarget,
-        comment: `AutoPainel painel ${slug}`,
-      });
+    if (!wildcardsOnly) {
+      for (const slug of effectiveSlugs) {
+        const hosts = hostnamesForSlug(slug);
+        await ensureCloudflareCname({
+          name: hosts.storefront.replace(`.${PLATFORM_ROOT}`, ""),
+          content: storefrontTarget,
+          comment: `AutoPainel vitrine ${slug}`,
+        });
+        await ensureCloudflareCname({
+          name: hosts.panel.replace(`.${PLATFORM_ROOT}`, ""),
+          content: panelTarget,
+          comment: `AutoPainel painel ${slug}`,
+        });
+      }
     }
-  } else if (!useCloudflare && storefrontTarget && panelTarget) {
+  } else if (!useCloudflare && storefrontTarget && panelTarget && !wildcardsOnly) {
     printRegistroBrRows(registroRows);
     console.log("\nEscala recomendada: migrar DNS para Cloudflare + wildcards (ver packages/shared/docs/DEALERSHIP_HOSTS_PROVISIONING.md).");
   }

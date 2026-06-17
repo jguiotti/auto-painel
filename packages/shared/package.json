@@ -243,6 +243,16 @@
       "import": "./src/lib/analytics/push-autopainel-analytics-event.ts",
       "default": "./src/lib/analytics/push-autopainel-analytics-event.ts"
     },
+    "./lib/auth/send-password-setup-email": {
+      "types": "./src/lib/auth/send-password-setup-email.ts",
+      "import": "./src/lib/auth/send-password-setup-email.ts",
+      "default": "./src/lib/auth/send-password-setup-email.ts"
+    },
+    "./lib/auth/resolve-auth-redirect-origins": {
+      "types": "./src/lib/auth/resolve-auth-redirect-origins.ts",
+      "import": "./src/lib/auth/resolve-auth-redirect-origins.ts",
+      "default": "./src/lib/auth/resolve-auth-redirect-origins.ts"
+    },
     "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },
   "peerDependencies": {

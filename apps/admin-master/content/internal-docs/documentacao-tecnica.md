@@ -258,6 +258,29 @@ Guia: `DEALERSHIP_HOSTS_PROVISIONING.md`.
 
 ---
 
+## E-mail transacional (Auth) — Fase 1
+
+Régua PM + copy UX Writer: [`EMAIL_COMMUNICATION_REGUA.md`](../../../packages/shared/docs/EMAIL_COMMUNICATION_REGUA.md).
+
+Setup Resend + Supabase SMTP/templates/redirect URLs: [`EMAIL_RESEND_SETUP.md`](../../../packages/shared/docs/EMAIL_RESEND_SETUP.md).
+
+| Superfície | Rotas | Env |
+| --- | --- | --- |
+| Admin | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `NEXT_PUBLIC_ADMIN_AUTH_REDIRECT_ORIGIN` |
+| Painel loja | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `NEXT_PUBLIC_DEALERSHIP_PANEL_URL_TEMPLATE` (por slug) |
+
+Convite colaborador: `apps/admin-master/src/actions/dealership-collaborators.ts` → `sendPasswordSetupEmail` + `resolveDealershipPanelAuthRedirectOrigin(slug)`.
+
+Templates HTML: `supabase/templates/invite.html`, `recovery.html`. Local: `supabase/config.toml`.
+
+Provision super-admin com e-mail: `scripts/provision-platform-super-admin.mjs`.
+
+Wildcards DNS: `npm run dealership:hosts:provision -- --wildcards-only --cloudflare` — ver `DEALERSHIP_HOSTS_PROVISIONING.md`.
+
+Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
+
+---
+
 ## Deploy
 
 | Destino | Guia |

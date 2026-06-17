@@ -21,7 +21,7 @@ import {
   toast,
 } from "@autopainel/shared/ui";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import {
   inviteDealershipCollaboratorAction,
@@ -47,44 +47,20 @@ export function DealershipCollaboratorsPanel({
 }: DealershipCollaboratorsPanelProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [tempPasswordBanner, setTempPasswordBanner] = useState<string | null>(
-    null,
-  );
 
   return (
     <Card className="border-border shadow-sm">
       <CardHeader>
         <CardTitle>Pessoas com acesso ao painel da loja</CardTitle>
         <CardDescription>
-          Estas credenciais abrem o <strong>painel da concessionária</strong>{" "}
-          (não este painel central). Transmita passwords provisórias apenas por canal
-          seguro.
+          Ao adicionar alguém, enviamos um e-mail para definir a senha no painel da
+          concessionária ({`{slug}.loja.autopainel.com.br`}).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        {tempPasswordBanner ? (
-          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-foreground">
-            <p className="font-medium">Palavra-passe provisória gerada</p>
-            <p className="mt-1 font-mono text-xs break-all">{tempPasswordBanner}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => {
-                void navigator.clipboard.writeText(tempPasswordBanner);
-                toast.success("Copiado para a área de transferência.");
-              }}
-            >
-              Copiar
-            </Button>
-          </div>
-        ) : null}
-
         <form
           action={(formData) => {
             startTransition(async () => {
-              setTempPasswordBanner(null);
               const result = await inviteDealershipCollaboratorAction(
                 dealershipId,
                 formData,
@@ -93,20 +69,17 @@ export function DealershipCollaboratorsPanel({
                 toast.error(result.error);
                 return;
               }
-              if (result.linked_existing_user) {
-                setTempPasswordBanner(null);
+              if (result.password_reset_email_sent) {
                 toast.success(
-                  result.password_reset_email_sent
-                    ? "Conta Auth já existia: perfil ligado a esta concessionária. Foi enviado um e-mail para definir a senha no painel da loja (verifique o spam)."
-                    : "Conta Auth já existia: perfil ligado a esta concessionária. A pessoa deve usar «Esqueci minha senha» no login do painel (defina NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN para envio automático de e-mail).",
+                  result.linked_existing_user
+                    ? "Perfil ligado à loja. E-mail enviado para definir a senha no painel (verifique o spam)."
+                    : "Convite enviado por e-mail para definir a senha no painel da loja.",
                 );
-                router.refresh();
-                return;
+              } else {
+                toast.warning(
+                  "Conta criada, mas o e-mail não foi enviado. Verifique SMTP/Resend e URLs de redirect no Supabase.",
+                );
               }
-              if (result.temporary_password) {
-                setTempPasswordBanner(result.temporary_password);
-              }
-              toast.success("Pessoa convidada e conta criada.");
               router.refresh();
             });
           }}
