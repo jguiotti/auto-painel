@@ -33,9 +33,9 @@ export async function exchangeICarrosPasswordGrantToken(params: {
     client_secret: params.clientSecret,
   });
 
-  const scope = params.scope?.trim();
-  if (scope) {
-    body.set("scope", scope);
+  const requestedScope = params.scope?.trim();
+  if (requestedScope) {
+    body.set("scope", requestedScope);
   }
 
   let response: Response;
@@ -103,12 +103,13 @@ export async function exchangeICarrosPasswordGrantToken(params: {
       : null;
   const refreshToken =
     typeof payload.refresh_token === "string" ? payload.refresh_token.trim() : null;
-  const scope = typeof payload.scope === "string" ? payload.scope.trim() : null;
+  const grantedScope =
+    typeof payload.scope === "string" ? payload.scope.trim() : null;
 
   return {
     accessToken,
     expiresIn,
     refreshToken,
-    scope,
+    scope: grantedScope,
   };
 }
