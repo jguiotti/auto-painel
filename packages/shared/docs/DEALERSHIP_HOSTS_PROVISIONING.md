@@ -126,6 +126,46 @@ Apontar NS do domínio para `ns1.vercel-dns.com` / `ns2.vercel-dns.com` e gerir 
 
 Domínios **já registados na Vercel** (2026-06-17). NS em Cloudflare (`leonidas` / `barbara`). Confirmar wildcards `*` e `*.loja` na Cloudflare (ver secção B acima).
 
+**Erro comum no painel (`demo.loja…` SSL):** na Cloudflare o nome tem de ser **`*.loja`** (com ponto), **não** `*loja`. O registo `*loja.autopainel.com.br` não cobre `demo.loja.autopainel.com.br`.
+
+---
+
+## Cloudflare API — onde obter token e Zone ID
+
+O script lê **`CLOUDFLARE_API_TOKEN`** e **`CLOUDFLARE_ZONE_ID`** da raiz **`.env.local`** (não commitar).
+
+### 1. `CLOUDFLARE_API_TOKEN`
+
+1. Cloudflare → **My Profile** (ícone utilizador) → **API Tokens**
+2. **Create Token** → template **Edit zone DNS** → **Use template**
+3. **Zone Resources:** *Include* → *Specific zone* → **`autopainel.com.br`**
+4. **Continue to summary** → **Create Token**
+5. Copiar o token **uma vez** (só aparece na criação) → colar em `.env.local`:
+
+```env
+CLOUDFLARE_API_TOKEN=seu_token_aqui
+```
+
+### 2. `CLOUDFLARE_ZONE_ID`
+
+1. Cloudflare → **Websites** → clicar **`autopainel.com.br`**
+2. Na página **Overview**, coluna direita **API** → **Zone ID** (UUID)
+3. Colar em `.env.local`:
+
+```env
+CLOUDFLARE_ZONE_ID=uuid_da_zona
+```
+
+### 3. Correr o script
+
+```bash
+npm run dealership:hosts:provision -- --wildcards-only --cloudflare
+```
+
+Sem estas variáveis, o terminal mostra: `CLOUDFLARE_API_TOKEN e CLOUDFLARE_ZONE_ID são obrigatórios com --cloudflare`.
+
+**Proxy (nuvem laranja):** para CNAME → Vercel, recomenda-se **DNS only** (cinza). O script cria com `proxied: false`; se editares à mão, desliga o proxy nos wildcards.
+
 ---
 
 ## Variáveis opcionais (`.env.local`)

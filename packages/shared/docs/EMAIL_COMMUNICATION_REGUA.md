@@ -1,6 +1,6 @@
 # Régua de comunicação por e-mail — AutoPainel
 
-Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** especificação aprovada para implementação — templates Supabase / Auth Hook pendente.
+Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 1 entregue** (2026-06-17) — admin ADM-01/02 + convite colaborador com link por slug; **Fase 2 pendente** — whitelabel painel (Auth Hook).
 
 **Relacionado:** `tenant_operator_journey` (PRD histórico), `regras-de-negocio.md` § Comunicação por e-mail.
 
@@ -101,8 +101,8 @@ Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** especif
 
 | Evento | Quando | Mecanismo actual | Mecanismo alvo |
 | --- | --- | --- | --- |
-| **LOJ-01 Boas-vindas / convite** | Colaborador criado em `inviteDealershipCollaboratorAction` | ⚠️ Só envia e-mail se **conta já existia** (`linked_existing_user`); usuário **novo** recebe senha temporária **só na UI do admin** | Sempre enviar `invite` ou `recovery` após createUser |
-| **LOJ-02 Recuperar senha** | `/recuperar-senha` no painel | ✅ `resetPasswordForEmail` — template **sem marca** | Template whitelabel por loja |
+| **LOJ-01 Boas-vindas / convite** | Colaborador criado em `inviteDealershipCollaboratorAction` | ✅ Sempre envia `resetPasswordForEmail` com host `{slug}.loja…` (marca AutoPainel no template Supabase) | Auth Hook whitelabel (Fase 2) |
+| **LOJ-02 Recuperar senha** | `/recuperar-senha` no painel | ✅ `resetPasswordForEmail` — template **marca AutoPainel** (não whitelabel) | Template whitelabel por loja (Fase 2) |
 | **LOJ-03 Senha alterada** | Após `/definir-senha` ou troca logado | Default Supabase | Template whitelabel |
 | **LOJ-04 Conta desactivada** | `is_active=false` (CRM Fase D) | ❌ Não implementado | E-mail opcional fase 2 |
 

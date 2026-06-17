@@ -279,6 +279,8 @@ Wildcards DNS: `npm run dealership:hosts:provision -- --wildcards-only --cloudfl
 
 Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
 
+**Épico Fase 1 (e-mail + DNS multitenant) — encerrado 2026-06-17:** Resend + Supabase SMTP produção, wildcards Cloudflare, provisionamento Vercel por slug, rotas Auth admin/painel, convite colaborador com e-mail.
+
 ---
 
 ## Deploy

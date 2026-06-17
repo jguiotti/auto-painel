@@ -116,6 +116,17 @@ async function fetchRecommendedCname(token, hostname) {
   return primary;
 }
 
+function cloudflareRecordFqdn(name) {
+  const trimmed = name.trim();
+  if (trimmed.includes(PLATFORM_ROOT)) {
+    return trimmed;
+  }
+  if (trimmed === "@" || trimmed === PLATFORM_ROOT) {
+    return PLATFORM_ROOT;
+  }
+  return `${trimmed}.${PLATFORM_ROOT}`;
+}
+
 async function ensureCloudflareCname({ name, content, comment }) {
   const token = process.env.CLOUDFLARE_API_TOKEN?.trim();
   const zoneId = process.env.CLOUDFLARE_ZONE_ID?.trim();
@@ -123,7 +134,9 @@ async function ensureCloudflareCname({ name, content, comment }) {
     throw new Error("CLOUDFLARE_API_TOKEN e CLOUDFLARE_ZONE_ID são obrigatórios com --cloudflare");
   }
 
-  const listUrl = `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(name)}`;
+  const normalizedContent = content.replace(/\.$/, "");
+  const listFqdn = cloudflareRecordFqdn(name);
+  const listUrl = `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(listFqdn)}`;
   const listRes = await fetch(listUrl, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -134,12 +147,12 @@ async function ensureCloudflareCname({ name, content, comment }) {
 
   const existing = listData.result?.[0];
   if (existing) {
-    if (existing.content === content.replace(/\.$/, "")) {
-      console.log(`  · Cloudflare: ${name} já aponta para ${content}`);
+    if (existing.content === normalizedContent) {
+      console.log(`  · Cloudflare: ${name} já aponta para ${normalizedContent}`);
       return;
     }
     if (dryRun) {
-      console.log(`  [dry-run] Cloudflare update ${name} → ${content}`);
+      console.log(`  [dry-run] Cloudflare update ${name} → ${normalizedContent}`);
       return;
     }
     const patchRes = await fetch(
@@ -150,19 +163,25 @@ async function ensureCloudflareCname({ name, content, comment }) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ type: "CNAME", name, content, proxied: false, comment }),
+        body: JSON.stringify({
+          type: "CNAME",
+          name,
+          content: normalizedContent,
+          proxied: false,
+          comment,
+        }),
       },
     );
     const patchData = await patchRes.json();
     if (!patchData.success) {
       throw new Error(`Cloudflare update ${name}: ${patchData.errors?.[0]?.message ?? "failed"}`);
     }
-    console.log(`  ✓ Cloudflare: ${name} actualizado → ${content}`);
+    console.log(`  ✓ Cloudflare: ${name} actualizado → ${normalizedContent}`);
     return;
   }
 
   if (dryRun) {
-    console.log(`  [dry-run] Cloudflare create ${name} → ${content}`);
+    console.log(`  [dry-run] Cloudflare create ${name} → ${normalizedContent}`);
     return;
   }
 
@@ -172,13 +191,24 @@ async function ensureCloudflareCname({ name, content, comment }) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ type: "CNAME", name, content, proxied: false, comment }),
+    body: JSON.stringify({
+      type: "CNAME",
+      name,
+      content: normalizedContent,
+      proxied: false,
+      comment,
+    }),
   });
   const createData = await createRes.json();
   if (!createData.success) {
-    throw new Error(`Cloudflare create ${name}: ${createData.errors?.[0]?.message ?? "failed"}`);
+    const msg = createData.errors?.[0]?.message ?? "failed";
+    if (/already exists/i.test(msg)) {
+      console.log(`  · Cloudflare: ${name} já existe (OK)`);
+      return;
+    }
+    throw new Error(`Cloudflare create ${name}: ${msg}`);
   }
-  console.log(`  ✓ Cloudflare: ${name} → ${content}`);
+  console.log(`  ✓ Cloudflare: ${name} → ${normalizedContent}`);
 }
 
 function printRegistroBrRows(rows) {
