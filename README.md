@@ -144,9 +144,37 @@ Componentes shadcn e tokens ficam **somente** em `packages/shared`. Apps importa
 | Recurso | Conteúdo |
 | --- | --- |
 | [`AGENTS.md`](AGENTS.md) | Visão geral do monorepo, regras Cursor, links principais |
-| [`packages/shared/docs/`](packages/shared/docs/) | Contratos técnicos (Supabase, tipos, tenant/OAuth, etc.) |
+| [`packages/shared/docs/`](packages/shared/docs/) | Contratos técnicos (Supabase, deploy, integrações, GTM) |
 | [`rules/`](rules/) | Convenções de código, idioma, workflow de squad |
-| `apps/admin-master/content/internal-docs/` | PRD e rastreabilidade técnica (acesso via painel admin) |
+| `apps/admin-master/content/internal-docs/` | Rastreabilidade operacional (acesso restrito via painel admin) |
+
+**Regras de negócio e PRDs** ficam no admin interno — não duplicar no README.
+
+## Produção e integrações (runbook dev)
+
+Fluxos operacionais **sem segredos** — valores reais só em `.env.local` / Vercel / Supabase Dashboard.
+
+| Objetivo | Comando / doc |
+| --- | --- |
+| Aplicar migrações + Edge Functions | `npm run supabase:deploy` → [`SUPABASE_DEPLOY.md`](packages/shared/docs/SUPABASE_DEPLOY.md) |
+| Secrets integrações (Meta, OLX, workers) | `npm run integration:secrets:configure` → [`INTEGRATIONS_DEPLOY.md`](packages/shared/docs/INTEGRATIONS_DEPLOY.md) |
+| Smoke config Meta | `npm run meta:config:smoke` → [`META_INTEGRATION_SIMPLIFIED.md`](packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md) |
+| Publicar host de nova loja (Vercel + DNS) | `npm run dealership:hosts:provision -- <slug>` → [`DEALERSHIP_HOSTS_PROVISIONING.md`](packages/shared/docs/DEALERSHIP_HOSTS_PROVISIONING.md) |
+| Deploy apps Vercel + env | [`VERCEL_DEPLOY.md`](packages/shared/docs/VERCEL_DEPLOY.md), `npm run vercel:env:configure` |
+| Sync env local → apps | `npm run sync:env` |
+| Demo users (local/remoto) | `npm run seed:demo-users` |
+| GTM / GA4 eventos | [`GTM.md`](packages/shared/docs/GTM.md), [`GTM_EVENTS.md`](packages/shared/docs/GTM_EVENTS.md) |
+
+### Mapa de URLs produção
+
+| Superfície | Padrão |
+| --- | --- |
+| Marketing | `https://autopainel.com.br` |
+| Admin | `https://admin.autopainel.com.br` |
+| Vitrine loja | `https://{slug}.autopainel.com.br` |
+| Painel loja | `https://{slug}.loja.autopainel.com.br` |
+
+Cada slug novo exige **Supabase** (concessionária) + **Vercel** (hostnames) + **DNS** (CNAME ou Cloudflare wildcard).
 
 ## Utilitários npm
 
@@ -157,6 +185,9 @@ Componentes shadcn e tokens ficam **somente** em `packages/shared`. Apps importa
 | `npm run git:untrack-env` | Remove env files do índice git |
 | `npm run git:repair-index` | Repara `.git/index` corrompido ou com timeout |
 | `npm run clean:caches` | Limpa caches Next/Turbo locais |
+| `npm run dealership:hosts:provision` | Regista slug na Vercel + instruções DNS |
+| `npm run meta:config:smoke` | Valida env Meta local/remoto |
+| `npm run integration:secrets:configure` | Propaga secrets para Edge Functions |
 
 ## Contribuição
 

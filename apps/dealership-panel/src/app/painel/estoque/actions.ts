@@ -8,6 +8,8 @@ import { publishVehicleToClassifiedsAction } from "@/app/painel/estoque/classifi
 import { enqueueVehicleSocialShareAction } from "@/app/painel/estoque/social-actions";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { dispatchClassifiedsSyncWorker } from "@/lib/integrations/dispatch-classifieds-sync-worker";
+import { delistClassifiedsBeforeVehicleDelete } from "@/lib/inventory/delist-classifieds-before-delete";
+import { maybeAutoPublishVehicleToClassifieds } from "@/lib/inventory/maybe-auto-publish-classifieds-on-save";
 import { normalizePublicSlug } from "@/lib/inventory/normalize-public-slug";
 import {
   parseVehicleCatalogForm,
@@ -36,12 +38,15 @@ async function runVehicleSavePromotions(vehicleId: string, formData: FormData) {
     await enqueueVehicleSocialShareAction(vehicleId, socialChannels, "vehicle_save");
   }
 
-  const providers: Array<"olx" | "webmotors"> = [];
+  const providers: Array<"olx" | "webmotors" | "icarros"> = [];
   if (formData.get("promote_olx") === "true") {
     providers.push("olx");
   }
   if (formData.get("promote_webmotors") === "true") {
     providers.push("webmotors");
+  }
+  if (formData.get("promote_icarros") === "true") {
+    providers.push("icarros");
   }
   if (providers.length > 0) {
     await publishVehicleToClassifiedsAction(vehicleId, providers);
@@ -253,6 +258,7 @@ export async function createVehicleAction(formData: FormData) {
   }
 
   await runVehicleSavePromotions(vehicleId, formData);
+  await maybeAutoPublishVehicleToClassifieds(vehicleId, formData);
 
   revalidatePath("/painel");
   revalidatePath("/painel/estoque");
@@ -411,6 +417,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   }
 
   await runVehicleSavePromotions(vehicleId, formData);
+  await maybeAutoPublishVehicleToClassifieds(vehicleId, formData);
 
   revalidatePath("/painel");
   revalidatePath("/painel/estoque");
@@ -538,6 +545,8 @@ export async function unmarkVehicleAsSoldAction(vehicleId: string) {
 
 export async function deleteVehicleAction(vehicleId: string) {
   const { supabase, dealershipId } = await requireDashboardSession("/painel/estoque");
+
+  await delistClassifiedsBeforeVehicleDelete(vehicleId);
 
   const { error: leadsError } = await supabase
     .from("leads")

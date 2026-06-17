@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createOAuthState } from "@/lib/classifieds/oauth-pkce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isMetaPlatformConnectMode } from "@/lib/integrations/meta-platform-connect";
 import { resolveMetaOAuthStartParams } from "@/lib/integrations/resolve-meta-oauth-start";
 import { getDealershipIdFromCookies } from "@/lib/tenant/get-dealership-id-from-cookies";
 
@@ -19,6 +20,7 @@ function resolveMetaScopes(): string {
     "pages_manage_posts",
     "instagram_basic",
     "instagram_content_publish",
+    "business_management",
   ].join(",");
 }
 
@@ -92,8 +94,9 @@ export async function POST(request: NextRequest) {
   if (!startParams) {
     return NextResponse.json(
       {
-        error:
-          "Salve o App ID e o App Secret do Meta na seção de integrações para habilitar a conexão.",
+        error: isMetaPlatformConnectMode()
+          ? "A conexão Meta da plataforma ainda não está configurada no servidor. Contacte o suporte AutoPainel."
+          : "Salve o App ID e o App Secret do Meta na seção de integrações para habilitar a conexão.",
       },
       { status: 503 },
     );

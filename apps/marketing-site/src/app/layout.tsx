@@ -34,8 +34,23 @@ export const metadata: Metadata = {
     siteName: "AutoPainel",
     locale: "pt_BR",
     type: "website",
+    url: LEGAL_SITE_URL,
+    title: "AutoPainel — Plataforma digital para concessionárias",
+    description:
+      "Site exclusivo e painel de gestão para concessionárias: estoque isolado, equipe com papéis, 3 layouts de vitrine e SEO de qualidade. Demonstração gratuita.",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "AutoPainel" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "AutoPainel — Plataforma digital para concessionárias",
+    description:
+      "Site whitelabel, estoque, leads e integrações para concessionárias — sem depender de agência.",
+    images: ["/opengraph-image"],
+  },
+  alternates: {
+    canonical: LEGAL_SITE_URL,
+  },
+  category: "technology",
   robots: { index: true, follow: true },
 };
 

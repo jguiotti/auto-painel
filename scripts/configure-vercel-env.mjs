@@ -161,7 +161,7 @@ applyProject("auto-painel-dealership-panel", "apps/dealership-panel", {
   OLX_OAUTH_SCOPE: process.env.OLX_OAUTH_SCOPE?.trim() || "autoupload",
   OLX_OAUTH_REDIRECT_URI:
     process.env.OLX_OAUTH_REDIRECT_URI?.trim() ||
-    `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=olx`,
+    `${supabaseUrl}/functions/v1/classifieds-oauth-callback`,
   OLX_LISTINGS_API_URL:
     process.env.OLX_LISTINGS_API_URL?.trim() ||
     "https://apps.olx.com.br/autoupload/import",

@@ -122,7 +122,7 @@ const PROVIDER_CATALOG: Array<{
   {
     key: "icarros",
     subtitle:
-      "Publique anúncios no iCarros com login seguro em janela — igual à OLX, após homologação.",
+      "Publique anúncios no iCarros com o login da sua loja no portal (sem janela popup).",
   },
 ];
 
@@ -300,7 +300,7 @@ export function ClassifiedsIntegrationCards({
     }
   }
 
-  async function resolveConnectionAfterPopup(provider: ClassifiedsProvider) {
+  async function resolveConnectionAfterPopup(provider: ClassifiedsProvider): Promise<boolean> {
     try {
       const res = await fetch(
         `/api/painel/integracoes/oauth/connection-status?provider=${provider}`,
@@ -316,39 +316,50 @@ export function ClassifiedsIntegrationCards({
       });
       if (payload.status === "connected") {
         setInlineFeedback(classifiedsConnectSuccessMessage(provider));
-        return;
+        return true;
       }
       if (payload.status === "error" && payload.lastError) {
         setInlineFeedback(formatOAuthFeedback(provider, payload.lastError));
-        return;
+        return true;
       }
       if (payload.status === "connecting") {
         setInlineFeedback(
           "Conexão não concluída. Feche a janela de login e clique em Conectar novamente.",
         );
+        return true;
       }
     } catch {
       // refresh below still runs
     }
+    return false;
   }
 
-  async function startWebMotorsConnectFromDialog() {
+  async function startIntegratorConnectFromDialog() {
     const provider = dialogProvider;
-    if (provider !== "webmotors") {
+    if (!provider || !classifiedsUsesIntegratorCredentials(provider)) {
       return;
     }
 
     const username = integratorUsername.trim();
     if (!username || !integratorPassword) {
-      setInlineFeedback("Informe o usuário e a senha do integrador CRM WebMotors.");
+      setInlineFeedback(
+        provider === "webmotors"
+          ? "Informe o usuário e a senha do integrador CRM WebMotors."
+          : "Informe o usuário e a senha da sua conta iCarros.",
+      );
       return;
     }
 
     setPendingProvider(provider);
-    logOAuthEvent("webmotors_connect_start");
+    logOAuthEvent(`${provider}_connect_start`);
+
+    const connectPath =
+      provider === "webmotors"
+        ? "/api/painel/integracoes/webmotors/connect"
+        : "/api/painel/integracoes/icarros/connect";
 
     try {
-      const res = await fetch("/api/painel/integracoes/webmotors/connect", {
+      const res = await fetch(connectPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password: integratorPassword }),
@@ -362,7 +373,7 @@ export function ClassifiedsIntegrationCards({
       setIntegratorPassword("");
 
       if (!res.ok || !("status" in payload) || payload.status !== "connected") {
-        logOAuthEvent("webmotors_connect_failed", { status: res.status, payload });
+        logOAuthEvent(`${provider}_connect_failed`, { status: res.status, payload });
         setInlineFeedback(
           "error" in payload
             ? payload.error
@@ -372,7 +383,7 @@ export function ClassifiedsIntegrationCards({
         return;
       }
 
-      logOAuthEvent("webmotors_connect_ok");
+      logOAuthEvent(`${provider}_connect_ok`);
       setInlineFeedback(classifiedsConnectSuccessMessage(provider));
       router.refresh();
     } catch {
@@ -412,6 +423,14 @@ export function ClassifiedsIntegrationCards({
           setUnavailableProvider(provider);
           return;
         }
+        if ("code" in payload && payload.code === "oauth_session_store_mismatch") {
+          setInlineFeedback(
+            "error" in payload && payload.error
+              ? payload.error
+              : classifiedsConnectFailureMessage(provider),
+          );
+          return;
+        }
         setInlineFeedback(
           "error" in payload
             ? payload.error
@@ -448,11 +467,21 @@ export function ClassifiedsIntegrationCards({
 
           if (closedProvider && !oauthMessageReceivedRef.current) {
             logOAuthEvent("popup_closed_without_message", { provider: closedProvider });
-            void cleanupStaleOAuthAttempt(closedProvider)
-              .then(() => resolveConnectionAfterPopup(closedProvider))
-              .finally(() => {
-                router.refresh();
-              });
+            window.setTimeout(() => {
+              if (oauthMessageReceivedRef.current) {
+                return;
+              }
+              void resolveConnectionAfterPopup(closedProvider)
+                .then((resolved) => {
+                  if (!resolved && !oauthMessageReceivedRef.current) {
+                    return cleanupStaleOAuthAttempt(closedProvider);
+                  }
+                  return undefined;
+                })
+                .finally(() => {
+                  router.refresh();
+                });
+            }, 2500);
             return;
           }
 
@@ -643,12 +672,20 @@ export function ClassifiedsIntegrationCards({
           {dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider) ? (
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="webmotors-integrator-username">Usuário integrador CRM</Label>
+                <Label htmlFor={`${dialogProvider}-integrator-username`}>
+                  {dialogProvider === "webmotors"
+                    ? "Usuário integrador CRM"
+                    : "Usuário iCarros"}
+                </Label>
                 <Input
-                  id="webmotors-integrator-username"
-                  type="email"
+                  id={`${dialogProvider}-integrator-username`}
+                  type={dialogProvider === "webmotors" ? "email" : "text"}
                   autoComplete="username"
-                  placeholder="ex.: integrador@sualoja.com.br"
+                  placeholder={
+                    dialogProvider === "webmotors"
+                      ? "ex.: integrador@sualoja.com.br"
+                      : "Login da loja no iCarros"
+                  }
                   value={integratorUsername}
                   disabled={pendingProvider !== null}
                   onChange={(event) => {
@@ -657,11 +694,19 @@ export function ClassifiedsIntegrationCards({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="webmotors-integrator-password">Senha do integrador</Label>
+                <Label htmlFor={`${dialogProvider}-integrator-password`}>
+                  {dialogProvider === "webmotors"
+                    ? "Senha do integrador"
+                    : "Senha iCarros"}
+                </Label>
                 <PasswordInput
-                  id="webmotors-integrator-password"
+                  id={`${dialogProvider}-integrator-password`}
                   autoComplete="current-password"
-                  placeholder="Senha criada no Cockpit WebMotors"
+                  placeholder={
+                    dialogProvider === "webmotors"
+                      ? "Senha criada no Cockpit WebMotors"
+                      : "Senha da conta iCarros da loja"
+                  }
                   value={integratorPassword}
                   disabled={pendingProvider !== null}
                   onChange={(event) => {
@@ -689,7 +734,7 @@ export function ClassifiedsIntegrationCards({
               disabled={pendingProvider !== null}
               onClick={() => {
                 if (dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider)) {
-                  void startWebMotorsConnectFromDialog();
+                  void startIntegratorConnectFromDialog();
                   return;
                 }
                 void startOAuthFromDialog();
@@ -698,7 +743,9 @@ export function ClassifiedsIntegrationCards({
               {pendingProvider
                 ? "Conectando..."
                 : dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider)
-                  ? "Conectar WebMotors"
+                  ? dialogProvider === "webmotors"
+                    ? "Conectar WebMotors"
+                    : "Conectar iCarros"
                   : "Continuar para login"}
             </Button>
           </DialogFooter>

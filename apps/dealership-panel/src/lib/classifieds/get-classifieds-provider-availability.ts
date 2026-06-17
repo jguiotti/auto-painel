@@ -6,6 +6,7 @@ import { isClassifiedsOAuthDevStubEnabled } from "@autopainel/shared/lib/classif
 import type { ClassifiedsOAuthProvider } from "@/lib/classifieds/oauth-provider";
 import { CLASSIFIEDS_OAUTH_PROVIDERS } from "@/lib/classifieds/oauth-provider";
 import { resolveClassifiedsOAuthProviderConfigForDealership } from "@/lib/classifieds/resolve-classifieds-oauth-config";
+import { tryResolveICarrosPlatformConfig } from "@/lib/classifieds/resolve-icarros-platform-config";
 import { tryResolveWebMotorsPlatformConfig } from "@/lib/classifieds/resolve-webmotors-platform-config";
 import { classifiedsUsesIntegratorCredentials } from "@/lib/classifieds/classifieds-connect-mode";
 import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
@@ -38,7 +39,11 @@ export async function getClassifiedsProviderOAuthReady(params: {
   await Promise.all(
     oauthProviders.map(async (provider) => {
       if (classifiedsUsesIntegratorCredentials(provider)) {
-        availability[provider] = (await tryResolveWebMotorsPlatformConfig()) !== null;
+        if (provider === "webmotors") {
+          availability[provider] = (await tryResolveWebMotorsPlatformConfig()) !== null;
+        } else {
+          availability[provider] = (await tryResolveICarrosPlatformConfig()) !== null;
+        }
         return;
       }
 

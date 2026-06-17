@@ -77,9 +77,11 @@ export async function GET(request: NextRequest) {
 
   const stubCode = buildClassifiedsOAuthDevStubCode(provider, state);
   const callbackUrl = new URL(redirectUri);
-  callbackUrl.searchParams.set("provider", provider);
   callbackUrl.searchParams.set("state", state);
   callbackUrl.searchParams.set("code", stubCode);
+  if (provider !== "olx") {
+    callbackUrl.searchParams.set("provider", provider);
+  }
 
   return new NextResponse(
     buildAuthorizeHtml({

@@ -8,8 +8,12 @@ Guia para publicar os **4 apps Next.js** do monorepo com DNS no **Registro.br** 
 | --- | --- | --- |
 | `marketing-site` | `autopainel-marketing` | `autopainel.com.br`, `www.autopainel.com.br` |
 | `admin-master` | `autopainel-admin` | `admin.autopainel.com.br` |
-| `dealership-panel` | `autopainel-panel` | **`{slug}.loja.autopainel.com.br`** (wildcard `*.loja.autopainel.com.br`) |
-| `customer-site` | `autopainel-customer` | **`{slug}.autopainel.com.br`** (wildcard `*.autopainel.com.br`) |
+| `dealership-panel` | `auto-painel-dealership-panel` | **`{slug}.loja.autopainel.com.br`** |
+| `customer-site` | `auto-painel-customer-site` | **`{slug}.autopainel.com.br`** |
+
+**Automatizar passo 2 (Vercel):** `npm run dealership:hosts:provision -- <slug>` — ver **`DEALERSHIP_HOSTS_PROVISIONING.md`**.
+
+**Importante:** slugs novos exigem **registo na Vercel** + **CNAME no Registro.br** (2 entradas por loja) **ou** wildcards Cloudflare (recomendado). Criar linha em `dealerships` no Supabase **não** publica DNS sozinho.
 
 **Importante — painel da loja:** o middleware resolve o tenant pelo **primeiro segmento** do host em relação à raiz configurada. Com `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=loja.autopainel.com.br`, a URL canónica do painel da loja **Guiotti** é `https://guiotti.loja.autopainel.com.br` (não `loja.autopainel.com.br` sem slug). O host `loja.autopainel.com.br` sozinho não resolve concessionária.
 
@@ -109,7 +113,7 @@ Adicionar domínios **primeiro na Vercel** (Settings → Domains); depois replic
 
 **Demo Guiotti:** suficiente para validar produção antes de escalar.
 
-**Nova concessionária:** repetir linhas customer + panel com `{slug}.autopainel.com.br` e `{slug}.loja.autopainel.com.br` (processo manual ou automatizar via API Cloudflare no onboarding — backlog DevOps).
+**Nova concessionária:** `npm run dealership:hosts:provision -- {slug}` (Vercel) + CNAME no Registro.br conforme output — ou migrar para Cloudflare wildcards (`DEALERSHIP_HOSTS_PROVISIONING.md` §B).
 
 ### 3.3 Multitenant ilimitado — wildcards (recomendado para produção)
 

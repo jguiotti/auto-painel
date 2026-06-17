@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 
 import {
   Button,
@@ -27,6 +29,18 @@ export function ContactForm() {
     submitSaasProspectAction,
     initialState,
   );
+
+  useEffect(() => {
+    if (!state?.success) {
+      return;
+    }
+    pushAutopainelAnalyticsEvent({
+      ap_event: "lead_form_submit",
+      ap_event_category: "conversion",
+      ap_event_label: "marketing_contact",
+      ap_app_surface: "marketing",
+    });
+  }, [state?.success]);
 
   return (
     <Card className="border-white/10 bg-card/80 shadow-xl shadow-black/20">

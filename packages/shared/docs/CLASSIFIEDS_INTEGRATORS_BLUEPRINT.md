@@ -94,9 +94,9 @@ Quando **todas** as condições forem verdadeiras **por portal**:
 | **Excluir veículo** | `delist` **antes** do DELETE (gap atual) |
 | Desfazer venda (`available` de novo) | **Não** republica automaticamente (republicar = editar/salvar de novo ou botão na ficha) |
 
-**Implementado hoje:** trigger SQL `trg_vehicles_enqueue_classifieds_delist` + dispatch do worker após marcar vendido/editar.
+**Implementado hoje:** trigger SQL `trg_vehicles_enqueue_classifieds_delist` + dispatch do worker após marcar vendido/editar; **INT-1** auto-publish no save normal; **INT-2** delist antes de `deleteVehicleAction`.
 
-**Pendente:** delist antes de `deleteVehicleAction`; publish automático pós-create (hoje só via «Salvar e divulgar»).
+**Pendente:** homologação publish real em produção (`CLASSIFIEDS_SYNC_DRY_RUN=false` na Edge); WebMotors/iCarros APIs reais.
 
 ---
 
@@ -157,13 +157,13 @@ Prioridade sugerida (squad):
 | # | Entrega | Fase squad | Estado |
 | --- | --- | --- | --- |
 | **INT-0** | **Split módulos SaaS** por portal + helper gating + migração planos | Arch + Backend | 🔴 pendente |
-| **INT-1** | **Auto-publish** pós create/update (P1–P6 **por portal**) | Backend + Frontend | 🔴 pendente |
-| **INT-2** | **Delist antes de delete** veículo | Backend | 🔴 pendente |
-| **INT-3** | **iCarros** provider end-to-end (migration + adapter + UI) | Arch → Backend → Frontend | 🔴 pendente |
-| **INT-4** | **Refresh token** + status `reauth_required` | Backend + Edge | 🔴 pendente |
-| **INT-5** | Credenciais reais OLX/WM/iCarros + homologação APIs | DevOps + QA manual | 🔴 pendente |
+| **INT-1** | **Auto-publish** pós create/update (P1–P6 **por portal**) | Backend + Frontend | 🟢 entregue |
+| **INT-2** | **Delist antes de delete** veículo | Backend | 🟢 entregue |
+| **INT-3** | **iCarros** provider end-to-end | Arch → Backend → Frontend | ⏸ aguardando credenciais iCarros |
+| **INT-4** | **Refresh token** + status `reauth_required` | Backend + Edge | 🟢 entregue (OLX) |
+| **INT-5** | Credenciais reais OLX + adapter autoupload | DevOps + QA manual | 🟢 código entregue — ativar `CLASSIFIEDS_SYNC_DRY_RUN=false` |
 | **INT-6** | Admin UI `platform_classifieds_oauth_providers` | Frontend admin | 🟡 pendente |
-| **INT-7** | Republicar após update (preço/fotos) — enqueue `publish` idempotente | Backend | 🟡 pendente |
+| **INT-7** | Republicar após update (preço/fotos) — enqueue `publish` idempotente | Backend | 🟢 entregue (via INT-1) |
 | **INT-8** | Meta — épico separado | — | ⏸ depois |
 
 **Já entregue:** OAuth scaffold, fila, worker, UI hub, ficha manual, trigger delist, «Salvar e divulgar» opt-in, dry-run, E2E gating.

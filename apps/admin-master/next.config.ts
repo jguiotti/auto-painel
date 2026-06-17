@@ -55,6 +55,11 @@ const nextConfig: NextConfig = {
         destination: "/painel/documentacao/:path*",
         permanent: false,
       },
+      {
+        source: "/painel/documentacao/guia-da-equipe",
+        destination: "/painel/documentacao/regras-de-negocio",
+        permanent: false,
+      },
     ];
   },
 };

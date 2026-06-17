@@ -25,12 +25,23 @@ export function resolveClassifiedsOAuthErrorDetails(
       provider === "icarros"
         ? "confira se a URL de redirecionamento cadastrada no iCarros inclui ?provider=icarros"
         : provider === "olx"
-          ? "confira se a URL de redirecionamento cadastrada na OLX inclui ?provider=olx"
+          ? "confira se a URL de redirecionamento cadastrada na OLX é a URL base do callback (sem ?provider=)"
           : "confira se a URL de redirecionamento cadastrada no portal está idêntica à da plataforma";
     return {
       supportCode: "missing_code",
       title: `Login ${label} não foi concluído`,
       hint: `O portal devolveu o fluxo sem código de autorização. Mantenha a janela aberta até ela fechar sozinha, conclua o login e ${redirectHint}.`,
+    };
+  }
+
+  if (normalized === "invalid_callback") {
+    return {
+      supportCode: "invalid_callback",
+      title: `Login ${label} não foi concluído`,
+      hint:
+        provider === "olx"
+          ? "A OLX devolveu o callback sem parâmetros válidos. Confirme que a URL de redirecionamento cadastrada na OLX é a URL base (sem ?provider=) e tente conectar novamente sem fechar a janela."
+          : "O portal devolveu o callback sem parâmetros válidos. Tente conectar novamente e aguarde a janela fechar sozinha.",
     };
   }
 
@@ -62,6 +73,17 @@ export function resolveClassifiedsOAuthErrorDetails(
         normalized === "webmotors_invalid_credentials"
           ? "Usuário ou senha do integrador CRM inválidos. Crie ou redefina o integrador no Cockpit WebMotors (cockpit.com.br) e tente novamente."
           : "Verifique se o integrador CRM está ativo e se a aplicação AutoPainel está homologada na Sensedia.",
+    };
+  }
+
+  if (normalized.startsWith("icarros_")) {
+    return {
+      supportCode: normalized,
+      title: "Não foi possível conectar ao iCarros",
+      hint:
+        normalized === "icarros_invalid_credentials"
+          ? "Usuário ou senha iCarros inválidos. Use o login da loja no portal iCarros e tente novamente."
+          : "Verifique se a aplicação AutoPainel está homologada no iCarros e se as credenciais da plataforma estão publicadas.",
     };
   }
 

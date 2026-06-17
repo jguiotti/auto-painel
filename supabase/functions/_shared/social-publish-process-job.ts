@@ -182,6 +182,7 @@ async function createInstagramMediaContainer(params: {
   imageUrl: string;
   graphVersion: string;
   isCarouselItem: boolean;
+  caption?: string;
 }): Promise<string> {
   const body = new URLSearchParams({
     image_url: params.imageUrl,
@@ -189,6 +190,8 @@ async function createInstagramMediaContainer(params: {
   });
   if (params.isCarouselItem) {
     body.set("is_carousel_item", "true");
+  } else if (params.caption?.trim()) {
+    body.set("caption", params.caption.trim());
   }
 
   const response = await fetch(
@@ -206,6 +209,49 @@ async function createInstagramMediaContainer(params: {
     throw new Error("Instagram media container returned no id.");
   }
   return payload.id;
+}
+
+async function publishToInstagramSingleImage(params: {
+  igUserId: string;
+  pageAccessToken: string;
+  imageUrl: string;
+  caption: string;
+  graphVersion: string;
+}): Promise<{ mode: "live" | "dry_run"; postId?: string }> {
+  if (isDryRunEnabled()) {
+    return { mode: "dry_run", postId: `dry_run_ig_${crypto.randomUUID()}` };
+  }
+
+  const containerId = await createInstagramMediaContainer({
+    igUserId: params.igUserId,
+    pageAccessToken: params.pageAccessToken,
+    imageUrl: params.imageUrl,
+    graphVersion: params.graphVersion,
+    isCarouselItem: false,
+    caption: params.caption,
+  });
+
+  const publishResponse = await fetch(
+    `https://graph.facebook.com/v${params.graphVersion}/${params.igUserId}/media_publish`,
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        creation_id: containerId,
+        access_token: params.pageAccessToken,
+      }),
+    },
+  );
+
+  if (!publishResponse.ok) {
+    const text = await publishResponse.text();
+    throw new Error(`Instagram publish failed (${publishResponse.status}): ${text.slice(0, 500)}`);
+  }
+
+  const publishPayload = (await publishResponse.json()) as { id?: string };
+  return {
+    mode: "live",
+    postId: publishPayload.id,
+  };
 }
 
 async function publishToInstagramCarousel(params: {
@@ -388,10 +434,17 @@ export async function processSocialPublicationJob(
         reason: "instagram_business_account_missing",
       };
     } else if (carouselImageUrls.length < 2) {
+      const igResult = await publishToInstagramSingleImage({
+        igUserId: connection.instagram_business_account_id,
+        pageAccessToken,
+        imageUrl: carouselImageUrls[0],
+        caption,
+        graphVersion,
+      });
       results.instagram_feed = {
-        mode: "skipped",
-        reason: "carousel_requires_two_slides",
+        ...igResult,
         slideCount: carouselImageUrls.length,
+        format: "single_image",
       };
     } else {
       const igResult = await publishToInstagramCarousel({

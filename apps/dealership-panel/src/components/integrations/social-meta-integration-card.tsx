@@ -72,12 +72,15 @@ function resolveStatusVariant(
   return "outline";
 }
 
-function resolveActionLabel(status: ConnectionStatus): string {
+function resolveActionLabel(status: ConnectionStatus, pendingOAuth: boolean): string {
   if (status === "connected") {
     return "Conectado";
   }
-  if (status === "connecting") {
+  if (pendingOAuth) {
     return "Conectando…";
+  }
+  if (status === "connecting") {
+    return "Tentar novamente";
   }
   if (status === "page_selection_required") {
     return "Escolher página";
@@ -109,8 +112,16 @@ export function SocialMetaIntegrationCard({
   const [pendingOAuth, setPendingOAuth] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
+  const [pagePickerOpen, setPagePickerOpen] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const popupWatchRef = useRef<number | null>(null);
+  const oauthMessageReceivedRef = useRef(false);
+
+  useEffect(() => {
+    if (status === "page_selection_required") {
+      setPagePickerOpen(true);
+    }
+  }, [status]);
 
   useEffect(() => {
     const allowedOrigins = new Set<string>([window.location.origin]);
@@ -141,6 +152,7 @@ export function SocialMetaIntegrationCard({
       stopPopupWatch();
       popupRef.current = null;
       setPendingOAuth(false);
+      oauthMessageReceivedRef.current = true;
       if (payload.success) {
         if (payload.requiresPageSelection) {
           setInlineFeedback("Login concluído. Escolha qual página da sua loja usar.");
@@ -163,9 +175,64 @@ export function SocialMetaIntegrationCard({
     };
   }, [router]);
 
+  async function cleanupStaleMetaOAuthAttempt(): Promise<void> {
+    try {
+      await fetch("/api/painel/integracoes/meta/oauth/cleanup", { method: "POST" });
+    } catch {
+      // Non-blocking cleanup.
+    }
+  }
+
+  useEffect(() => {
+    if (status !== "connecting") {
+      return;
+    }
+    void cleanupStaleMetaOAuthAttempt().then(() => {
+      router.refresh();
+    });
+  }, [router, status]);
+
+  async function resolveMetaConnectionAfterPopup(): Promise<boolean> {
+    try {
+      const response = await fetch("/api/painel/integracoes/meta/oauth/connection-status");
+      const payload = (await response.json()) as {
+        status?: string;
+        lastError?: string | null;
+      };
+
+      if (payload.status === "connected") {
+        setInlineFeedback("Conta conectada com sucesso.");
+        return true;
+      }
+      if (payload.status === "page_selection_required") {
+        setInlineFeedback("Login concluído. Escolha qual página da sua loja usar.");
+        setPagePickerOpen(true);
+        return true;
+      }
+      if (payload.status === "error" && payload.lastError) {
+        setInlineFeedback(payload.lastError);
+        return true;
+      }
+      if (payload.status === "connecting") {
+        setInlineFeedback(
+          "Conexão não concluída. Feche a janela de login e clique em Conectar novamente.",
+        );
+        return true;
+      }
+    } catch {
+      // refresh below still runs
+    }
+    return false;
+  }
+
   async function startMetaOAuth() {
     setInlineFeedback(null);
     setPendingOAuth(true);
+    oauthMessageReceivedRef.current = false;
+
+    if (status === "connecting") {
+      await cleanupStaleMetaOAuthAttempt();
+    }
 
     try {
       const response = await fetch("/api/painel/integracoes/meta/oauth/start", {
@@ -188,10 +255,12 @@ export function SocialMetaIntegrationCard({
       const popup = window.open(
         payload.authorizationUrl,
         "autopainel-meta-oauth",
-        "popup=yes,width=560,height=760,noopener,noreferrer",
+        "popup=yes,width=560,height=760",
       );
       if (!popup) {
         setPendingOAuth(false);
+        await cleanupStaleMetaOAuthAttempt();
+        router.refresh();
         setInlineFeedback(
           "Seu navegador bloqueou a janela de login. Permita pop-ups para este site e tente novamente.",
         );
@@ -207,7 +276,26 @@ export function SocialMetaIntegrationCard({
           }
           popupRef.current = null;
           setPendingOAuth(false);
-          router.refresh();
+
+          if (!oauthMessageReceivedRef.current) {
+            window.setTimeout(() => {
+              if (oauthMessageReceivedRef.current) {
+                return;
+              }
+              void resolveMetaConnectionAfterPopup()
+                .then((resolved) => {
+                  if (!resolved && !oauthMessageReceivedRef.current) {
+                    return cleanupStaleMetaOAuthAttempt();
+                  }
+                  return undefined;
+                })
+                .finally(() => {
+                  router.refresh();
+                });
+            }, 2500);
+          } else {
+            router.refresh();
+          }
         }
       }, 600);
     } catch (error) {
@@ -246,9 +334,8 @@ export function SocialMetaIntegrationCard({
     }
   }
 
-  const isBusy =
-    pendingOAuth || disconnecting || status === "connecting";
-  const actionLabel = resolveActionLabel(status);
+  const isBusy = pendingOAuth || disconnecting;
+  const actionLabel = resolveActionLabel(status, pendingOAuth);
 
   return (
     <div className="space-y-4">
@@ -330,10 +417,13 @@ export function SocialMetaIntegrationCard({
                 !isEnabled ||
                 isBusy ||
                 status === "connected" ||
-                status === "page_selection_required" ||
                 !canStartOAuth
               }
               onClick={() => {
+                if (status === "page_selection_required") {
+                  setPagePickerOpen(true);
+                  return;
+                }
                 void startMetaOAuth();
               }}
             >
@@ -356,9 +446,10 @@ export function SocialMetaIntegrationCard({
       </Card>
 
       <MetaPagePickerDialog
-        open={status === "page_selection_required"}
-        onOpenChange={() => {}}
+        open={pagePickerOpen && status === "page_selection_required"}
+        onOpenChange={setPagePickerOpen}
         onCompleted={() => {
+          setPagePickerOpen(false);
           setInlineFeedback("Conta conectada com sucesso.");
           router.refresh();
         }}

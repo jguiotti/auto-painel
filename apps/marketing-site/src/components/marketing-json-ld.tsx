@@ -1,4 +1,5 @@
 import { LEGAL_SITE_URL } from "@/lib/legal/constants";
+import { BRAND_SOCIAL_LINKS } from "@/lib/brand";
 
 interface MarketingJsonLdProps {
   pathname?: string;
@@ -13,6 +14,7 @@ export function MarketingJsonLd({ pathname = "/" }: MarketingJsonLdProps) {
     name: "AutoPainel",
     url: LEGAL_SITE_URL,
     logo: `${LEGAL_SITE_URL}/logo-autopainel-horizontal.png`,
+    sameAs: [BRAND_SOCIAL_LINKS.facebook, BRAND_SOCIAL_LINKS.instagram],
     description:
       "Plataforma SaaS brasileira para gestão digital de concessionárias e revendedoras de veículos.",
     contactPoint: {

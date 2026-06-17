@@ -1,37 +1,32 @@
 # AutoPainel
 
-AutoPainel é uma plataforma SaaS brasileira para gestão digital de concessionárias e revendedoras de veículos.
+> Plataforma SaaS brasileira para gestão digital de concessionárias e revendedoras de veículos.
 
 ## O que é
 
-Cada concessionária recebe **site exclusivo + painel de gestão** no mesmo ecossistema: estoque, leads, simulador de financiamento e integrações (OLX, WebMotors, iCarros, Meta) conforme plano. Arquitetura multitenant — dados de uma loja nunca são acessíveis por outra.
+AutoPainel oferece vitrine whitelabel por loja, painel de estoque, leads, simulador de financiamento, integrações com classificados e publicação em redes sociais (Meta).
 
-## Para quem
+## Site oficial
 
-Donos e gestores de concessionárias que querem controle total da operação digital — site, equipe, estoque e leads — sem depender de agência e com custo SaaS previsível.
+- https://autopainel.com.br
+- https://autopainel.com.br/funcionalidades
+- https://autopainel.com.br/planos
+- https://autopainel.com.br/contato
 
-## Diferenciais principais
+## Redes sociais
 
-- Site whitelabel com **3 layouts elegantes**, tema claro/escuro, cores, logo e tipografia personalizáveis
-- **Painel único** para administrar vendas, estoque e contatos
-- **Isolamento por loja**: estoque e leads protegidos; equipe só vê dados da própria concessionária
-- **Gestão de colaboradores** com papéis (dono, gestor, vendedor)
-- **SEO de qualidade**: URLs amigáveis, metadados e estrutura para buscadores
-- Integrações com portais classificados e redes sociais (conforme plano)
+- Facebook: https://www.facebook.com/autopainel/
+- Instagram: https://www.instagram.com/auto_painel/
 
-## Planos
+## Público-alvo
 
-Starter, Business e Enterprise — valores sob consulta. Comparativo: https://autopainel.com.br/planos
+Donos e gestores de concessionárias no Brasil que querem site profissional, controle de estoque e marketing digital sem depender de agência.
 
-## Páginas principais
+## Contato comercial
 
-- Site: https://autopainel.com.br
-- Funcionalidades: https://autopainel.com.br/funcionalidades
-- Planos: https://autopainel.com.br/planos
-- Contato / demonstração: https://autopainel.com.br/contato
-- Política de privacidade: https://autopainel.com.br/politica-de-privacidade
+- Formulário: https://autopainel.com.br/contato
+- E-mail: contato@autopainel.com.br
 
-## Contato
+## Documentação técnica (repositório)
 
-- Comercial: contato@autopainel.com.br
-- Privacidade (LGPD): privacidade@autopainel.com.br
+Código aberto interno: monorepo Next.js + Supabase. Desenvolvedores: ver README.md no repositório AutoPainel.

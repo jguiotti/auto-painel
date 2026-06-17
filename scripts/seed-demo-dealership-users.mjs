@@ -26,6 +26,11 @@ const DEMO_USERS = [
     fullName: "Gestor EcoDrive",
     dealershipSlug: "ecodrive",
   },
+  {
+    email: "gestor.demo@autopainel.demo",
+    fullName: "Gestor Demo",
+    dealershipSlug: "demo",
+  },
 ];
 
 function loadEnvLocal() {
@@ -231,14 +236,21 @@ async function main() {
   }
 
   console.log("\nDemo users ready (password for all):", DEMO_PASSWORD);
-  console.log("Panel URLs:");
+  console.log("Panel URLs (local):");
   console.log("- http://guiotti.localhost:3002/login");
   console.log("- http://autoprime.localhost:3002/login");
   console.log("- http://ecodrive.localhost:3002/login");
-  console.log("Storefront URLs:");
+  console.log("- http://demo.localhost:3002/login  (Meta App Review)");
+  console.log("Storefront URLs (local):");
   console.log("- http://guiotti.localhost:3003");
   console.log("- http://autoprime.localhost:3003");
   console.log("- http://ecodrive.localhost:3003");
+  console.log("- http://demo.localhost:3003  (Meta App Review)");
+  console.log("Production (Meta App Review):");
+  console.log("- https://demo.loja.autopainel.com.br/login");
+  console.log("- https://demo.autopainel.com.br");
+  console.log("- Integrações Meta: https://demo.loja.autopainel.com.br/painel/integracoes");
+  console.log("Meta reviewer login: gestor.demo@autopainel.demo /", DEMO_PASSWORD);
   console.log("CRM demo: /painel/contatos on guiotti (6 leads across pipeline statuses)");
 }
 

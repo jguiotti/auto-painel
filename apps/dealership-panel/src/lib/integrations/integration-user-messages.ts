@@ -14,6 +14,9 @@ export function classifiedsConnectDialogTitle(provider: ClassifiedsProvider): st
   if (provider === "webmotors") {
     return "Conectar WebMotors";
   }
+  if (provider === "icarros") {
+    return "Conectar iCarros";
+  }
   return `Entrar na ${classifiedsProviderLabel(provider)}`;
 }
 
@@ -22,6 +25,9 @@ export function classifiedsConnectDialogDescription(
 ): string {
   if (provider === "webmotors") {
     return "Informe o usuário e a senha do Integrador de API criado no CRM Cockpit WebMotors (https://www.cockpit.com.br). Cada loja pode ter apenas um integrador. A AutoPainel usa essas credenciais de forma segura para publicar seu estoque.";
+  }
+  if (provider === "icarros") {
+    return "Informe o usuário e a senha da conta iCarros da sua loja. A AutoPainel troca essas credenciais de forma segura pelo token de acesso — você não precisa copiar chaves técnicas.";
   }
   return `Vamos abrir uma janela segura para você fazer login na ${classifiedsProviderLabel(provider)}. Assim que você concluir o login, a conexão com sua loja é feita automaticamente — não é preciso copiar códigos nem configurar nada técnico.`;
 }
@@ -40,7 +46,7 @@ export function classifiedsProviderOAuthPendingMessage(
     return "Seu plano inclui a WebMotors, mas a plataforma ainda não publicou as credenciais da aplicação AutoPainel no portal Sensedia. Tente novamente em breve ou fale com o suporte.";
   }
   if (provider === "icarros") {
-    return "Seu plano inclui o iCarros. A conexão será liberada após homologação com a central iCarros (fluxo com usuário integrador, sem popup). Tente novamente em breve ou fale com o suporte.";
+    return "Seu plano inclui o iCarros, mas a plataforma ainda não publicou as credenciais da aplicação AutoPainel junto ao iCarros. Tente novamente em breve ou fale com o suporte.";
   }
   return "Seu plano inclui a OLX, mas a conexão ainda não foi liberada pela plataforma. Nossa equipe configura as credenciais oficiais do portal — tente novamente em breve ou fale com o suporte.";
 }
@@ -53,13 +59,16 @@ export function classifiedsProviderConnectHint(
     if (provider === "webmotors") {
       return "Clique em Conectar e informe o usuário e senha do integrador CRM WebMotors (Cockpit).";
     }
+    if (provider === "icarros") {
+      return "Clique em Conectar e informe o usuário e senha da conta iCarros da loja.";
+    }
     return "Clique em Conectar e faça login na janela que abrir. A conexão é concluída automaticamente.";
   }
   if (provider === "webmotors") {
     return "Incluído no seu plano. Aguardando credenciais da aplicação AutoPainel na WebMotors (Sensedia).";
   }
   if (provider === "icarros") {
-    return "Incluído no seu plano. A conexão iCarros usará credenciais do integrador após homologação com o portal.";
+    return "Incluído no seu plano. Aguardando credenciais da aplicação AutoPainel no iCarros (OAuth API).";
   }
   return "Incluído no seu plano. A conexão será habilitada assim que a plataforma publicar as credenciais OAuth da OLX.";
 }
@@ -108,6 +117,12 @@ export function mapClassifiedsOAuthCallbackError(raw: string | undefined): strin
       return "Usuário ou senha do integrador CRM WebMotors inválidos. Confira no Cockpit e tente novamente.";
     }
     return "Não foi possível validar o integrador CRM WebMotors. Tente novamente ou fale com o suporte.";
+  }
+  if (normalized.startsWith("icarros_")) {
+    if (normalized === "icarros_invalid_credentials") {
+      return "Usuário ou senha iCarros inválidos. Confira no portal iCarros e tente novamente.";
+    }
+    return "Não foi possível validar a conta iCarros. Tente novamente ou fale com o suporte.";
   }
 
   if (normalized === "token_exchange_failed" || normalized.includes("token endpoint")) {

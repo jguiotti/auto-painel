@@ -1,15 +1,21 @@
-import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 import {
   isClassifiedsProviderModuleEnabled,
 } from "@autopainel/shared/lib/dealership-features";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ClassifiedsOAuthNotConfiguredError } from "@/lib/classifieds/oauth-not-configured-error";
+import {
+  assertClassifiedsOAuthSessionStoreAligned,
+  ClassifiedsOAuthSessionStoreMismatchError,
+  classifiedsOAuthSessionStoreMismatchMessage,
+  createClassifiedsOAuthSessionAdminClient,
+} from "@/lib/classifieds/create-classifieds-oauth-session-admin";
 import { classifiedsProviderUnavailableMessage } from "@/lib/integrations/integration-user-messages";
 import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
 import { resolveClassifiedsOAuthProviderConfigForDealership } from "@/lib/classifieds/resolve-classifieds-oauth-config";
+import { createClassifiedsOAuthState } from "@autopainel/shared/lib/classifieds-oauth-state";
+
 import {
-  createOAuthState,
   createPkceChallenge,
   createPkceVerifier,
   providerUsesPkce,
@@ -80,30 +86,6 @@ export async function POST(request: NextRequest) {
 
   const panelOrigin = resolveDealershipPanelOrigin(request);
 
-  try {
-    const admin = createSupabaseServiceRoleClient();
-    await admin
-      .from("dealership_classifieds_oauth_sessions")
-      .update({
-        status: "expired",
-        error_reason: "replaced_by_new_attempt",
-      })
-      .eq("dealership_id", dealershipIdFromCookie)
-      .eq("provider", provider)
-      .eq("status", "pending");
-  } catch {
-    await supabase
-      .from("dealership_classifieds_oauth_sessions")
-      .update({
-        status: "expired",
-        error_reason: "replaced_by_new_attempt",
-      })
-      .eq("dealership_id", dealershipIdFromCookie)
-      .eq("provider", provider)
-      .eq("status", "pending")
-      .eq("created_by", user.id);
-  }
-
   let providerConfig;
   try {
     providerConfig = await resolveClassifiedsOAuthProviderConfigForDealership({
@@ -111,7 +93,18 @@ export async function POST(request: NextRequest) {
       provider,
       panelOrigin,
     });
+    assertClassifiedsOAuthSessionStoreAligned(providerConfig.redirectUri);
   } catch (error) {
+    if (error instanceof ClassifiedsOAuthSessionStoreMismatchError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          provider,
+          error: classifiedsOAuthSessionStoreMismatchMessage(),
+        },
+        { status: 503 },
+      );
+    }
     if (error instanceof ClassifiedsOAuthNotConfiguredError) {
       return NextResponse.json(
         {
@@ -130,13 +123,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const state = createOAuthState();
+  const oauthAdmin = createClassifiedsOAuthSessionAdminClient();
+
+  await oauthAdmin
+    .from("dealership_classifieds_oauth_sessions")
+    .update({
+      status: "expired",
+      error_reason: "replaced_by_new_attempt",
+    })
+    .eq("dealership_id", dealershipIdFromCookie)
+    .eq("provider", provider)
+    .eq("status", "pending");
+
+  const state = createClassifiedsOAuthState(provider);
   const usesPkce = providerUsesPkce(provider);
   const codeVerifier = usesPkce ? createPkceVerifier() : null;
   const codeChallenge = codeVerifier ? createPkceChallenge(codeVerifier) : null;
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-  const { error: sessionError } = await supabase
+  const { error: sessionError } = await oauthAdmin
     .from("dealership_classifieds_oauth_sessions")
     .insert({
       dealership_id: dealershipIdFromCookie,
@@ -156,7 +161,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { error: connectionError } = await supabase
+  const { error: connectionError } = await oauthAdmin
     .from("dealership_classifieds_connections")
     .upsert(
       {

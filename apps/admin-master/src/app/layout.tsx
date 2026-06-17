@@ -41,6 +41,13 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         <AutopainelGoogleTagManagerHead appSurface="admin" />
+        {process.env.NODE_ENV === "development" ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){if(typeof performance==="undefined"||!performance.measure)return;var o=performance.measure.bind(performance);performance.measure=function(){try{return o.apply(performance,arguments)}catch(e){if(e instanceof TypeError&&String(e.message).indexOf("cannot have a negative time stamp")!==-1)return;throw e}}})();`,
+            }}
+          />
+        ) : null}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}

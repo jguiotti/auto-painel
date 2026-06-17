@@ -5,11 +5,15 @@ import { InternalDocumentationDetail } from "@/components/internal-documentation
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Regras de negócio · Documentação interna",
+  title: "Manual de onboarding · Documentação interna",
 };
 
 export default function BusinessRulesDocumentationPage() {
   return (
-    <InternalDocumentationDetail pageSlug="business-rules" title="Regras de negócio" />
+    <InternalDocumentationDetail
+      pageSlug="business-rules"
+      title="Manual de onboarding"
+      readOnly
+    />
   );
 }

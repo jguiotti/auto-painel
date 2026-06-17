@@ -18,6 +18,9 @@ export interface VehicleListingPayload {
   fuelType: string | null;
   transmission: string | null;
   color: string | null;
+  vehicleType: string | null;
+  contactPhone: string | null;
+  zipcode: string | null;
 }
 
 export interface ProviderSyncResult {

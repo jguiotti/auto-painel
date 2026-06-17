@@ -24,10 +24,14 @@ interface VehiclePromotionSectionProps {
   facebook: boolean;
   olx: boolean;
   webmotors: boolean;
+  icarros: boolean;
+  skipClassifieds: boolean;
   onInstagramChange: (value: boolean) => void;
   onFacebookChange: (value: boolean) => void;
   onOlxChange: (value: boolean) => void;
   onWebmotorsChange: (value: boolean) => void;
+  onIcarrosChange: (value: boolean) => void;
+  onSkipClassifiedsChange: (value: boolean) => void;
 }
 
 export function VehiclePromotionSection({
@@ -36,26 +40,54 @@ export function VehiclePromotionSection({
   facebook,
   olx,
   webmotors,
+  icarros,
+  skipClassifieds,
   onInstagramChange,
   onFacebookChange,
   onOlxChange,
   onWebmotorsChange,
+  onIcarrosChange,
+  onSkipClassifiedsChange,
 }: VehiclePromotionSectionProps) {
   const showSocial = config.socialEnabled && config.metaConnected;
   const showClassifieds = config.connectedProviders.length > 0;
 
-  if (!isVehiclePromotionActionAvailable(config)) {
+  if (!isVehiclePromotionActionAvailable(config) && !showClassifieds) {
     return null;
   }
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-      <div>
-        <p className="text-sm font-medium">Divulgação automática</p>
-        <p className="text-xs text-muted-foreground">
-          Opcional — envie para redes e portais ao salvar o veículo.
-        </p>
-      </div>
+      {showClassifieds ? (
+        <div className="space-y-2">
+          <div>
+            <p className="text-sm font-medium">Classificados</p>
+            <p className="text-xs text-muted-foreground">
+              Ao salvar, veículos disponíveis com foto são enviados aos portais conectados.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="skip_classifieds_promotion"
+              value="true"
+              checked={skipClassifieds}
+              onChange={(event) => onSkipClassifiedsChange(event.target.checked)}
+              className="size-4 rounded border-input"
+            />
+            Não divulgar em classificados neste cadastro
+          </label>
+        </div>
+      ) : null}
+
+      {isVehiclePromotionActionAvailable(config) ? (
+        <>
+          <div>
+            <p className="text-sm font-medium">Divulgação ao usar «Salvar e divulgar»</p>
+            <p className="text-xs text-muted-foreground">
+              Opcional — escolha redes e portais específicos nesse botão.
+            </p>
+          </div>
 
       {showSocial ? (
         <div className="space-y-2">
@@ -115,6 +147,19 @@ export function VehiclePromotionSection({
               Publicar na WebMotors ao salvar
             </label>
           ) : null}
+          {config.connectedProviders.includes("icarros") ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="promote_icarros"
+                value="true"
+                checked={icarros}
+                onChange={(event) => onIcarrosChange(event.target.checked)}
+                className="size-4 rounded border-input"
+              />
+              Publicar no iCarros ao salvar
+            </label>
+          ) : null}
           {config.enabledClassifiedProviders.includes("icarros") &&
           !config.connectedProviders.includes("icarros") ? (
             <p className="text-xs text-muted-foreground">
@@ -122,6 +167,8 @@ export function VehiclePromotionSection({
             </p>
           ) : null}
         </div>
+      ) : null}
+        </>
       ) : null}
     </div>
   );

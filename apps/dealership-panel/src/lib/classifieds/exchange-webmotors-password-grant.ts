@@ -38,7 +38,7 @@ export async function exchangeWebMotorsPasswordGrantToken(params: {
       body: JSON.stringify({
         username: params.username,
         password: params.password,
-        integracaosite: true,
+        integracaosite: "true",
         grant_type: "password",
       }),
     });

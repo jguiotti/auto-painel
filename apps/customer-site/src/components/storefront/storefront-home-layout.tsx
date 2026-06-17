@@ -1,7 +1,16 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useMemo } from "react";
+
+import {
+  resolveStorefrontHomeCopy,
+  sellsMotorcyclesFromContentConfig,
+} from "@autopainel/shared/lib/dealership/storefront-home-copy";
 import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
 import { Button } from "@autopainel/shared/ui";
+
+import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
 
 import type { PublicVehicleCardModel } from "./vehicle-listing-grid";
 
@@ -23,20 +32,30 @@ export function StorefrontHomeLayout({
   vehicles,
   totalCount,
 }: StorefrontHomeLayoutProps) {
+  const dealership = usePublicDealership();
   const featuredVehicles = vehicles.filter((vehicle) => vehicle.is_featured);
+
+  const copy = useMemo(
+    () =>
+      resolveStorefrontHomeCopy({
+        contentConfig: dealership?.content_config as Record<string, unknown> | null | undefined,
+        layoutId,
+        context: {
+          dealershipName: dealership?.name ?? "Nossa loja",
+          sellsMotorcycles: sellsMotorcyclesFromContentConfig(
+            dealership?.content_config as Record<string, unknown> | null | undefined,
+            dealership?.slug,
+          ),
+        },
+      }),
+    [dealership?.content_config, dealership?.name, dealership?.slug, layoutId],
+  );
 
   if (layoutId === 2) {
     return (
       <>
         <HomeHero layoutId={layoutId} />
-        <HomeTrustStrip
-          items={[
-            { value: "48h", label: "Resposta média" },
-            { value: "100%", label: "Revisados" },
-            { value: "15+", label: "Anos no mercado" },
-            { value: "500+", label: "Clientes atendidos" },
-          ]}
-        />
+        <HomeTrustStrip items={copy.trustStats} />
         <HomeHeritageSection layoutId={layoutId} />
         <HomeInventoryTeaser layoutId={layoutId} vehicles={vehicles} totalCount={totalCount} />
       </>
@@ -66,17 +85,17 @@ export function StorefrontHomeLayout({
                 className="text-xl font-semibold text-[var(--primary-color,var(--dealer-primary))]"
                 style={{ fontFamily: "var(--storefront-font-heading, var(--dealer-font-heading))" }}
               >
-                Simule o financiamento em segundos
+                {copy.financeTitle}
               </h2>
               <p className="mt-1 text-sm text-[var(--storefront-fg,var(--dealer-fg))]/70">
-                Descubra a parcela estimada e receba uma proposta personalizada da nossa equipe.
+                {copy.financeSubtitle}
               </p>
             </div>
             <Button
               className="mt-4 bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-white hover:opacity-95 md:mt-0"
               asChild
             >
-              <Link href="/simular-financiamento">Quero minha proposta</Link>
+              <Link href="/simular-financiamento">{copy.financeCta}</Link>
             </Button>
           </div>
         </StorefrontPageContainer>

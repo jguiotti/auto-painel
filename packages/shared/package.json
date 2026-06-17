@@ -48,6 +48,16 @@
       "import": "./src/lib/dealership/parse-hq-address-from-form.ts",
       "default": "./src/lib/dealership/parse-hq-address-from-form.ts"
     },
+    "./lib/dealership/storefront-home-copy": {
+      "types": "./src/lib/dealership/storefront-home-copy.ts",
+      "import": "./src/lib/dealership/storefront-home-copy.ts",
+      "default": "./src/lib/dealership/storefront-home-copy.ts"
+    },
+    "./lib/dealership/parse-dealership-social-links": {
+      "types": "./src/lib/dealership/parse-dealership-social-links.ts",
+      "import": "./src/lib/dealership/parse-dealership-social-links.ts",
+      "default": "./src/lib/dealership/parse-dealership-social-links.ts"
+    },
     "./lib/dealership-features": {
       "types": "./src/lib/dealership-features.ts",
       "import": "./src/lib/dealership-features.ts",
@@ -62,6 +72,11 @@
       "types": "./src/lib/classifieds-oauth-redirect.ts",
       "import": "./src/lib/classifieds-oauth-redirect.ts",
       "default": "./src/lib/classifieds-oauth-redirect.ts"
+    },
+    "./lib/classifieds-oauth-state": {
+      "types": "./src/lib/classifieds-oauth-state.ts",
+      "import": "./src/lib/classifieds-oauth-state.ts",
+      "default": "./src/lib/classifieds-oauth-state.ts"
     },
     "./lib/classifieds-token-crypto": {
       "types": "./src/lib/classifieds-token-crypto.ts",
@@ -92,6 +107,16 @@
       "types": "./src/lib/notifications/notification-read-storage.ts",
       "import": "./src/lib/notifications/notification-read-storage.ts",
       "default": "./src/lib/notifications/notification-read-storage.ts"
+    },
+    "./lib/notifications/lead-notification-items": {
+      "types": "./src/lib/notifications/lead-notification-items.ts",
+      "import": "./src/lib/notifications/lead-notification-items.ts",
+      "default": "./src/lib/notifications/lead-notification-items.ts"
+    },
+    "./lib/notifications/platform-billing-notification-items": {
+      "types": "./src/lib/notifications/platform-billing-notification-items.ts",
+      "import": "./src/lib/notifications/platform-billing-notification-items.ts",
+      "default": "./src/lib/notifications/platform-billing-notification-items.ts"
     },
     "./hooks/use-notification-read-state": {
       "types": "./src/hooks/use-notification-read-state.ts",
@@ -212,6 +237,11 @@
       "types": "./src/lib/analytics/extract-dealership-slug-from-host.ts",
       "import": "./src/lib/analytics/extract-dealership-slug-from-host.ts",
       "default": "./src/lib/analytics/extract-dealership-slug-from-host.ts"
+    },
+    "./lib/analytics/push-autopainel-analytics-event": {
+      "types": "./src/lib/analytics/push-autopainel-analytics-event.ts",
+      "import": "./src/lib/analytics/push-autopainel-analytics-event.ts",
+      "default": "./src/lib/analytics/push-autopainel-analytics-event.ts"
     },
     "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },

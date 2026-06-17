@@ -4,7 +4,8 @@ import {
   decryptSecretValue,
   encryptSecretValue,
 } from "../_shared/classifieds-crypto.ts";
-import { normalizeClassifiedsOAuthRedirectUri } from "../_shared/classifieds-oauth-redirect.ts";
+import { normalizeClassifiedsOAuthRedirectUri, buildClassifiedsOAuthCallbackUrl } from "../_shared/classifieds-oauth-redirect.ts";
+import { parseProviderFromClassifiedsOAuthState } from "../_shared/classifieds-oauth-state.ts";
 import {
   buildClassifiedsOAuthDevStubTokenPayload,
   CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID,
@@ -64,7 +65,7 @@ interface OauthAppRow {
 function resolveDefaultCallbackUrl(supabaseUrl: string, provider: ProviderKey): string {
   return normalizeClassifiedsOAuthRedirectUri(
     provider,
-    `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`,
+    buildClassifiedsOAuthCallbackUrl(supabaseUrl, provider),
   );
 }
 
@@ -270,6 +271,39 @@ const POPUP_HTML_HEADERS: Record<string, string> = {
     "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
 };
 
+function oauthCallbackBootstrapHtml(): Response {
+  return new Response(
+    `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Processando login…</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        if (window.location.hash && window.location.hash.length > 1) {
+          const params = new URLSearchParams(window.location.hash.slice(1));
+          if (params.has("code") || params.has("state") || params.has("error")) {
+            window.location.replace(
+              window.location.pathname + "?" + params.toString(),
+            );
+            return;
+          }
+        }
+        window.location.replace(window.location.pathname + window.location.search);
+      })();
+    </script>
+    <p>Processando login…</p>
+  </body>
+</html>`,
+    {
+      headers: POPUP_HTML_HEADERS,
+      status: 200,
+    },
+  );
+}
+
 type PopupErrorCode =
   | "invalid_callback"
   | "session_expired"
@@ -329,10 +363,11 @@ async function tryResolvePendingSessionByState(
   admin: SupabaseClient,
   state: string,
 ): Promise<OAuthSessionRow | null> {
+  const normalizedState = normalizeOAuthStateParam(state);
   const { data, error } = await admin
     .from("dealership_classifieds_oauth_sessions")
-    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at")
-    .eq("state", state)
+    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at, status")
+    .eq("state", normalizedState)
     .eq("status", "pending")
     .maybeSingle();
 
@@ -341,6 +376,100 @@ async function tryResolvePendingSessionByState(
   }
 
   return data as OAuthSessionRow;
+}
+
+async function tryResolveSessionByStateAnyStatus(
+  admin: SupabaseClient,
+  state: string,
+): Promise<OAuthSessionRow | null> {
+  const normalizedState = normalizeOAuthStateParam(state);
+  const { data, error } = await admin
+    .from("dealership_classifieds_oauth_sessions")
+    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at, status")
+    .eq("state", normalizedState)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as OAuthSessionRow;
+}
+
+function normalizeOAuthStateParam(raw: string): string {
+  try {
+    return decodeURIComponent(raw).trim();
+  } catch {
+    return raw.trim();
+  }
+}
+
+async function tryResolveLatestPendingSessionForProvider(
+  admin: SupabaseClient,
+  provider: ProviderKey,
+): Promise<OAuthSessionRow | null> {
+  const { data, error } = await admin
+    .from("dealership_classifieds_oauth_sessions")
+    .select("id, dealership_id, provider, state, code_verifier, redirect_origin, expires_at")
+    .eq("provider", provider)
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as OAuthSessionRow;
+}
+
+function redirectOrHtmlPopup(
+  redirectOrigin: string | null | undefined,
+  params: {
+    provider: ProviderKey | null;
+    success: boolean;
+    error?: PopupErrorCode | string;
+  },
+  status = 400,
+): Response {
+  if (redirectOrigin && params.provider) {
+    const errorCode =
+      typeof params.error === "string" &&
+      [
+        "invalid_callback",
+        "session_expired",
+        "session_invalid",
+        "cancelled",
+        "missing_code",
+        "token_exchange_failed",
+        "configuration",
+        "unknown",
+      ].includes(params.error)
+        ? (params.error as PopupErrorCode)
+        : params.success
+          ? undefined
+          : "unknown";
+
+    return redirectToPanelPopupResult(redirectOrigin, {
+      provider: params.provider,
+      success: params.success,
+      error: params.success ? undefined : errorCode,
+    });
+  }
+
+  return htmlPopupResponse(
+    {
+      targetOrigin: redirectOrigin ?? "*",
+      provider: params.provider,
+      success: params.success,
+      error: typeof params.error === "string" ? params.error : params.error ?? "unknown",
+    },
+    status,
+  );
 }
 
 async function exchangeCodeForTokens(
@@ -399,11 +528,24 @@ async function exchangeCodeForTokens(
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
+  const hasAuthParams =
+    url.searchParams.has("code") ||
+    url.searchParams.has("state") ||
+    url.searchParams.has("error");
+
+  if (!hasAuthParams && req.method === "GET") {
+    return oauthCallbackBootstrapHtml();
+  }
+
   let provider = resolveProvider(url.searchParams.get("provider"));
-  const state = url.searchParams.get("state")?.trim() ?? null;
+  let state = url.searchParams.get("state")?.trim() ?? null;
   const code = url.searchParams.get("code");
   const oauthError = url.searchParams.get("error");
   const oauthErrorDescription = url.searchParams.get("error_description");
+
+  if (!provider && state) {
+    provider = parseProviderFromClassifiedsOAuthState(state);
+  }
 
   let tokenCryptoSecret: string;
   let supabaseUrl: string;
@@ -439,23 +581,48 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  if (!oauthSession && code && provider && !state) {
+    oauthSession = await tryResolveLatestPendingSessionForProvider(admin, provider);
+    if (oauthSession) {
+      state = oauthSession.state;
+    }
+  }
+
+  if (!oauthSession && code && !state && !provider) {
+    for (const candidate of ["olx", "webmotors", "icarros"] as ProviderKey[]) {
+      const session = await tryResolveLatestPendingSessionForProvider(admin, candidate);
+      if (session) {
+        oauthSession = session;
+        provider = session.provider;
+        state = session.state;
+        break;
+      }
+    }
+  }
+
   if (!provider || !state) {
-    return htmlPopupResponse(
-      {
-        targetOrigin: oauthSession?.redirect_origin ?? "*",
-        provider,
-        success: false,
-        error: "Callback inválido: provider/state ausente.",
-      },
-      400,
-    );
+    console.info("[classifieds-oauth-callback] invalid_callback", {
+      provider,
+      hasState: Boolean(state),
+      hasCode: Boolean(code),
+      queryKeys: [...url.searchParams.keys()],
+    });
+
+    return redirectOrHtmlPopup(oauthSession?.redirect_origin, {
+      provider,
+      success: false,
+      error: "invalid_callback",
+    });
   }
 
   if (!oauthSession || oauthSession.provider !== provider) {
-    if (oauthSession?.dealership_id && provider) {
+    const sessionForRedirect =
+      oauthSession ?? (state ? await tryResolveSessionByStateAnyStatus(admin, state) : null);
+
+    if (sessionForRedirect?.dealership_id && provider) {
       await admin.from("dealership_classifieds_connections").upsert(
         {
-          dealership_id: oauthSession.dealership_id,
+          dealership_id: sessionForRedirect.dealership_id,
           provider,
           status: "error",
           last_error: "session_invalid",
@@ -464,23 +631,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (oauthSession?.redirect_origin && provider) {
-      return redirectToPanelPopupResult(oauthSession.redirect_origin, {
-        provider,
-        success: false,
-        error: "session_invalid",
-      });
-    }
+    console.info("[classifieds-oauth-callback] session_invalid", {
+      provider,
+      hasCode: Boolean(code),
+      statePrefix: state?.slice(0, 24) ?? null,
+      hadPendingSession: Boolean(oauthSession),
+      sessionStatus: sessionForRedirect?.status ?? null,
+    });
 
-    return htmlPopupResponse(
-      {
-        targetOrigin: "*",
-        provider,
-        success: false,
-        error: "Sessão OAuth2 expirada ou inválida. Tente novamente.",
-      },
-      400,
-    );
+    return redirectOrHtmlPopup(sessionForRedirect?.redirect_origin, {
+      provider,
+      success: false,
+      error: sessionForRedirect?.status === "expired" ? "session_expired" : "session_invalid",
+    });
   }
 
   const sessionExpired = new Date(oauthSession.expires_at).getTime() < Date.now();

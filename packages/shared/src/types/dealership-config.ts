@@ -37,10 +37,44 @@ export interface BrazilianAddressFields {
   complement?: string;
 }
 
+export type StorefrontHomeLayoutKey = "1" | "2" | "3";
+
+export interface StorefrontHomeTrustStat {
+  value: string;
+  label: string;
+}
+
+/** Per-layout homepage copy overrides (customer-site whitelabel). */
+export interface StorefrontHomeLayoutCopy {
+  hero_eyebrow?: string;
+  hero_headline?: string;
+  hero_subheadline?: string;
+  hero_cta_stock?: string;
+  hero_cta_whatsapp?: string;
+  hero_browse_stock?: string;
+  hero_sidecard_title?: string;
+  hero_sidecard_items?: string[];
+  heritage_eyebrow?: string;
+  heritage_headline?: string;
+  heritage_body?: string;
+  heritage_stats?: StorefrontHomeTrustStat[];
+  finance_title?: string;
+  finance_subtitle?: string;
+  finance_cta?: string;
+  trust_stats?: StorefrontHomeTrustStat[];
+}
+
+export interface StorefrontHomeConfig {
+  hero_background_url?: string;
+  by_layout?: Partial<Record<StorefrontHomeLayoutKey, StorefrontHomeLayoutCopy>>;
+}
+
 export interface DealershipContentConfig {
   about_text?: string;
   /** @deprecated Prefer hq_address for structured HQ mailing address. */
   address?: string;
   hq_address?: BrazilianAddressFields;
   social_links?: Record<string, string>;
+  sells_motorcycles?: boolean;
+  storefront_home?: StorefrontHomeConfig;
 }

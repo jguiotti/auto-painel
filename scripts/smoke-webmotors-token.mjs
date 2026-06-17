@@ -31,7 +31,7 @@ const res = await fetch(tokenUrl, {
   body: JSON.stringify({
     username,
     password,
-    integracaosite: true,
+    integracaosite: "true",
     grant_type: "password",
   }),
 });

@@ -26,6 +26,23 @@ export interface InternalDocPayload {
 export async function loadInternalDoc(
   pageSlug: InternalDocPageSlug,
 ): Promise<InternalDocPayload> {
+  const baseDir = path.join(process.cwd(), "content", "internal-docs");
+  const fileName = INTERNAL_DOC_FILES[pageSlug];
+  const filePath = path.join(baseDir, fileName);
+
+  try {
+    const bodyMd = await fs.readFile(filePath, "utf8");
+    if (bodyMd.trim().length > 0) {
+      return {
+        bodyMd,
+        source: "filesystem",
+        updatedAtIso: null,
+      };
+    }
+  } catch {
+    // Fall through to optional database mirror.
+  }
+
   const dbSlug = INTERNAL_DOC_DB_SLUG[pageSlug];
 
   try {
@@ -44,12 +61,9 @@ export async function loadInternalDoc(
       };
     }
   } catch {
-    // Table missing or transport errors — fall back to repo markdown.
+    // Table missing or transport errors.
   }
 
-  const baseDir = path.join(process.cwd(), "content", "internal-docs");
-  const fileName = INTERNAL_DOC_FILES[pageSlug];
-  const filePath = path.join(baseDir, fileName);
   const bodyMd = await fs.readFile(filePath, "utf8");
 
   return {

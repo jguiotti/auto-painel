@@ -35,3 +35,8 @@ export const FAVICON_SRC = "/favicon-autopainel.png";
 
 export const BRAND_SLOGAN =
   "A operação digital da sua concessionária, no controle.";
+
+export const BRAND_SOCIAL_LINKS = {
+  facebook: "https://www.facebook.com/autopainel/",
+  instagram: "https://www.instagram.com/auto_painel/",
+} as const;

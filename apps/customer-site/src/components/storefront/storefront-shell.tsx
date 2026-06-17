@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { DealershipFontsLink } from "@/components/storefront/dealership-fonts-link";
 import { StorefrontCookieConsentBanner } from "@/components/storefront/storefront-cookie-consent-banner";
+import { StorefrontFooterSocialLinks } from "@/components/storefront/storefront-footer-social-links";
 import { StorefrontHeaderNav } from "@/components/storefront/storefront-header-nav";
 import { StorefrontWhatsAppFloat } from "@/components/storefront/storefront-whatsapp-float";
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
@@ -128,6 +129,7 @@ export function StorefrontShell({
                 </a>
               </p>
             ) : null}
+            <StorefrontFooterSocialLinks contentConfig={dealership.content_config} />
             <nav
               className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs"
               aria-label="Links legais"

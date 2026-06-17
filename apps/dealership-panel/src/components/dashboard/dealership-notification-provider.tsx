@@ -11,6 +11,10 @@ import {
 
 import { useNotificationReadState } from "@autopainel/shared/hooks/use-notification-read-state";
 import {
+  isStorefrontLeadSource,
+  mapDealershipLeadNotification,
+} from "@autopainel/shared/lib/notifications/lead-notification-items";
+import {
   NotificationBellTrigger,
   NotificationCenterSheet,
   type NotificationCenterItem,
@@ -26,22 +30,6 @@ interface DealershipNotificationContextValue {
 const DealershipNotificationContext =
   createContext<DealershipNotificationContextValue | null>(null);
 
-function mapLeadRow(row: {
-  id?: string;
-  client_name?: string | null;
-  type?: string | null;
-  created_at?: string | null;
-}): NotificationCenterItem {
-  const typeLabel = row.type === "simulation" ? "Simulação" : "Contato";
-  return {
-    id: row.id ?? crypto.randomUUID(),
-    title: row.client_name?.trim() || "Novo interessado",
-    subtitle: `${typeLabel} · intenção de compra na vitrine`,
-    href: "/painel/contatos",
-    createdAt: row.created_at ?? undefined,
-  };
-}
-
 interface DealershipNotificationProviderProps {
   dealershipId: string;
   enabled: boolean;
@@ -55,7 +43,7 @@ export function DealershipNotificationProvider({
 }: DealershipNotificationProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<NotificationCenterItem[]>([]);
-  const readScope = `dealership-${dealershipId}-leads`;
+  const readScope = `dealership-${dealershipId}-storefront-leads`;
 
   const { itemsWithRead, unreadCount, markAllRead, handleItemActivate } =
     useNotificationReadState(readScope, items);
@@ -78,19 +66,23 @@ export function DealershipNotificationProvider({
 
     void supabase
       .from("leads")
-      .select("id, client_name, type, created_at")
+      .select("id, client_name, type, source, created_at")
       .eq("dealership_id", dealershipId)
+      .neq("source", "manual")
       .order("created_at", { ascending: false })
       .limit(20)
       .then(({ data }) => {
         if (!data) {
           return;
         }
-        setItems(data.map((row) => mapLeadRow(row)));
+        const mapped = data
+          .map((row) => mapDealershipLeadNotification(row))
+          .filter((item): item is NotificationCenterItem => item !== null);
+        setItems(mapped);
       });
 
     const channel = supabase
-      .channel(`dealership-${dealershipId}-lead-notifications`)
+      .channel(`dealership-${dealershipId}-storefront-lead-notifications`)
       .on(
         "postgres_changes",
         {
@@ -100,7 +92,15 @@ export function DealershipNotificationProvider({
           filter: `dealership_id=eq.${dealershipId}`,
         },
         (payload) => {
-          pushNotification(mapLeadRow(payload.new as Parameters<typeof mapLeadRow>[0]));
+          const row = payload.new as Parameters<typeof mapDealershipLeadNotification>[0];
+          if (!isStorefrontLeadSource(row.source)) {
+            return;
+          }
+          const item = mapDealershipLeadNotification(row);
+          if (!item) {
+            return;
+          }
+          pushNotification(item);
           setIsOpen(true);
         },
       )
@@ -131,8 +131,8 @@ export function DealershipNotificationProvider({
         onOpenChange={setIsOpen}
         items={itemsWithRead}
         title="Novidades da loja"
-        description="Intenções de compra e simulações recebidas pela vitrine."
-        emptyMessage="Nenhuma notificação recente. Quando alguém entrar em contato, avisamos aqui."
+        description="Leads e simulações recebidos pela vitrine desta concessionária."
+        emptyMessage="Nenhuma notificação recente. Quando alguém entrar em contato pela vitrine, avisamos aqui."
         footerLink={{ href: "/painel/contatos", label: "Ver todos os contatos" }}
         unreadCount={unreadCount}
         onMarkAllRead={markAllRead}

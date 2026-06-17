@@ -8,6 +8,10 @@ import type {
   StorefrontThemeMode,
 } from "@autopainel/shared/types";
 import {
+  readStorefrontHomeConfig,
+  sellsMotorcyclesFromContentConfig,
+} from "@autopainel/shared/lib/dealership/storefront-home-copy";
+import {
   Badge,
   Button,
   Input,
@@ -50,6 +54,7 @@ import type { DealershipAdminRow } from "@/types/dealership-admin";
 import { DealershipBrandUpload } from "./dealership-brand-upload";
 import { DealershipUnitsEditor } from "./dealership-units-editor";
 import { DealershipTemplatePicker } from "./dealership-template-picker";
+import { StorefrontHomeContentFields } from "./storefront-home-content-fields";
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -665,6 +670,17 @@ export function DealershipForm({
             disabled={pending}
           />
         </div>
+
+        <StorefrontHomeContentFields
+          layoutId={layoutId}
+          initialConfig={readStorefrontHomeConfig(dealership?.content_config ?? null)}
+          dealershipName={defaults.name}
+          sellsMotorcycles={sellsMotorcyclesFromContentConfig(
+            dealership?.content_config ?? null,
+            defaults.slug,
+          )}
+          disabled={pending}
+        />
 
         <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
           <p className="text-sm font-semibold text-foreground">

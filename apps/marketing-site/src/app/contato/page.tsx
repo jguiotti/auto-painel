@@ -4,13 +4,20 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { Separator } from "@autopainel/shared/ui";
 
 import { ContactForm } from "@/components/contact-form";
-import { CONTACT_EMAIL } from "@/lib/legal/constants";
+import { CONTACT_EMAIL, LEGAL_SITE_URL } from "@/lib/legal/constants";
 import { buildMarketingWhatsAppUrl, MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Contato",
   description:
     "Solicite uma demonstração do AutoPainel para sua concessionária. Planos sob consulta.",
+  openGraph: {
+    title: "Contato — AutoPainel",
+    description:
+      "Solicite uma demonstração do AutoPainel para sua concessionária. Planos sob consulta.",
+    url: `${LEGAL_SITE_URL}/contato`,
+  },
+  alternates: { canonical: `${LEGAL_SITE_URL}/contato` },
 };
 
 export default function ContatoPage() {

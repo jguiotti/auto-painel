@@ -60,7 +60,9 @@ export function DashboardShell({
     isAnyClassifiedsModuleEnabled(activeFeatureKeys) ||
     isDealershipFeatureEnabled(activeFeatureKeys, "social_media_kit");
   const alertOnVitrineLeads =
-    viewerRole === "owner" || viewerRole === "super_admin";
+    viewerRole === "owner" ||
+    viewerRole === "manager" ||
+    viewerRole === "super_admin";
 
   const canManageStoreSettings =
     viewerRole === "owner" ||

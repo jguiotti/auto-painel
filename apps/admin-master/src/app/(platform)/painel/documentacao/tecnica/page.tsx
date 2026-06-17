@@ -10,6 +10,10 @@ export const metadata: Metadata = {
 
 export default function TechnicalDocumentationPage() {
   return (
-    <InternalDocumentationDetail pageSlug="technical" title="Documentação técnica" />
+    <InternalDocumentationDetail
+      pageSlug="technical"
+      title="Documentação técnica"
+      readOnly
+    />
   );
 }

@@ -19,6 +19,19 @@ const applyLocal = process.argv.includes("--apply-local");
 
 loadRootEnvLocal();
 
+function normalizeOlxRedirectUri(redirectUri) {
+  if (!redirectUri) {
+    return redirectUri;
+  }
+  try {
+    const url = new URL(redirectUri);
+    url.search = "";
+    return url.toString().replace(/\/$/, "") || redirectUri;
+  } catch {
+    return redirectUri;
+  }
+}
+
 const cryptoSecret = process.env.CLASSIFIEDS_TOKENS_CRYPTO_SECRET?.trim();
 if (!cryptoSecret) {
   console.error("Missing CLASSIFIEDS_TOKENS_CRYPTO_SECRET in .env.local");
@@ -34,8 +47,13 @@ function requireProviderEnv(provider) {
   const scope = process.env[`${prefix}_OAUTH_SCOPE`]?.trim() || null;
   const redirectUri = process.env[`${prefix}_OAUTH_REDIRECT_URI`]?.trim() || null;
 
-  if (provider === "webmotors") {
-    if (!clientId || !clientSecret || !tokenUrl) {
+  if (provider === "webmotors" || provider === "icarros") {
+    const defaultTokenUrl =
+      provider === "icarros"
+        ? "https://api.icarros.com.br/oauth-api/oauth/token"
+        : null;
+    const resolvedTokenUrl = tokenUrl || defaultTokenUrl;
+    if (!clientId || !clientSecret || !resolvedTokenUrl) {
       console.error(
         `Missing ${prefix}_OAUTH_CLIENT_ID, ${prefix}_OAUTH_CLIENT_SECRET or ${prefix}_OAUTH_TOKEN_URL`,
       );
@@ -45,8 +63,8 @@ function requireProviderEnv(provider) {
       provider,
       clientId,
       clientSecret,
-      authorizationUrl: authorizationUrl || tokenUrl,
-      tokenUrl,
+      authorizationUrl: authorizationUrl || resolvedTokenUrl,
+      tokenUrl: resolvedTokenUrl,
       scope,
       redirectUri: null,
     };
@@ -107,8 +125,12 @@ for (const config of providers) {
     cryptoSecret,
   );
   const scopeSql = config.scope ? `'${config.scope.replace(/'/g, "''")}'` : "null";
-  const redirectSql = config.redirectUri
-    ? `'${config.redirectUri.replace(/'/g, "''")}'`
+  const normalizedRedirectUri =
+    config.provider === "olx" && config.redirectUri
+      ? normalizeOlxRedirectUri(config.redirectUri)
+      : config.redirectUri;
+  const redirectSql = normalizedRedirectUri
+    ? `'${normalizedRedirectUri.replace(/'/g, "''")}'`
     : "null";
 
   statements.push(`
@@ -167,5 +189,6 @@ Next steps:
 3. Set Edge secrets: npm run classifieds:oauth:secrets:configure
 4. Deploy Edge: supabase functions deploy classifieds-oauth-callback --project-ref wcgevmvystdhqpzwuyig
 5. In .env.local set CLASSIFIEDS_OAUTH_DEV_STUB=false and npm run sync:env
-6. Register redirect URI at each portal: same value as PROVIDER_OAUTH_REDIRECT_URI (including ?provider= when required)
+6. OLX: redirect URI **sem** \`?provider=\` — ver CLASSIFIEDS_OAUTH_SETUP.md §1.3
+7. WebMotors: não usa redirect — password grant + integrador CRM
 `);

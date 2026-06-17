@@ -11,6 +11,11 @@ import {
 
 import { useNotificationReadState } from "@autopainel/shared/hooks/use-notification-read-state";
 import {
+  isBillingAlertDueSoon,
+  mapBillingHistoryNotification,
+  mapDealershipStatusNotification,
+} from "@autopainel/shared/lib/notifications/platform-billing-notification-items";
+import {
   NotificationBellTrigger,
   NotificationCenterSheet,
   type NotificationCenterItem,
@@ -27,43 +32,72 @@ const AdminNotificationContext = createContext<AdminNotificationContextValue | n
   null,
 );
 
-const READ_SCOPE = "admin-platform-leads";
+const READ_SCOPE = "admin-platform-ops";
+const REFRESH_INTERVAL_MS = 90_000;
 
-function resolveLeadDealership(
-  dealerships:
-    | { name?: string | null; slug?: string | null }
-    | { name?: string | null; slug?: string | null }[]
-    | null
-    | undefined,
-): { name?: string | null; slug?: string | null } | null {
-  if (Array.isArray(dealerships)) {
-    return dealerships[0] ?? null;
-  }
-  return dealerships ?? null;
+function sortNotifications(items: NotificationCenterItem[]): NotificationCenterItem[] {
+  return [...items].sort((left, right) => {
+    const leftTime = left.createdAt ? Date.parse(left.createdAt) : 0;
+    const rightTime = right.createdAt ? Date.parse(right.createdAt) : 0;
+    return rightTime - leftTime;
+  });
 }
 
-function mapPlatformLeadRow(row: {
-  id?: string;
-  client_name?: string | null;
-  type?: string | null;
-  created_at?: string | null;
-  dealerships?:
-    | { name?: string | null; slug?: string | null }
-    | { name?: string | null; slug?: string | null }[]
-    | null;
-}): NotificationCenterItem {
-  const dealership = resolveLeadDealership(row.dealerships);
-  const dealershipName = dealership?.name?.trim() || "Concessionária";
-  const typeLabel = row.type === "simulation" ? "Simulação" : "Contato";
-  const slug = dealership?.slug?.trim();
+function mergeNotificationItems(
+  current: NotificationCenterItem[],
+  incoming: NotificationCenterItem[],
+): NotificationCenterItem[] {
+  const map = new Map<string, NotificationCenterItem>();
+  for (const item of [...incoming, ...current]) {
+    map.set(item.id, item);
+  }
+  return sortNotifications(Array.from(map.values())).slice(0, 30);
+}
 
-  return {
-    id: row.id ?? crypto.randomUUID(),
-    title: row.client_name?.trim() || "Novo interessado",
-    subtitle: `${typeLabel} · ${dealershipName}`,
-    href: slug ? `/painel/concessionarias` : "/painel/dashboard",
-    createdAt: row.created_at ?? undefined,
-  };
+async function fetchPlatformNotifications(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+): Promise<NotificationCenterItem[]> {
+  const [billingResult, dealershipsResult] = await Promise.all([
+    supabase
+      .from("dealership_billing_history")
+      .select(
+        "id, billing_period_start, expected_amount, settlement_status, due_date, created_at, updated_at, dealerships(id, name, slug)",
+      )
+      .in("settlement_status", ["overdue", "pending"])
+      .order("due_date", { ascending: true })
+      .limit(40),
+    supabase
+      .from("dealerships")
+      .select("id, name, status, updated_at")
+      .in("status", ["pending_setup", "suspended", "churned"])
+      .order("updated_at", { ascending: false })
+      .limit(15),
+  ]);
+
+  const billingItems =
+    billingResult.error || !billingResult.data
+      ? []
+      : billingResult.data
+          .map((row) => {
+            if (
+              row.settlement_status === "pending" &&
+              row.due_date &&
+              !isBillingAlertDueSoon(row.due_date)
+            ) {
+              return null;
+            }
+            return mapBillingHistoryNotification(row);
+          })
+          .filter((item): item is NotificationCenterItem => item !== null);
+
+  const statusItems =
+    dealershipsResult.error || !dealershipsResult.data
+      ? []
+      : dealershipsResult.data
+          .map((row) => mapDealershipStatusNotification(row))
+          .filter((item): item is NotificationCenterItem => item !== null);
+
+  return mergeNotificationItems([], [...billingItems, ...statusItems]);
 }
 
 export function AdminNotificationProvider({ children }: { children: React.ReactNode }) {
@@ -73,65 +107,23 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
   const { itemsWithRead, unreadCount, markAllRead, handleItemActivate } =
     useNotificationReadState(READ_SCOPE, items);
 
-  const pushNotification = useCallback((item: NotificationCenterItem) => {
-    setItems((current) => {
-      if (current.some((entry) => entry.id === item.id)) {
-        return current;
-      }
-      return [item, ...current].slice(0, 25);
-    });
+  const refreshNotifications = useCallback(async () => {
+    const supabase = createSupabaseBrowserClient();
+    const nextItems = await fetchPlatformNotifications(supabase);
+    setItems(nextItems);
   }, []);
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
+    void refreshNotifications();
 
-    void supabase
-      .from("leads")
-      .select("id, client_name, type, created_at, dealerships(name, slug)")
-      .order("created_at", { ascending: false })
-      .limit(25)
-      .then(({ data }) => {
-        if (!data) {
-          return;
-        }
-        setItems(data.map((row) => mapPlatformLeadRow(row)));
-      });
-
-    const channel = supabase
-      .channel("admin-platform-lead-notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "leads",
-        },
-        (payload) => {
-          const row = payload.new as {
-            id?: string;
-            client_name?: string | null;
-            type?: string | null;
-            created_at?: string | null;
-          };
-          pushNotification({
-            id: row.id ?? crypto.randomUUID(),
-            title: row.client_name?.trim() || "Novo interessado",
-            subtitle:
-              row.type === "simulation"
-                ? "Simulação · nova intenção de compra"
-                : "Contato · nova intenção de compra",
-            href: "/painel/dashboard",
-            createdAt: row.created_at ?? undefined,
-          });
-          setIsOpen(true);
-        },
-      )
-      .subscribe();
+    const intervalId = window.setInterval(() => {
+      void refreshNotifications();
+    }, REFRESH_INTERVAL_MS);
 
     return () => {
-      void supabase.removeChannel(channel);
+      window.clearInterval(intervalId);
     };
-  }, [pushNotification]);
+  }, [refreshNotifications]);
 
   const contextValue = useMemo(
     () => ({
@@ -148,10 +140,10 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         open={isOpen}
         onOpenChange={setIsOpen}
         items={itemsWithRead}
-        title="Atividade da plataforma"
-        description="Intenções de compra e simulações recebidas nas lojas."
-        emptyMessage="Nenhuma notificação recente na plataforma."
-        footerLink={{ href: "/painel/dashboard", label: "Ir para o painel" }}
+        title="Operação AutoPainel"
+        description="Mensalidades, vencimentos e alertas operacionais da plataforma."
+        emptyMessage="Nenhum alerta operacional no momento."
+        footerLink={{ href: "/painel/financeiro", label: "Ir para financeiro" }}
         unreadCount={unreadCount}
         onMarkAllRead={markAllRead}
         onItemActivate={handleItemActivate}

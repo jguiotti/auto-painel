@@ -77,10 +77,22 @@ const carouselRenderUrl =
     ? `${panelPublicUrl.replace(/\/$/, "")}/api/internal/social-carousel-render`
     : "");
 
+const supabasePublicUrl =
+  process.env.SUPABASE_URL?.trim() || process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
+const metaRedirectUri =
+  process.env.META_OAUTH_REDIRECT_URI?.trim() ||
+  (supabasePublicUrl
+    ? `${supabasePublicUrl.replace(/\/$/, "")}/functions/v1/meta-oauth-callback`
+    : "");
+
 const edgePairs = [
   ["SOCIAL_CAROUSEL_RENDER_SECRET", carouselRenderSecret],
   ["META_PLATFORM_APP_ONLY", process.env.META_PLATFORM_APP_ONLY?.trim() || "true"],
 ];
+
+if (metaRedirectUri) {
+  edgePairs.push(["META_OAUTH_REDIRECT_URI", metaRedirectUri]);
+}
 
 if (carouselRenderUrl) {
   edgePairs.unshift(["SOCIAL_CAROUSEL_RENDER_URL", carouselRenderUrl]);

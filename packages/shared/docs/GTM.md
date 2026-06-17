@@ -69,3 +69,7 @@ Valores de `ap_app_surface`:
 ## Privacidade / LGPD
 
 Tags de marketing (GA, Hotjar) devem respeitar consentimento quando aplicável. O snippet GTM carrega sempre que `NEXT_PUBLIC_GTM_ID` está definido; use **Consent Mode** ou triggers condicionados no GTM conforme política de privacidade do produto.
+
+**Eventos de produto:** ver [`GTM_EVENTS.md`](./GTM_EVENTS.md) — contrato `ap_custom_event` + catálogo por superfície.
+
+**Passo a passo operacional (GTM + GA4):** [`GTM_GA4_SETUP.md`](./GTM_GA4_SETUP.md).

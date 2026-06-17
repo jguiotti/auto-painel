@@ -167,11 +167,16 @@ Validar: Actions → **Integration workers cron** → Run workflow → HTTP 200 
 
 ## 7. Meta (Facebook Developers)
 
+**URI canónica:** `https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/meta-oauth-callback`  
+Detalhe passo a passo (Avançado, validador, App Review): **`META_INTEGRATION_SIMPLIFIED.md` §8**.
+
 Checklist App Review (uma vez, plataforma):
 
-- [ ] Redirect URI: `https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/meta-oauth-callback`
-- [ ] Permissões: `pages_show_list`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`, `business_management`
-- [ ] App em modo Live após revisão
+- [ ] **Login do Facebook para empresas → Configurações** — URI na lista + **Salvar alterações**
+- [ ] **Configurações do app → Avançado** — «Autorizar URL de retorno de chamada» e lista de compartilhamento sem refs errados
+- [ ] Permissões submetidas (só as 6 do doc): `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`, `business_management`
+- [ ] App **Publicado** + permissões **aprovadas** na Análise do app
+- [ ] `npm run meta:config:smoke` sem erros (valida `.env.local`)
 - [ ] `SOCIAL_PUBLISH_DRY_RUN=false` na Edge quando validar publicação real
 
 ---

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.104.0";
 
-import { decryptSecretValue } from "./classifieds-crypto.ts";
+import { ensureFreshClassifiedsAccessToken } from "./classifieds-refresh-access-token.ts";
 import { getClassifiedsProviderAdapter } from "./classifieds-providers/index.ts";
 import type { ClassifiedsProviderKey } from "./classifieds-providers/types.ts";
 import type { VehicleListingPayload } from "./classifieds-providers/types.ts";
@@ -78,33 +78,19 @@ async function loadAccessToken(
   dealershipId: string,
   provider: ClassifiedsProviderKey,
 ): Promise<string> {
-  const cryptoSecret = requireEnvVar("CLASSIFIEDS_TOKENS_CRYPTO_SECRET");
+  return ensureFreshClassifiedsAccessToken(admin, dealershipId, provider);
+}
 
-  const { data: connection, error: connectionError } = await admin
-    .from("dealership_classifieds_connections")
-    .select("id, status")
-    .eq("dealership_id", dealershipId)
-    .eq("provider", provider)
-    .maybeSingle();
-
-  if (connectionError || !connection) {
-    throw new Error("Conexão com o portal não encontrada.");
+function parseUnitPostalCode(address: unknown): string | null {
+  if (!address || typeof address !== "object") {
+    return null;
   }
-  if (connection.status !== "connected") {
-    throw new Error("Reconecte o portal em Integrações antes de sincronizar.");
-  }
-
-  const { data: credential, error: credentialError } = await admin
-    .from("dealership_classifieds_credentials")
-    .select("access_token_encrypted")
-    .eq("connection_id", connection.id)
-    .maybeSingle();
-
-  if (credentialError || !credential?.access_token_encrypted) {
-    throw new Error("Credenciais OAuth ausentes para este portal.");
-  }
-
-  return decryptSecretValue(credential.access_token_encrypted, cryptoSecret);
+  const record = address as Record<string, unknown>;
+  const postal =
+    (typeof record.postal_code === "string" && record.postal_code) ||
+    (typeof record.cep === "string" && record.cep) ||
+    null;
+  return postal?.replace(/\D/g, "").slice(0, 8) || null;
 }
 
 async function loadVehiclePayload(
@@ -115,7 +101,7 @@ async function loadVehiclePayload(
   const { data: vehicle, error } = await admin
     .from("vehicles")
     .select(
-      "id, dealership_id, brand, model, version, public_slug, manufacturing_year, model_year, mileage, price, sale_price, description, images, fuel_type, transmission, color, status, is_active",
+      "id, dealership_id, brand, model, version, public_slug, manufacturing_year, model_year, mileage, price, sale_price, description, images, fuel_type, transmission, color, status, is_active, vehicle_type, dealership_unit_id",
     )
     .eq("id", vehicleId)
     .eq("dealership_id", dealershipId)
@@ -123,6 +109,23 @@ async function loadVehiclePayload(
 
   if (error || !vehicle) {
     throw new Error("Veículo não encontrado para sincronização.");
+  }
+
+  const { data: dealership } = await admin
+    .from("dealerships")
+    .select("whatsapp_number")
+    .eq("id", dealershipId)
+    .maybeSingle();
+
+  let zipcode: string | null = null;
+  if (vehicle.dealership_unit_id) {
+    const { data: unit } = await admin
+      .from("dealership_units")
+      .select("address")
+      .eq("id", vehicle.dealership_unit_id)
+      .eq("dealership_id", dealershipId)
+      .maybeSingle();
+    zipcode = parseUnitPostalCode(unit?.address);
   }
 
   const images = Array.isArray(vehicle.images)
@@ -157,6 +160,9 @@ async function loadVehiclePayload(
     fuelType: vehicle.fuel_type ?? null,
     transmission: vehicle.transmission ?? null,
     color: vehicle.color ?? null,
+    vehicleType: vehicle.vehicle_type ?? null,
+    contactPhone: dealership?.whatsapp_number ?? null,
+    zipcode,
   };
 }
 

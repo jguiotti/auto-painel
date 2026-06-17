@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
+import {
+  mergeStorefrontHomeConfig,
+  parseStorefrontHomeJson,
+  readStorefrontHomeConfig,
+} from "@autopainel/shared/lib/dealership/storefront-home-copy";
 import type {
   StorefrontLayoutTemplateId,
   StorefrontThemeMode,
@@ -24,6 +29,7 @@ const PRICING_PLAN_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BRANDING_BUCKET = "dealership-branding";
 const MAX_BRAND_BYTES = 2 * 1024 * 1024;
+const MAX_HERO_BACKGROUND_BYTES = 5 * 1024 * 1024;
 const ALLOWED_BRAND_MIME = new Set([
   "image/jpeg",
   "image/png",
@@ -267,6 +273,28 @@ function buildContentConfig(
     delete out.social_links;
   }
 
+  const existingHome = readStorefrontHomeConfig(base);
+  const byLayout = parseStorefrontHomeJson(String(formData.get("storefront_home_json") ?? ""));
+  const heroBackgroundFromForm = String(formData.get("hero_background_url") ?? "").trim();
+  if (heroBackgroundFromForm) {
+    const urlError = validatePublicHttpsAssetUrl(heroBackgroundFromForm);
+    if (urlError) {
+      throw new Error(urlError);
+    }
+  }
+
+  const storefrontHome = mergeStorefrontHomeConfig({
+    existing: existingHome,
+    byLayoutJson: byLayout,
+    heroBackgroundUrl: heroBackgroundFromForm || existingHome?.hero_background_url || null,
+  });
+
+  if (storefrontHome) {
+    out.storefront_home = storefrontHome;
+  } else {
+    delete out.storefront_home;
+  }
+
   return out;
 }
 
@@ -470,9 +498,10 @@ function extensionFromMime(type: string): string {
   return "jpg";
 }
 
-function validateBrandFile(file: File): string | null {
-  if (file.size > MAX_BRAND_BYTES) {
-    return "Cada imagem deve ter no máximo 2 MB.";
+function validateBrandFile(file: File, maxBytes = MAX_BRAND_BYTES): string | null {
+  if (file.size > maxBytes) {
+    const maxMb = Math.round(maxBytes / (1024 * 1024));
+    return `Cada imagem deve ter no máximo ${maxMb} MB.`;
   }
   if (!ALLOWED_BRAND_MIME.has(file.type)) {
     return "Formato não suportado. Use JPEG, PNG, WebP ou GIF.";
@@ -480,13 +509,51 @@ function validateBrandFile(file: File): string | null {
   return null;
 }
 
+function validatePublicHttpsAssetUrl(url: string): string | null {
+  if (!url.trim()) {
+    return null;
+  }
+  try {
+    const parsed = new URL(url.trim());
+    if (parsed.protocol !== "https:") {
+      return "Informe uma URL HTTPS pública para a imagem.";
+    }
+    return null;
+  } catch {
+    return "URL da imagem inválida.";
+  }
+}
+
+async function resolveHeroBackgroundUrlFromForm(
+  supabase: SupabaseClient,
+  dealershipId: string,
+  formData: FormData,
+): Promise<{ url?: string | null; error?: string }> {
+  const fileRaw = formData.get("hero_background_file");
+  if (fileRaw instanceof File && fileRaw.size > 0) {
+    return uploadDealershipBrandAsset(supabase, dealershipId, "hero_background", fileRaw);
+  }
+
+  const fromForm = String(formData.get("hero_background_url") ?? "").trim();
+  if (fromForm) {
+    const validationError = validatePublicHttpsAssetUrl(fromForm);
+    if (validationError) {
+      return { error: validationError };
+    }
+    return { url: fromForm };
+  }
+
+  return { url: undefined };
+}
+
 async function uploadDealershipBrandAsset(
   supabase: SupabaseClient,
   dealershipId: string,
-  kind: "header_logo" | "footer_logo" | "logo" | "favicon",
+  kind: "header_logo" | "footer_logo" | "logo" | "favicon" | "hero_background",
   file: File,
 ): Promise<{ url?: string; error?: string }> {
-  const validationError = validateBrandFile(file);
+  const maxBytes = kind === "hero_background" ? MAX_HERO_BACKGROUND_BYTES : MAX_BRAND_BYTES;
+  const validationError = validateBrandFile(file, maxBytes);
   if (validationError) {
     return { error: validationError };
   }
@@ -496,6 +563,8 @@ async function uploadDealershipBrandAsset(
       ? "header-logo"
       : kind === "footer_logo"
         ? "footer-logo"
+        : kind === "hero_background"
+          ? "hero-background"
         : kind === "logo"
           ? "logo"
           : "favicon";
@@ -510,6 +579,8 @@ async function uploadDealershipBrandAsset(
         ? "o favicon"
         : kind === "footer_logo"
           ? "o logo do rodapé"
+          : kind === "hero_background"
+            ? "a imagem de fundo do banner"
           : "o logo do cabeçalho";
     return { error: `Falha ao enviar ${pt}: ${upErr.message}` };
   }
@@ -615,7 +686,15 @@ export async function createDealershipAction(
   const storefront_theme_mode = parseStorefrontThemeModeFromForm(formData);
   theme_config.storefront_theme_mode = storefront_theme_mode;
 
-  const content_config = buildContentConfig(formData, {});
+  let content_config: Record<string, unknown>;
+  try {
+    content_config = buildContentConfig(formData, {});
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Conteúdo da vitrine inválido.",
+    };
+  }
   const layout_id = parseLayoutIdFromForm(formData);
   const pricing_plan_id = parsePricingPlanIdFromForm(formData);
 
@@ -626,6 +705,7 @@ export async function createDealershipAction(
   const headerLogoFileRaw = formData.get("header_logo_file");
   const footerLogoFileRaw = formData.get("footer_logo_file");
   const faviconFileRaw = formData.get("favicon_file");
+  const heroBackgroundFileRaw = formData.get("hero_background_file");
 
   if (headerLogoFileRaw instanceof File && headerLogoFileRaw.size > 0) {
     const ve = validateBrandFile(headerLogoFileRaw);
@@ -641,6 +721,12 @@ export async function createDealershipAction(
   }
   if (faviconFileRaw instanceof File && faviconFileRaw.size > 0) {
     const ve = validateBrandFile(faviconFileRaw);
+    if (ve) {
+      return { error: ve };
+    }
+  }
+  if (heroBackgroundFileRaw instanceof File && heroBackgroundFileRaw.size > 0) {
+    const ve = validateBrandFile(heroBackgroundFileRaw, MAX_HERO_BACKGROUND_BYTES);
     if (ve) {
       return { error: ve };
     }
@@ -755,6 +841,36 @@ export async function createDealershipAction(
     if (brandErr) {
       await supabase.from("dealerships").delete().eq("id", dealershipId);
       return { error: friendlyDealershipDbError(brandErr.message) };
+    }
+  }
+
+  const heroBackground = await resolveHeroBackgroundUrlFromForm(
+    supabase,
+    dealershipId,
+    formData,
+  );
+  if (heroBackground.error) {
+    await supabase.from("dealerships").delete().eq("id", dealershipId);
+    return { error: heroBackground.error };
+  }
+  if (heroBackground.url) {
+    const home =
+      content_config.storefront_home &&
+      typeof content_config.storefront_home === "object" &&
+      !Array.isArray(content_config.storefront_home)
+        ? { ...(content_config.storefront_home as Record<string, unknown>) }
+        : {};
+    content_config.storefront_home = {
+      ...home,
+      hero_background_url: heroBackground.url,
+    };
+    const { error: heroPersistErr } = await supabase
+      .from("dealerships")
+      .update({ content_config })
+      .eq("id", dealershipId);
+    if (heroPersistErr) {
+      await supabase.from("dealerships").delete().eq("id", dealershipId);
+      return { error: friendlyDealershipDbError(heroPersistErr.message) };
     }
   }
 
@@ -945,10 +1061,32 @@ export async function updateDealershipAction(
     delete theme_config.favicon_url;
   }
 
-  const content_config = buildContentConfig(
-    formData,
-    parseRecord(existing.content_config),
-  );
+  let contentConfig: Record<string, unknown>;
+  try {
+    contentConfig = buildContentConfig(formData, parseRecord(existing.content_config));
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Conteúdo da vitrine inválido.",
+    };
+  }
+
+  const heroBackground = await resolveHeroBackgroundUrlFromForm(supabase, id, formData);
+  if (heroBackground.error) {
+    return { error: heroBackground.error };
+  }
+  if (heroBackground.url) {
+    const home =
+      contentConfig.storefront_home &&
+      typeof contentConfig.storefront_home === "object" &&
+      !Array.isArray(contentConfig.storefront_home)
+        ? { ...(contentConfig.storefront_home as Record<string, unknown>) }
+        : {};
+    contentConfig.storefront_home = {
+      ...home,
+      hero_background_url: heroBackground.url,
+    };
+  }
 
   const layout_id = parseLayoutIdFromForm(formData);
   const pricing_plan_id = parsePricingPlanIdFromForm(formData);
@@ -978,7 +1116,7 @@ export async function updateDealershipAction(
       logo_url: finalHeaderUrl,
       theme_settings,
       theme_config,
-      content_config,
+      content_config: contentConfig,
       enabled_features: [],
       status,
       layout_id,

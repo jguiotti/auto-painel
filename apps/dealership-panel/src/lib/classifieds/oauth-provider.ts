@@ -1,5 +1,8 @@
 import { getSupabaseUrl } from "@autopainel/shared/lib/supabase";
-import { normalizeClassifiedsOAuthRedirectUri } from "@autopainel/shared/lib/classifieds-oauth-redirect";
+import {
+  buildClassifiedsOAuthCallbackUrl,
+  normalizeClassifiedsOAuthRedirectUri,
+} from "@autopainel/shared/lib/classifieds-oauth-redirect";
 import {
   buildClassifiedsOAuthDevAuthorizePath,
   buildClassifiedsOAuthDevCallbackPath,
@@ -39,7 +42,7 @@ function resolveDefaultCallbackUrl(provider: ClassifiedsProvider): string {
   const supabaseUrl = getSupabaseUrl();
   return normalizeClassifiedsOAuthRedirectUri(
     provider,
-    `${supabaseUrl}/functions/v1/classifieds-oauth-callback?provider=${provider}`,
+    buildClassifiedsOAuthCallbackUrl(supabaseUrl, provider),
   );
 }
 
