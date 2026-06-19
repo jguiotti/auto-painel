@@ -575,3 +575,34 @@ export async function deleteVehicleAction(vehicleId: string) {
   revalidatePath("/painel/contatos");
   return { success: true as const };
 }
+
+export async function updateFeaturedSortOrderAction(
+  vehicleId: string,
+  featuredSortOrder: number | null,
+): Promise<{ error?: string; success?: boolean }> {
+  const { supabase, profile, dealershipId } = await requireDashboardSession();
+
+  const canManage =
+    profile.role === "owner" ||
+    profile.role === "manager" ||
+    profile.role === "super_admin";
+  if (!canManage) {
+    return { error: "Somente gestores podem alterar a ordem dos destaques." };
+  }
+
+  const { error } = await supabase.rpc("update_vehicle_featured_sort_orders", {
+    p_updates: [
+      {
+        vehicle_id: vehicleId,
+        featured_sort_order: featuredSortOrder,
+      },
+    ],
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/painel/estoque");
+  return { success: true };
+}

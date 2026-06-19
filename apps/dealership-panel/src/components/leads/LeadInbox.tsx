@@ -163,6 +163,8 @@ export function LeadInbox({
           }
         }}
         soldVehicles={soldVehicles}
+        viewerRole={viewerRole}
+        canManageAssignments={canManageAssignments}
       />
     </div>
   );

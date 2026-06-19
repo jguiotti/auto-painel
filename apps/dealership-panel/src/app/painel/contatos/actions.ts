@@ -35,23 +35,41 @@ export async function updateLeadAssigneeAction(
   }
 
   if (assignedUserId) {
-    const { data: peer, error: peerErr } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", assignedUserId)
-      .eq("dealership_id", dealershipId)
-      .in("role", ["owner", "manager", "seller"])
-      .maybeSingle();
+    const { error } = await supabase.rpc("reassign_dealership_lead", {
+      p_lead_id: leadId,
+      p_assignee_user_id: assignedUserId,
+    });
 
-    if (peerErr || !peer) {
-      return { error: "Responsável inválido para esta loja." };
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    const { error } = await supabase
+      .from("leads")
+      .update({ assigned_user_id: null })
+      .eq("id", leadId)
+      .eq("dealership_id", dealershipId);
+
+    if (error) {
+      return { error: error.message };
     }
   }
 
-  const { error } = await supabase
-    .from("leads")
-    .update({ assigned_user_id: assignedUserId })
-    .eq("id", leadId);
+  revalidatePath("/painel/contatos");
+  revalidatePath("/painel");
+  return { success: true };
+}
+
+export async function claimLeadAction(leadId: string): Promise<LeadActionResult> {
+  const { supabase, profile } = await requireDashboardSession();
+
+  if (profile.role !== "seller") {
+    return { error: "Somente vendedores podem assumir leads da fila." };
+  }
+
+  const { error } = await supabase.rpc("claim_dealership_lead", {
+    p_lead_id: leadId,
+  });
 
   if (error) {
     return { error: error.message };
@@ -68,6 +86,8 @@ export async function updateLeadPipelineAction(
     status?: LeadPipelineStatus;
     nextFollowUpAt?: string | null;
     convertedVehicleId?: string | null;
+    lossReasonCode?: string | null;
+    lossReasonNote?: string | null;
   },
 ): Promise<LeadActionResult> {
   const { supabase, profile } = await requireDashboardSession();
@@ -82,6 +102,33 @@ export async function updateLeadPipelineAction(
     patch.status = input.status;
     if (input.status !== "won") {
       patch.converted_vehicle_id = null;
+    }
+    if (input.status !== "lost") {
+      patch.loss_reason_code = null;
+      patch.loss_reason_note = null;
+    }
+  }
+
+  if (input.lossReasonCode !== undefined) {
+    patch.loss_reason_code = input.lossReasonCode;
+  }
+
+  if (input.lossReasonNote !== undefined) {
+    patch.loss_reason_note = input.lossReasonNote?.trim() || null;
+  }
+
+  if (input.status === "lost" || patch.status === "lost") {
+    const code =
+      (input.lossReasonCode ?? patch.loss_reason_code) as string | null | undefined;
+    const note =
+      input.lossReasonNote !== undefined
+        ? input.lossReasonNote?.trim() || null
+        : (patch.loss_reason_note as string | null | undefined);
+    if (!code) {
+      return { error: "Informe o motivo da perda para marcar como venda perdida." };
+    }
+    if (code === "other" && !note) {
+      return { error: "Descreva o motivo quando selecionar «Outro»." };
     }
   }
 
@@ -170,4 +217,26 @@ export async function createManualLeadAction(input: {
   revalidatePath("/painel/contatos");
   revalidatePath("/painel");
   return { success: true, leadId: data as string };
+}
+
+export async function deleteLeadAction(leadId: string): Promise<LeadActionResult> {
+  const { supabase, profile, dealershipId } = await requireDashboardSession();
+
+  if (!canAssignLeads(profile.role)) {
+    return { error: "Apenas perfis de gestão podem excluir contatos." };
+  }
+
+  const { error } = await supabase
+    .from("leads")
+    .delete()
+    .eq("id", leadId)
+    .eq("dealership_id", dealershipId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/painel/contatos");
+  revalidatePath("/painel");
+  return { success: true };
 }

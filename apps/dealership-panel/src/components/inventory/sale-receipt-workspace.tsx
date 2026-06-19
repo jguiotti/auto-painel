@@ -8,7 +8,7 @@ import {
   type SaleReceiptPaymentMethod,
   type VehicleSaleReceiptRecord,
 } from "@autopainel/shared/types/sale-receipt";
-import { Button, Input, Label } from "@autopainel/shared/ui";
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@autopainel/shared/ui";
 
 import { saveVehicleSaleReceiptAction } from "@/app/painel/estoque/sale-receipt-actions";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/inventory/build-sale-receipt-preview";
 import type {
   SaleReceiptDealershipHeader,
+  SaleReceiptLeadOption,
   SaleReceiptVehicleSummary,
 } from "@/lib/inventory/get-vehicle-sale-receipt-page-context";
 
@@ -27,6 +28,7 @@ interface SaleReceiptWorkspaceProps {
   vehicle: SaleReceiptVehicleSummary;
   dealership: SaleReceiptDealershipHeader;
   initialReceipt: VehicleSaleReceiptRecord | null;
+  leadOptions: SaleReceiptLeadOption[];
 }
 
 function buildDefaultPaymentLine(): SaleReceiptPaymentLine {
@@ -69,6 +71,7 @@ export function SaleReceiptWorkspace({
   vehicle,
   dealership,
   initialReceipt,
+  leadOptions,
 }: SaleReceiptWorkspaceProps) {
   const [receipt, setReceipt] = useState(initialReceipt);
   const [form, setForm] = useState(() => receiptToFormState(vehicle, initialReceipt));
@@ -116,6 +119,19 @@ export function SaleReceiptWorkspace({
     setForm((current) => ({
       ...current,
       paymentLines: current.paymentLines.filter((_, lineIndex) => lineIndex !== index),
+    }));
+  }
+
+  function applyLeadPrefill(leadId: string) {
+    const lead = leadOptions.find((entry) => entry.id === leadId);
+    if (!lead) {
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      buyerName: lead.client_name,
+      buyerDocument: lead.document_cpf ?? current.buyerDocument,
+      buyerBillingAddress: lead.billing_address ?? current.buyerBillingAddress,
     }));
   }
 
@@ -258,8 +274,27 @@ export function SaleReceiptWorkspace({
         <section className="space-y-4">
           <div>
             <p className="text-sm font-medium">Dados do comprador</p>
-            <p className="text-xs text-muted-foreground">Informe os dados do cliente da venda.</p>
+            <p className="text-xs text-muted-foreground">
+              Informe os dados do cliente ou selecione um contato vinculado a este veículo.
+            </p>
           </div>
+          {leadOptions.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="buyer_lead_prefill">Pré-preencher a partir de um contato</Label>
+              <Select onValueChange={applyLeadPrefill}>
+                <SelectTrigger id="buyer_lead_prefill">
+                  <SelectValue placeholder="Selecione um lead (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leadOptions.map((lead) => (
+                    <SelectItem key={lead.id} value={lead.id}>
+                      {lead.client_name} · {lead.phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="buyer_name">Nome completo</Label>

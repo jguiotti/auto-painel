@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +21,8 @@ import {
   buildDisplacementRangeValue,
   parseDisplacementRangeValue,
 } from "@/lib/inventory/build-vehicle-filter-options";
+
+import { useStorefrontThemeCssVars } from "./use-storefront-theme-css-vars";
 
 export interface VehicleFilterValues {
   brand: string;
@@ -49,6 +51,7 @@ interface VehicleFiltersPanelProps {
   targetPath?: string;
   panelId: string;
   className?: string;
+  onApplied?: () => void;
 }
 
 const SORT_OPTIONS: Array<{ value: InventorySortKey; label: string }> = [
@@ -66,6 +69,22 @@ const MILEAGE_RANGES = [
   { label: "50 mil a 100 mil km", minMileage: "50000", maxMileage: "100000" },
   { label: "Acima de 100 mil km", minMileage: "100000", maxMileage: "" },
 ];
+
+const STOREFRONT_SELECT_TRIGGER_CLASS =
+  "border-[color-mix(in_srgb,var(--dealer-primary)_25%,transparent)] !bg-[color-mix(in_srgb,var(--dealer-surface)_90%,black)] !text-[var(--dealer-fg)]";
+
+function StorefrontSelectContent({ children }: { children: ReactNode }) {
+  const themeCssVars = useStorefrontThemeCssVars();
+
+  return (
+    <SelectContent
+      style={themeCssVars}
+      className="border-[color-mix(in_srgb,var(--dealer-primary)_25%,transparent)] !bg-[var(--dealer-surface)] !text-[var(--dealer-fg)]"
+    >
+      {children}
+    </SelectContent>
+  );
+}
 
 function buildPriceRangeValue(minPrice: string, maxPrice: string): string {
   return `${minPrice}|${maxPrice}`;
@@ -93,6 +112,7 @@ export function VehicleFiltersPanel({
   targetPath = "/estoque",
   panelId,
   className,
+  onApplied,
 }: VehicleFiltersPanelProps) {
   const router = useRouter();
   const [brand, setBrand] = useState(defaults.brand);
@@ -158,6 +178,7 @@ export function VehicleFiltersPanel({
     if (maxDisplacementCc) params.set("maxDisplacementCc", maxDisplacementCc);
     const query = params.toString();
     router.push(query ? `${targetPath}?${query}` : targetPath);
+    onApplied?.();
   }
 
   const isSidebar = variant === "sidebar";
@@ -189,17 +210,17 @@ export function VehicleFiltersPanel({
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-brand`}>Marca</Label>
           <Select value={brand || "__all__"} onValueChange={handleBrandChange}>
-            <SelectTrigger id={`${idPrefix}-brand`}>
+            <SelectTrigger id={`${idPrefix}-brand`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Todas as marcas" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               <SelectItem value="__all__">Todas as marcas</SelectItem>
               {options.brands.map((entry) => (
                 <SelectItem key={entry} value={entry}>
                   {entry}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
@@ -210,17 +231,17 @@ export function VehicleFiltersPanel({
             onValueChange={(value) => setModel(value === "__all__" ? "" : value)}
             disabled={modelOptions.length === 0}
           >
-            <SelectTrigger id={`${idPrefix}-model`}>
+            <SelectTrigger id={`${idPrefix}-model`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Todos os modelos" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               <SelectItem value="__all__">Todos os modelos</SelectItem>
               {modelOptions.map((entry) => (
                 <SelectItem key={entry} value={entry}>
                   {entry}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
@@ -231,27 +252,27 @@ export function VehicleFiltersPanel({
             onValueChange={(value) => setVehicleType(value === "__all__" ? "" : value)}
             disabled={options.vehicleTypes.length === 0}
           >
-            <SelectTrigger id={`${idPrefix}-vehicle-type`}>
+            <SelectTrigger id={`${idPrefix}-vehicle-type`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Todos os tipos" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               <SelectItem value="__all__">Todos os tipos</SelectItem>
               {options.vehicleTypes.map((entry) => (
                 <SelectItem key={entry.value} value={entry.value}>
                   {entry.label}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-price`}>Faixa de preço</Label>
           <Select value={priceRange} onValueChange={setPriceRange}>
-            <SelectTrigger id={`${idPrefix}-price`}>
+            <SelectTrigger id={`${idPrefix}-price`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Qualquer faixa" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               {options.priceRanges.map((range) => (
                 <SelectItem
                   key={range.label}
@@ -260,7 +281,7 @@ export function VehicleFiltersPanel({
                   {range.label}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
@@ -270,17 +291,17 @@ export function VehicleFiltersPanel({
             value={minYear || "__all__"}
             onValueChange={(value) => setMinYear(value === "__all__" ? "" : value)}
           >
-            <SelectTrigger id={`${idPrefix}-min-year`}>
+            <SelectTrigger id={`${idPrefix}-min-year`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Sem mínimo" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               <SelectItem value="__all__">Sem mínimo</SelectItem>
               {options.years.map((year) => (
                 <SelectItem key={`min-${year}`} value={String(year)}>
                   {year}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
@@ -290,17 +311,17 @@ export function VehicleFiltersPanel({
             value={maxYear || "__all__"}
             onValueChange={(value) => setMaxYear(value === "__all__" ? "" : value)}
           >
-            <SelectTrigger id={`${idPrefix}-max-year`}>
+            <SelectTrigger id={`${idPrefix}-max-year`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
               <SelectValue placeholder="Sem máximo" />
             </SelectTrigger>
-            <SelectContent>
+            <StorefrontSelectContent>
               <SelectItem value="__all__">Sem máximo</SelectItem>
               {options.years.map((year) => (
                 <SelectItem key={`max-${year}`} value={String(year)}>
                   {year}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </StorefrontSelectContent>
           </Select>
         </div>
 
@@ -311,17 +332,17 @@ export function VehicleFiltersPanel({
               value={fuelType || "__all__"}
               onValueChange={(value) => setFuelType(value === "__all__" ? "" : value)}
             >
-              <SelectTrigger id={`${idPrefix}-fuel`}>
+              <SelectTrigger id={`${idPrefix}-fuel`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent>
+              <StorefrontSelectContent>
                 <SelectItem value="__all__">Todos</SelectItem>
                 {options.fuelTypes.map((entry) => (
                   <SelectItem key={entry} value={entry}>
                     {entry}
                   </SelectItem>
                 ))}
-              </SelectContent>
+              </StorefrontSelectContent>
             </Select>
           </div>
         ) : null}
@@ -333,17 +354,17 @@ export function VehicleFiltersPanel({
               value={transmission || "__all__"}
               onValueChange={(value) => setTransmission(value === "__all__" ? "" : value)}
             >
-              <SelectTrigger id={`${idPrefix}-transmission`}>
+              <SelectTrigger id={`${idPrefix}-transmission`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent>
+              <StorefrontSelectContent>
                 <SelectItem value="__all__">Todos</SelectItem>
                 {options.transmissions.map((entry) => (
                   <SelectItem key={entry} value={entry}>
                     {entry}
                   </SelectItem>
                 ))}
-              </SelectContent>
+              </StorefrontSelectContent>
             </Select>
           </div>
         ) : null}
@@ -355,17 +376,17 @@ export function VehicleFiltersPanel({
               value={color || "__all__"}
               onValueChange={(value) => setColor(value === "__all__" ? "" : value)}
             >
-              <SelectTrigger id={`${idPrefix}-color`}>
+              <SelectTrigger id={`${idPrefix}-color`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
-              <SelectContent>
+              <StorefrontSelectContent>
                 <SelectItem value="__all__">Todas</SelectItem>
                 {options.colors.map((entry) => (
                   <SelectItem key={entry} value={entry}>
                     {entry}
                   </SelectItem>
                 ))}
-              </SelectContent>
+              </StorefrontSelectContent>
             </Select>
           </div>
         ) : null}
@@ -374,10 +395,10 @@ export function VehicleFiltersPanel({
           <div className="space-y-2">
             <Label htmlFor={`${idPrefix}-displacement`}>Cilindrada</Label>
             <Select value={displacementRange} onValueChange={setDisplacementRange}>
-              <SelectTrigger id={`${idPrefix}-displacement`}>
+              <SelectTrigger id={`${idPrefix}-displacement`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Qualquer cilindrada" />
               </SelectTrigger>
-              <SelectContent>
+              <StorefrontSelectContent>
                 {options.displacementRanges.map((range) => (
                   <SelectItem
                     key={range.label}
@@ -389,7 +410,7 @@ export function VehicleFiltersPanel({
                     {range.label}
                   </SelectItem>
                 ))}
-              </SelectContent>
+              </StorefrontSelectContent>
             </Select>
           </div>
         ) : null}
@@ -401,17 +422,17 @@ export function VehicleFiltersPanel({
               value={gearCount || "__all__"}
               onValueChange={(value) => setGearCount(value === "__all__" ? "" : value)}
             >
-              <SelectTrigger id={`${idPrefix}-gears`}>
+              <SelectTrigger id={`${idPrefix}-gears`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Qualquer" />
               </SelectTrigger>
-              <SelectContent>
+              <StorefrontSelectContent>
                 <SelectItem value="__all__">Qualquer</SelectItem>
                 {options.gearCounts.map((entry) => (
                   <SelectItem key={entry} value={String(entry)}>
                     {entry} marchas
                   </SelectItem>
                 ))}
-              </SelectContent>
+              </StorefrontSelectContent>
             </Select>
           </div>
         ) : null}
@@ -421,10 +442,10 @@ export function VehicleFiltersPanel({
             <div className="space-y-2">
               <Label htmlFor={`${idPrefix}-mileage`}>Quilometragem</Label>
               <Select value={mileageRange} onValueChange={setMileageRange}>
-                <SelectTrigger id={`${idPrefix}-mileage`}>
+                <SelectTrigger id={`${idPrefix}-mileage`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                   <SelectValue placeholder="Qualquer km" />
                 </SelectTrigger>
-                <SelectContent>
+                <StorefrontSelectContent>
                   {MILEAGE_RANGES.map((range) => (
                     <SelectItem
                       key={range.label}
@@ -433,23 +454,23 @@ export function VehicleFiltersPanel({
                       {range.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
+                </StorefrontSelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor={`${idPrefix}-sort`}>Ordenar por</Label>
               <Select value={sort} onValueChange={(value) => setSort(value as InventorySortKey)}>
-                <SelectTrigger id={`${idPrefix}-sort`}>
+                <SelectTrigger id={`${idPrefix}-sort`} className={STOREFRONT_SELECT_TRIGGER_CLASS}>
                   <SelectValue placeholder="Ordenação" />
                 </SelectTrigger>
-                <SelectContent>
+                <StorefrontSelectContent>
                   {SORT_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
+                </StorefrontSelectContent>
               </Select>
             </div>
           </>

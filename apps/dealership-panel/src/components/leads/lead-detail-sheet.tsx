@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
+import {
+  LEAD_LOSS_REASON_CODES,
+  LEAD_LOSS_REASON_LABELS,
+} from "@autopainel/shared/types";
 import {
   LEAD_PIPELINE_STATUSES,
   LEAD_PIPELINE_STATUS_LABELS,
@@ -31,9 +35,11 @@ import {
 
 import {
   addLeadNoteAction,
+  deleteLeadAction,
   updateLeadPipelineAction,
 } from "@/app/painel/contatos/actions";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import { LeadClaimButton } from "@/components/leads/lead-claim-button";
 import { formatDatePt } from "@/lib/format/format-date-pt";
 import {
   buildLeadWhatsAppMessage,
@@ -47,6 +53,8 @@ interface LeadDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   soldVehicles: SoldVehicleOption[];
+  viewerRole: string;
+  canManageAssignments: boolean;
 }
 
 export function LeadDetailSheet({
@@ -54,11 +62,27 @@ export function LeadDetailSheet({
   open,
   onOpenChange,
   soldVehicles,
+  viewerRole,
+  canManageAssignments,
 }: LeadDetailSheetProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [noteBody, setNoteBody] = useState("");
+  const [lossReasonCode, setLossReasonCode] = useState<string>(
+    lead?.loss_reason_code ?? "",
+  );
+  const [lossReasonNote, setLossReasonNote] = useState<string>(
+    lead?.loss_reason_note ?? "",
+  );
+
+  useEffect(() => {
+    if (!lead) {
+      return;
+    }
+    setLossReasonCode(lead.loss_reason_code ?? "");
+    setLossReasonNote(lead.loss_reason_note ?? "");
+  }, [lead?.id, lead?.loss_reason_code, lead?.loss_reason_note]);
 
   if (!lead) {
     return null;
@@ -80,11 +104,32 @@ export function LeadDetailSheet({
   ) {
     setError(null);
     startTransition(async () => {
-      const res = await updateLeadPipelineAction(lead!.id, patch);
+      const payload = { ...patch };
+      if (payload.status === "lost" || lead!.status === "lost") {
+        payload.lossReasonCode = lossReasonCode || null;
+        payload.lossReasonNote = lossReasonNote || null;
+      }
+      const res = await updateLeadPipelineAction(lead!.id, payload);
       if (res.error) {
         setError(res.error);
         return;
       }
+      router.refresh();
+    });
+  }
+
+  function handleDelete() {
+    if (!window.confirm("Excluir este contato permanentemente? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteLeadAction(lead!.id);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      onOpenChange(false);
       router.refresh();
     });
   }
@@ -154,9 +199,18 @@ export function LeadDetailSheet({
             <Label htmlFor={`lead-status-${lead.id}`}>Status</Label>
             <Select
               value={lead.status}
-              onValueChange={(value) =>
-                runUpdate({ status: value as LeadPipelineStatus })
-              }
+              onValueChange={(value) => {
+                const next = value as LeadPipelineStatus;
+                if (next === "lost") {
+                  runUpdate({
+                    status: next,
+                    lossReasonCode: lossReasonCode || lead.loss_reason_code,
+                    lossReasonNote: lossReasonNote || lead.loss_reason_note,
+                  });
+                  return;
+                }
+                runUpdate({ status: next });
+              }}
               disabled={pending}
             >
               <SelectTrigger id={`lead-status-${lead.id}`}>
@@ -171,6 +225,61 @@ export function LeadDetailSheet({
               </SelectContent>
             </Select>
           </div>
+
+          {lead.status === "lost" || lossReasonCode ? (
+            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+              <div className="space-y-2">
+                <Label htmlFor={`lead-loss-reason-${lead.id}`}>Motivo da perda</Label>
+                <Select
+                  value={lossReasonCode || "__none__"}
+                  onValueChange={(value) =>
+                    setLossReasonCode(value === "__none__" ? "" : value)
+                  }
+                  disabled={pending}
+                >
+                  <SelectTrigger id={`lead-loss-reason-${lead.id}`}>
+                    <SelectValue placeholder="Selecione o motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Selecione —</SelectItem>
+                    {LEAD_LOSS_REASON_CODES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {LEAD_LOSS_REASON_LABELS[code]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {lossReasonCode === "other" ? (
+                <div className="space-y-2">
+                  <Label htmlFor={`lead-loss-note-${lead.id}`}>Detalhe do motivo</Label>
+                  <Textarea
+                    id={`lead-loss-note-${lead.id}`}
+                    value={lossReasonNote}
+                    onChange={(event) => setLossReasonNote(event.target.value)}
+                    placeholder="Descreva o motivo da perda…"
+                    rows={2}
+                    disabled={pending}
+                  />
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={pending || !lossReasonCode}
+                onClick={() =>
+                  runUpdate({
+                    status: "lost",
+                    lossReasonCode,
+                    lossReasonNote,
+                  })
+                }
+              >
+                Salvar motivo da perda
+              </Button>
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor={`lead-follow-up-${lead.id}`}>Próximo follow-up</Label>
@@ -261,6 +370,25 @@ export function LeadDetailSheet({
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          <LeadClaimButton
+            leadId={lead.id}
+            canClaim={viewerRole === "seller" && lead.assigned_user_id === null}
+            size="default"
+            className="w-full"
+          />
+
+          {canManageAssignments ? (
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              disabled={pending}
+              onClick={handleDelete}
+            >
+              Excluir contato
+            </Button>
+          ) : null}
 
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700" asChild>
             <a href={wa} target="_blank" rel="noopener noreferrer">

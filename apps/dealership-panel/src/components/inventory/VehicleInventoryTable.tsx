@@ -15,6 +15,7 @@ import {
 import { formatBrl } from "@/lib/format/format-brl";
 
 import { DeleteVehicleButton } from "@/components/inventory/DeleteVehicleButton";
+import { FeaturedSortOrderInput } from "@/components/inventory/featured-sort-order-input";
 import { MarkVehicleAsSoldButton } from "@/components/inventory/mark-vehicle-as-sold-button";
 import { UnmarkVehicleAsSoldButton } from "@/components/inventory/unmark-vehicle-as-sold-button";
 
@@ -33,10 +34,12 @@ export interface VehicleInventoryRow {
   public_slug: string;
   images: string[] | null;
   unit_name?: string | null;
+  featured_sort_order?: number | null;
 }
 
 interface VehicleInventoryTableProps {
   vehicles: VehicleInventoryRow[];
+  canManageFeaturedOrder?: boolean;
 }
 
 const statusLabel: Record<string, string> = {
@@ -107,7 +110,10 @@ function InventoryIconActions({
   );
 }
 
-export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) {
+export function VehicleInventoryTable({
+  vehicles,
+  canManageFeaturedOrder = false,
+}: VehicleInventoryTableProps) {
   if (vehicles.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
@@ -130,6 +136,9 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
               <TableHead>Km</TableHead>
               <TableHead>Preço</TableHead>
               <TableHead>Status</TableHead>
+              {canManageFeaturedOrder ? (
+                <TableHead className="w-28">Ordem vitrine</TableHead>
+              ) : null}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -185,6 +194,18 @@ export function VehicleInventoryTable({ vehicles }: VehicleInventoryTableProps) 
                       </span>
                     ) : null}
                   </TableCell>
+                  {canManageFeaturedOrder ? (
+                    <TableCell>
+                      {v.is_featured ? (
+                        <FeaturedSortOrderInput
+                          vehicleId={v.id}
+                          value={v.featured_sort_order ?? null}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="text-right">
                     <InventoryIconActions
                       vehicleId={v.id}

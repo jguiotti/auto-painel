@@ -171,6 +171,8 @@ type FormDefaults = {
   primaryForeground: string;
   secondary: string;
   header_logo_url: string;
+  logo_light_url: string;
+  logo_dark_url: string;
   footer_logo_url: string;
   google_font_heading: string;
   google_font_body: string;
@@ -205,6 +207,8 @@ function getDefaults(
       primaryForeground: c.primaryForeground,
       secondary: secondaryFromDealership(dealership),
       header_logo_url: headerLogoUrlFromDealership(dealership),
+      logo_light_url: readStr(tc, "logo_light_url") || headerLogoUrlFromDealership(dealership),
+      logo_dark_url: readStr(tc, "logo_dark_url"),
       footer_logo_url: readStr(tc, "footer_logo_url"),
       google_font_heading: readStr(tc, "google_font_heading"),
       google_font_body: readStr(tc, "google_font_body"),
@@ -231,6 +235,8 @@ function getDefaults(
     primaryForeground: "#f8fafc",
     secondary: "#64748b",
     header_logo_url: "",
+    logo_light_url: "",
+    logo_dark_url: "",
     footer_logo_url: "",
     google_font_heading: "",
     google_font_body: "",
@@ -592,8 +598,26 @@ export function DealershipForm({
             fileInputName="header_logo_file"
             hiddenUrlName="header_logo_url"
             label="Logo do cabeçalho da vitrine"
-            description="Formato mais horizontal entra bem no topo (à esquerda, altura até ~40px). JPEG, PNG, WebP ou GIF até 2 MB."
+            description="Formato horizontal para o topo da vitrine. JPEG, PNG, WebP ou GIF até 2 MB."
             initialRemoteUrl={defaults.header_logo_url}
+            disabled={pending}
+          />
+
+          <DealershipBrandUpload
+            fileInputName="logo_light_file"
+            hiddenUrlName="logo_light_url"
+            label="Logo para fundo claro"
+            description="Usado no painel, impressos (QR/recibo) e vitrine clara. Se vazio, reutiliza o logo do cabeçalho."
+            initialRemoteUrl={defaults.logo_light_url}
+            disabled={pending}
+          />
+
+          <DealershipBrandUpload
+            fileInputName="logo_dark_file"
+            hiddenUrlName="logo_dark_url"
+            label="Logo para fundo escuro"
+            description="Usado na vitrine em modo escuro. Se vazio, reutiliza o logo do cabeçalho."
+            initialRemoteUrl={defaults.logo_dark_url}
             disabled={pending}
           />
 

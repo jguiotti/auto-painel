@@ -221,6 +221,43 @@ Especificação completa da squad (convites, boas-vindas, recuperar senha, marca
 | Colaborador **painel da loja** | Logo/tema da concessionária | Convite (definir senha) + recuperar senha |
 | Cliente **gestor** (onboarding) | AutoPainel (manual) | E-mail com URLs vitrine + painel após DNS |
 
-**Hoje:** convite de colaborador **novo** ainda mostra senha temporária só no Admin — e-mail automático de boas-vindas está **pendente** (ver régua §4.1).
+**Hoje:** convite de colaborador dispara e-mail automático com link para definir senha (Fase 1 entregue). E-mail whitelabel por loja: Fase 2 pendente.
+
+---
+
+## Épico feedback operacional (PRD aprovado — jun/2026)
+
+Ajustes solicitados por lojistas após uso real. **Status:** UX Writer + UX aprovados; aguardando arquitetura e implementação.
+
+### Decisões PM (Open Questions fechadas)
+
+| Tema | Decisão |
+| --- | --- |
+| Ordem destaques | Campo numérico «posição» |
+| Quem reordena | Apenas owner e manager |
+| QR A4 financiamento | Bloco de texto livre |
+| Leads novos sem dono | Todos os vendedores veem; «puxar para mim»; só gestor repassa entre vendedores |
+| Excluir lead | Hard-delete |
+| Convite equipe | Painel (titular) **convive** com convite admin-master |
+| E-mail novo lead | Toda equipe comercial (owner, manager, seller) |
+| Cadastro cliente | Entidade **customer** 1:N **leads** |
+| Despublicar portal | Granular por portal |
+
+### Regras de negócio (resumo)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-FO-001** | WhatsApp na ficha do veículo abre modal de lead (igual flutuante) antes de abrir WhatsApp; lead sempre com veículo. |
+| **BZ-FO-002** | Filtros `/estoque` mobile não empurram listagem além de 1 viewport (sheet/drawer). |
+| **BZ-FO-003** | Estoque painel: filtros + paginação; destaques com campo posição (owner/manager). |
+| **BZ-FO-004** | QR aponta vitrine `{slug}.autopainel.com.br/veiculo/...`; impressos usam logo fundo claro. |
+| **BZ-FO-005** | Status lead: Novo, Em atendimento, Contato quente, Contato frio, Venda ganha, Venda perdida; perda exige motivo. |
+| **BZ-FO-006** | Customer enriquecido (documento, endereço); leads vinculados; veículo interesse = estoque inteiro. |
+| **BZ-FO-007** | Equipe: só **owner** convida/edita; manager/seller sem acesso à página. |
+| **BZ-FO-008** | E-mail transacional a equipe comercial a cada novo lead. |
+| **BZ-FO-009** | Admin: logo fundo claro + logo fundo escuro; vitrine segue tema; painel/impressos sempre logo claro. |
+| **BZ-FO-010** | Despublicar classificados: ação por portal (OLX, WebMotors, iCarros). Meta **fora** deste épico. |
+
+Detalhe técnico: `documentacao-tecnica.md` (após implementação).
 
 *Última atualização: junho/2026*

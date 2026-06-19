@@ -46,6 +46,7 @@ export default async function VehicleSaleReceiptPage({ params }: VehicleSaleRece
       vehicle={context.vehicle}
       dealership={context.dealership}
       initialReceipt={context.receipt}
+      leadOptions={context.leadOptions}
     />
   );
 }

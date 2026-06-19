@@ -549,7 +549,7 @@ async function resolveHeroBackgroundUrlFromForm(
 async function uploadDealershipBrandAsset(
   supabase: SupabaseClient,
   dealershipId: string,
-  kind: "header_logo" | "footer_logo" | "logo" | "favicon" | "hero_background",
+  kind: "header_logo" | "footer_logo" | "logo" | "favicon" | "hero_background" | "logo_light" | "logo_dark",
   file: File,
 ): Promise<{ url?: string; error?: string }> {
   const maxBytes = kind === "hero_background" ? MAX_HERO_BACKGROUND_BYTES : MAX_BRAND_BYTES;
@@ -565,9 +565,13 @@ async function uploadDealershipBrandAsset(
         ? "footer-logo"
         : kind === "hero_background"
           ? "hero-background"
-        : kind === "logo"
-          ? "logo"
-          : "favicon";
+          : kind === "logo_light"
+            ? "logo-light"
+            : kind === "logo_dark"
+              ? "logo-dark"
+              : kind === "logo"
+                ? "logo"
+                : "favicon";
   const path = `${dealershipId}/${slug}-${crypto.randomUUID()}.${ext}`;
   const { error: upErr } = await supabase.storage.from(BRANDING_BUCKET).upload(path, file, {
     contentType: file.type || "image/jpeg",
@@ -784,6 +788,10 @@ export async function createDealershipAction(
   let finalHeaderUrl = String(formData.get("header_logo_url") ?? "").trim() || null;
   let finalFooterUrl = String(formData.get("footer_logo_url") ?? "").trim() || null;
   let finalFaviconUrl = String(formData.get("favicon_url") ?? "").trim() || null;
+  let finalLogoLightUrl = String(formData.get("logo_light_url") ?? "").trim() || null;
+  let finalLogoDarkUrl = String(formData.get("logo_dark_url") ?? "").trim() || null;
+  const logoLightFileRaw = formData.get("logo_light_file");
+  const logoDarkFileRaw = formData.get("logo_dark_file");
 
   if (headerLogoFileRaw instanceof File && headerLogoFileRaw.size > 0) {
     const up = await uploadDealershipBrandAsset(supabase, dealershipId, "header_logo", headerLogoFileRaw);
@@ -812,6 +820,24 @@ export async function createDealershipAction(
     finalFaviconUrl = up.url ?? null;
   }
 
+  if (logoLightFileRaw instanceof File && logoLightFileRaw.size > 0) {
+    const up = await uploadDealershipBrandAsset(supabase, dealershipId, "logo_light", logoLightFileRaw);
+    if (up.error) {
+      await supabase.from("dealerships").delete().eq("id", dealershipId);
+      return { error: up.error };
+    }
+    finalLogoLightUrl = up.url ?? null;
+  }
+
+  if (logoDarkFileRaw instanceof File && logoDarkFileRaw.size > 0) {
+    const up = await uploadDealershipBrandAsset(supabase, dealershipId, "logo_dark", logoDarkFileRaw);
+    if (up.error) {
+      await supabase.from("dealerships").delete().eq("id", dealershipId);
+      return { error: up.error };
+    }
+    finalLogoDarkUrl = up.url ?? null;
+  }
+
   const mergedTheme = {
     ...theme_config,
     ...(finalHeaderUrl
@@ -820,6 +846,15 @@ export async function createDealershipAction(
           logo_url: finalHeaderUrl,
         }
       : {}),
+    ...(finalLogoLightUrl
+      ? {
+          logo_light_url: finalLogoLightUrl,
+          ...(!finalHeaderUrl
+            ? { header_logo_url: finalLogoLightUrl, logo_url: finalLogoLightUrl }
+            : {}),
+        }
+      : {}),
+    ...(finalLogoDarkUrl ? { logo_dark_url: finalLogoDarkUrl } : {}),
     ...(finalFooterUrl ? { footer_logo_url: finalFooterUrl } : {}),
     ...(finalFaviconUrl ? { favicon_url: finalFaviconUrl } : {}),
   };
@@ -827,13 +862,15 @@ export async function createDealershipAction(
   const needsBrandPersist =
     finalHeaderUrl !== null ||
     finalFooterUrl !== null ||
-    finalFaviconUrl !== null;
+    finalFaviconUrl !== null ||
+    finalLogoLightUrl !== null ||
+    finalLogoDarkUrl !== null;
 
   if (needsBrandPersist) {
     const { error: brandErr } = await supabase
       .from("dealerships")
       .update({
-        logo_url: finalHeaderUrl,
+        logo_url: finalHeaderUrl ?? finalLogoLightUrl,
         theme_config: mergedTheme,
       })
       .eq("id", dealershipId);
@@ -993,10 +1030,14 @@ export async function updateDealershipAction(
   const headerLogoFileRaw = formData.get("header_logo_file");
   const footerLogoFileRaw = formData.get("footer_logo_file");
   const faviconFileRaw = formData.get("favicon_file");
+  const logoLightFileRaw = formData.get("logo_light_file");
+  const logoDarkFileRaw = formData.get("logo_dark_file");
 
   let finalHeaderUrl = String(formData.get("header_logo_url") ?? "").trim() || null;
   let finalFooterUrl = String(formData.get("footer_logo_url") ?? "").trim() || null;
   let finalFaviconUrl = String(formData.get("favicon_url") ?? "").trim() || null;
+  let finalLogoLightUrl = String(formData.get("logo_light_url") ?? "").trim() || null;
+  let finalLogoDarkUrl = String(formData.get("logo_dark_url") ?? "").trim() || null;
 
   if (headerLogoFileRaw instanceof File && headerLogoFileRaw.size > 0) {
     const up = await uploadDealershipBrandAsset(supabase, id, "header_logo", headerLogoFileRaw);
@@ -1020,6 +1061,22 @@ export async function updateDealershipAction(
       return { error: up.error };
     }
     finalFaviconUrl = up.url ?? null;
+  }
+
+  if (logoLightFileRaw instanceof File && logoLightFileRaw.size > 0) {
+    const up = await uploadDealershipBrandAsset(supabase, id, "logo_light", logoLightFileRaw);
+    if (up.error) {
+      return { error: up.error };
+    }
+    finalLogoLightUrl = up.url ?? null;
+  }
+
+  if (logoDarkFileRaw instanceof File && logoDarkFileRaw.size > 0) {
+    const up = await uploadDealershipBrandAsset(supabase, id, "logo_dark", logoDarkFileRaw);
+    if (up.error) {
+      return { error: up.error };
+    }
+    finalLogoDarkUrl = up.url ?? null;
   }
 
   const theme_config: Record<string, unknown> = {
@@ -1047,6 +1104,22 @@ export async function updateDealershipAction(
   } else {
     delete theme_config.header_logo_url;
     delete theme_config.logo_url;
+  }
+
+  if (finalLogoLightUrl) {
+    theme_config.logo_light_url = finalLogoLightUrl;
+    if (!finalHeaderUrl) {
+      theme_config.header_logo_url = finalLogoLightUrl;
+      theme_config.logo_url = finalLogoLightUrl;
+    }
+  } else if (String(formData.get("logo_light_url") ?? "").trim() === "") {
+    delete theme_config.logo_light_url;
+  }
+
+  if (finalLogoDarkUrl) {
+    theme_config.logo_dark_url = finalLogoDarkUrl;
+  } else if (String(formData.get("logo_dark_url") ?? "").trim() === "") {
+    delete theme_config.logo_dark_url;
   }
 
   if (finalFooterUrl) {

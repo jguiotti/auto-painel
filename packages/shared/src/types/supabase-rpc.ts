@@ -193,3 +193,36 @@ export interface UpsertVehicleSaleReceiptArgs {
 export interface GetVehicleSaleReceiptArgs {
   p_vehicle_id: string;
 }
+
+/** `public.claim_dealership_lead` — seller assumes unassigned lead from pool. */
+export interface ClaimDealershipLeadArgs {
+  p_lead_id: string;
+}
+
+/** `public.reassign_dealership_lead` — owner/manager moves lead between staff. */
+export interface ReassignDealershipLeadArgs {
+  p_lead_id: string;
+  p_assignee_user_id: string;
+}
+
+/** `public.count_dealership_leads_needing_attention` — sidebar badge count. */
+export interface CountDealershipLeadsNeedingAttentionArgs {
+  p_dealership_id: string;
+}
+
+/** `public.update_vehicle_featured_sort_orders` — batch featured order on storefront. */
+export interface UpdateVehicleFeaturedSortOrdersArgs {
+  p_updates: Array<{ vehicle_id: string; featured_sort_order: number }>;
+}
+
+/** `public.upsert_dealership_customer` — enriched CRM customer profile. */
+export interface UpsertDealershipCustomerArgs {
+  p_full_name: string;
+  p_phone: string;
+  p_email?: string | null;
+  p_document_cpf?: string | null;
+  p_document_cnpj?: string | null;
+  p_billing_address?: Record<string, unknown>;
+  p_notes?: string | null;
+  p_customer_id?: string | null;
+}

@@ -26,7 +26,7 @@ export default async function LeadsPage() {
       supabase
         .from("leads")
         .select(
-          "id, client_name, phone, client_email, message, type, source, status, created_at, next_follow_up_at, converted_vehicle_id, assigned_user_id, vehicles!leads_vehicle_id_fkey(id, brand, model, public_slug)",
+          "id, client_name, phone, client_email, message, type, source, status, created_at, next_follow_up_at, converted_vehicle_id, assigned_user_id, loss_reason_code, loss_reason_note, vehicles!leads_vehicle_id_fkey(id, brand, model, public_slug)",
         )
         .eq("dealership_id", dealershipId)
         .order("created_at", { ascending: false }),
@@ -105,6 +105,8 @@ export default async function LeadsPage() {
       next_follow_up_at: (row.next_follow_up_at as string | null) ?? null,
       converted_vehicle_id: (row.converted_vehicle_id as string | null) ?? null,
       assigned_user_id: (row.assigned_user_id as string | null) ?? null,
+      loss_reason_code: (row.loss_reason_code as string | null) ?? null,
+      loss_reason_note: (row.loss_reason_note as string | null) ?? null,
       notes: notes.sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),

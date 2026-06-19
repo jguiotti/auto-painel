@@ -151,11 +151,38 @@ export function collectDealershipLogoCandidateUrls(
     candidates.push(value);
   }
 
+  push(readString(tc, "logo_light_url"));
   push(readString(tc, "header_logo_url"));
   push(readString(tc, "logo_url"));
   push(columnLogoUrl?.trim() || undefined);
 
   return candidates;
+}
+
+/** Logo for light backgrounds (panel, print, storefront light theme). */
+export function resolveDealershipLogoLightUrl(
+  theme_config: unknown,
+  columnLogoUrl: string | null | undefined,
+): string | null {
+  const tc = asRecord(theme_config);
+  const light = readString(tc, "logo_light_url");
+  if (light && isBrandAssetUrlAccessible(light)) {
+    return light;
+  }
+  return resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl);
+}
+
+/** Logo for dark backgrounds (storefront dark theme). */
+export function resolveDealershipLogoDarkUrl(
+  theme_config: unknown,
+  columnLogoUrl: string | null | undefined,
+): string | null {
+  const tc = asRecord(theme_config);
+  const dark = readString(tc, "logo_dark_url");
+  if (dark && isBrandAssetUrlAccessible(dark)) {
+    return dark;
+  }
+  return resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl);
 }
 
 export function resolveDealershipHeaderLogoUrl(

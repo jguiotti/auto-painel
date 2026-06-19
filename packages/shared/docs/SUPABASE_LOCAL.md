@@ -14,7 +14,9 @@ Guia para subir Postgres + Auth + Storage + Studio via **Supabase CLI** neste mo
 | `npm run supabase:start` | `supabase start` | Sobe todos os containers |
 | `npm run supabase:stop` | `supabase stop` | Para a stack local |
 | `npm run supabase:status` | `supabase status` | URLs, chaves e saúde |
-| `npm run supabase:reset` | `supabase db reset` | Recria o banco e reaplica `supabase/migrations/` |
+| `npm run supabase:reset` | `supabase db reset` | Recria o banco e reaplica `supabase/migrations/` (**apaga usuários Auth locais**) |
+| `npm run supabase:reset:dev` | reset + seeds | Reset local **e** recria super admin + gestores demo |
+| `npm run seed:local-access` | scripts | Só os seeds (`seed:admin-user` + `seed:demo-users`) |
 | `npm run supabase:deploy` | script + CI | Aplica migrações e Edge Functions no projeto **remoto** linkado |
 | `npm run supabase:migrations:status` | script | Compara migrações git vs remoto (`--dry-run` para pré-visualizar push) |
 
@@ -51,11 +53,16 @@ Mantenha uma cópia separada das credenciais do projeto **remoto** (`wcgevmvystd
 
 Após `supabase start` ou `supabase db reset`, a migração `20260514120000_seed_demo_dealerships_e2e.sql` cria lojas demo (Guiotti, AutoPrime, etc.).
 
-Usuários Auth demo (script existente):
+Usuários Auth (scripts — **só afetam a instância apontada por `.env.local`**, local ou remoto):
 
 ```bash
-npm run seed:demo-users
+npm run seed:local-access   # super admin + gestores demo (recomendado após reset)
+# ou separado:
+npm run seed:admin-user     # operador@autopainel.demo (admin-master)
+npm run seed:demo-users     # gestor.*@autopainel.demo (painéis loja)
 ```
+
+Após `supabase db reset`, prefira **`npm run supabase:reset:dev`** em vez de reset + seed manual.
 
 Requer `SUPABASE_SERVICE_ROLE_KEY` da instância ativa (local ou remota). Também atribui os leads demo da Guiotti ao gestor e cria `lead_notes` (migração `20260614200000_seed_demo_crm_leads.sql`).
 
@@ -75,6 +82,13 @@ Secrets locais: `supabase secrets set --env-file supabase/.env` (não versionar)
 
 - **`PGRST301` / `/erro/concessionaria` com `{slug}.localhost`:** confira se `NEXT_PUBLIC_SUPABASE_URL` aponta para `http://127.0.0.1:54321` **e** se `NEXT_PUBLIC_SUPABASE_ANON_KEY` é a chave **local** (`supabase status -o env`), não a do projeto remoto. Variáveis exportadas no shell (`echo $NEXT_PUBLIC_SUPABASE_ANON_KEY`) têm prioridade sobre `.env.local`; o `scripts/inject-monorepo-env.cjs` força a raiz `.env.local` nos apps Next. Se persistir, rode `unset NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_ANON_KEY` e reinicie `npm run dev:dealership-panel`.
 - **Docker não conecta:** abra o Docker Desktop e aguarde ficar *Running*.
+- **`supabase_db_* container is not running: exited`** (CLI diz «already running» mas o Postgres caiu): estado inconsistente após Docker ter sido fechado. Corrija:
+  ```bash
+  npm run supabase:stop
+  npm run supabase:start
+  ```
+  Se persistir: `supabase stop --no-backup` e depois `supabase start` (recria a stack; dados locais no volume Docker).
+- **`WARN: environment variable is unset: RESEND_API_KEY`:** o `config.toml` referencia Resend para SMTP local. Opcional — adiciona na raiz `.env.local` (`RESEND_API_KEY=re_...`) e exporta antes do start, **ou** ignora o aviso: a stack sobe; e-mails Auth local aparecem no **Mailpit** (http://127.0.0.1:54324) quando o SMTP externo não envia.
 - **`supabase db pull` / shadow DB:** exige Docker + `supabase start` (shadow na porta `54320`).
 - **Health check do storage na 1ª subida:** rode `supabase start` de novo; migrações já aplicadas, containers sobem mais rápido.
 - **Versões de imagem vs remoto:** aviso do CLI sobre `storage-api` — opcional `supabase link` + atualizar CLI; não bloqueia dev local.
@@ -94,7 +108,11 @@ Secrets locais: `supabase secrets set --env-file supabase/.env` (não versionar)
 | **Testar migrações / CRM demo / offline** | `.env.local` → **local** (`127.0.0.1:54321`) + `supabase db reset` |
 | **Local com dados iguais à produção (uma loja)** | Após reset local: `npm run sync:dealership-from-remote -- guiotti` |
 
-**Importante:** `supabase db reset` **apaga** o Postgres local e reaplica migrações — nunca afeta o remoto. O slug `guiotti` existe na produção **e** no seed demo; migrações de seed usam `ON CONFLICT DO NOTHING` para não sobrescrever lojas já cadastradas no remoto.
+**Importante:** `supabase db reset` **apaga** o Postgres local e reaplica migrações — **nunca afeta o remoto**. Usuários Auth (`auth.users`) **não** são recriados pelo reset: só voltam com `seed:local-access` ou `provision:super-admin`.
+
+**Produção:** `npm run supabase:deploy` / `db push` aplica **só schema** (tabelas, RPCs, policies). **Não apaga** contas Auth nem perfis existentes. Operadores `super_admin` e gestores de loja em produção permanecem até alguém removê-los no Dashboard ou via script explícito.
+
+O slug `guiotti` existe na produção **e** no seed demo; migrações de seed usam `ON CONFLICT DO NOTHING` para não sobrescrever lojas já cadastradas no remoto.
 
 **Admin master (`super_admin`):** credenciais via env (não commitar senha):
 

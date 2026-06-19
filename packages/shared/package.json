@@ -253,6 +253,11 @@
       "import": "./src/lib/auth/resolve-auth-redirect-origins.ts",
       "default": "./src/lib/auth/resolve-auth-redirect-origins.ts"
     },
+    "./lib/auth/invite-dealership-collaborator": {
+      "types": "./src/lib/auth/invite-dealership-collaborator.ts",
+      "import": "./src/lib/auth/invite-dealership-collaborator.ts",
+      "default": "./src/lib/auth/invite-dealership-collaborator.ts"
+    },
     "./data/google-fonts-families.json": "./src/data/google-fonts-families.json"
   },
   "peerDependencies": {

@@ -17,7 +17,7 @@ Dashboard → **Project** `wcgevmvystdhqpzwuyig` → **Authentication** → **SM
 | Host | `smtp.resend.com` |
 | Port | `465` |
 | Username | `resend` |
-| Password | API key Resend (`re_...`) |
+| Password | API key Resend (`re_JmiN64Hr_De5EtFjTQ1ujFF9bzjzD9uJy`) |
 | Sender email | `noreply@autopainel.com.br` |
 | Sender name | `AutoPainel` |
 
@@ -61,13 +61,35 @@ Admin-master e dealership-panel precisam do **panel URL template** para links de
 
 Depois: `npm run sync:env` + redeploy Vercel.
 
-## 6. Testar
+## 6. Edge Function `notify-dealership-new-lead` (P2)
+
+SMTP no Dashboard cobre **Auth** (convite/recuperação). E-mails de **novo lead** vêm da Edge Function e usam a API Resend diretamente.
+
+**Onde pegar a chave:** [Resend → API Keys](https://resend.com/api-keys) → *Create API Key* (permissão *Sending access*). A chave começa com `re_`. É a **mesma família** de credencial usada no SMTP Auth (campo Password em Authentication → SMTP), mas copie a chave completa da página de API Keys — não use placeholder.
+
+Defina no projeto hospedado (Dashboard → Edge Functions → Secrets, ou CLI):
+
+```bash
+supabase secrets set RESEND_API_KEY=re_... --project-ref wcgevmvystdhqpzwuyig
+# opcional — remetente (default: AutoPainel <notificacoes@autopainel.com.br>)
+supabase secrets set LEAD_NOTIFICATION_FROM_EMAIL="AutoPainel <notificacoes@autopainel.com.br>" --project-ref wcgevmvystdhqpzwuyig
+```
+
+Teste manual (processa fila `lead_notification_outbox`):
+
+```bash
+node scripts/dispatch-lead-notification-worker.mjs
+```
+
+Cron GitHub: `.github/workflows/lead-notification-dispatch.yml` (requer `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` nos secrets do repo).
+
+## 7. Testar Auth
 
 1. Admin → Concessionária → Equipe → convidar e-mail de teste.
 2. Verificar inbox + link abre `{slug}.loja.autopainel.com.br/definir-senha`.
 3. Admin → `/recuperar-senha` → e-mail com marca AutoPainel.
 
-## 7. Cloudflare wildcards (novas lojas)
+## 8. Cloudflare wildcards (novas lojas)
 
 DNS propagado (`dig NS` → `*.ns.cloudflare.com`). Criar wildcards:
 

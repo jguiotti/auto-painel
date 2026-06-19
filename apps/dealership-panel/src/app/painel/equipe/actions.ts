@@ -3,16 +3,19 @@
 import { revalidatePath } from "next/cache";
 
 import { parseHqAddressFromForm } from "@autopainel/shared/lib/dealership/parse-hq-address-from-form";
+import { inviteDealershipCollaborator } from "@autopainel/shared/lib/auth/invite-dealership-collaborator";
+import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
 export interface TeamActionResult {
   error?: string;
   success?: boolean;
+  passwordResetEmailSent?: boolean;
 }
 
-function canManageTeam(role: string): boolean {
-  return role === "owner" || role === "manager" || role === "super_admin";
+function canManageTeamAsOwner(role: string): boolean {
+  return role === "owner" || role === "super_admin";
 }
 
 export async function upsertEmployeeProfileAction(
@@ -23,8 +26,8 @@ export async function upsertEmployeeProfileAction(
     "/painel/equipe",
   );
 
-  if (!canManageTeam(profile.role)) {
-    return { error: "Apenas gestores podem editar a equipe." };
+  if (!canManageTeamAsOwner(profile.role)) {
+    return { error: "Apenas o titular da loja pode editar a equipe." };
   }
 
   const fullName = String(formData.get("full_name") ?? "").trim();
@@ -71,4 +74,50 @@ export async function upsertEmployeeProfileAction(
   revalidatePath("/painel/conta/perfil");
   revalidatePath("/painel");
   return { success: true };
+}
+
+export async function inviteTeamMemberAction(formData: FormData): Promise<TeamActionResult> {
+  const { profile, dealershipId } = await requireDashboardSession("/painel/equipe");
+
+  if (!canManageTeamAsOwner(profile.role)) {
+    return { error: "Apenas o titular da loja pode convidar colaboradores." };
+  }
+
+  const email = String(formData.get("email") ?? "").trim();
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const roleRaw = String(formData.get("role") ?? "seller").trim();
+
+  if (roleRaw !== "seller" && roleRaw !== "manager") {
+    return { error: "Papel inválido para convite pelo painel da loja." };
+  }
+
+  const admin = createSupabaseServiceRoleClient();
+  const { data: dealership, error: dealershipError } = await admin
+    .from("dealerships")
+    .select("slug")
+    .eq("id", dealershipId)
+    .maybeSingle();
+
+  if (dealershipError || !dealership?.slug) {
+    return { error: "Não foi possível carregar os dados da loja." };
+  }
+
+  const result = await inviteDealershipCollaborator(admin, {
+    email,
+    fullName,
+    role: roleRaw,
+    dealershipId,
+    dealershipSlug: String(dealership.slug),
+  });
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/painel/equipe");
+  revalidatePath("/painel");
+  return {
+    success: true,
+    passwordResetEmailSent: result.passwordResetEmailSent,
+  };
 }

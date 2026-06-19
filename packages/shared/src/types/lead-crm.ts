@@ -1,7 +1,8 @@
 export const LEAD_PIPELINE_STATUSES = [
   "new",
-  "contacted",
+  "in_progress",
   "hot",
+  "cold",
   "won",
   "lost",
 ] as const;
@@ -10,11 +11,15 @@ export type LeadPipelineStatus = (typeof LEAD_PIPELINE_STATUSES)[number];
 
 export const LEAD_PIPELINE_STATUS_LABELS: Record<LeadPipelineStatus, string> = {
   new: "Novo",
-  contacted: "Contactado",
-  hot: "Quente",
-  won: "Ganho",
-  lost: "Perdido",
+  in_progress: "Em atendimento",
+  hot: "Contato quente",
+  cold: "Contato frio",
+  won: "Venda ganha",
+  lost: "Venda perdida",
 };
+
+/** @deprecated migrated to in_progress — kept for legacy reads */
+export const LEGACY_LEAD_STATUS_CONTACTED = "contacted" as const;
 
 export const LEAD_SOURCE_LABELS: Record<string, string> = {
   vehicle_page: "Veículo",

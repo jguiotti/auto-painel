@@ -32,6 +32,7 @@ interface DashboardShellProps {
   activeFeatureKeys: string[];
   /** `profiles.role` for the signed-in user (owner | manager | seller | super_admin). */
   viewerRole: string;
+  contactsAttentionCount?: number;
   children: React.ReactNode;
 }
 
@@ -53,6 +54,7 @@ export function DashboardShell({
   dealershipId,
   activeFeatureKeys,
   viewerRole,
+  contactsAttentionCount = 0,
   children,
 }: DashboardShellProps) {
   const storefrontUrl = resolveStorefrontUrl(dealershipSlug);
@@ -68,6 +70,9 @@ export function DashboardShell({
     viewerRole === "owner" ||
     viewerRole === "manager" ||
     viewerRole === "super_admin";
+
+  const canManageTeam =
+    viewerRole === "owner" || viewerRole === "super_admin";
 
   const primaryNav: NavItem[] = [
     {
@@ -92,6 +97,10 @@ export function DashboardShell({
             label: "Dados da loja",
             description: "Contato e endereço na vitrine",
           } satisfies NavItem,
+        ]
+      : []),
+    ...(canManageTeam
+      ? [
           {
             href: "/painel/equipe",
             label: "Equipe",
@@ -110,6 +119,11 @@ export function DashboardShell({
         },
       ]
     : [];
+
+  const navAttentionCounts =
+    contactsAttentionCount > 0
+      ? { "/painel/contatos": contactsAttentionCount }
+      : {};
 
   return (
     <DealershipNotificationProvider
@@ -140,7 +154,11 @@ export function DashboardShell({
             </Link>
           </div>
 
-          <DealershipSidebarNav primaryNav={primaryNav} optionalNav={optionalNav} />
+          <DealershipSidebarNav
+            primaryNav={primaryNav}
+            optionalNav={optionalNav}
+            navAttentionCounts={navAttentionCounts}
+          />
 
           <div className="shrink-0 space-y-2 border-t border-border p-4">
             <Button variant="outline" size="sm" className="w-full" asChild>
@@ -168,6 +186,7 @@ export function DashboardShell({
                   primaryNav={primaryNav}
                   optionalNav={optionalNav}
                   storefrontUrl={storefrontUrl}
+                  navAttentionCounts={navAttentionCounts}
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">

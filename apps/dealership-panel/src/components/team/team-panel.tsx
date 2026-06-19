@@ -24,17 +24,25 @@ import {
 } from "@autopainel/shared/ui";
 
 import { EmployeeEditDialog } from "@/components/team/employee-edit-dialog";
+import { TeamInviteDialog } from "@/components/team/team-invite-dialog";
 import { formatBrl } from "@/lib/format/format-brl";
 
 interface TeamPanelProps {
   employees: DealershipEmployeePanelRow[];
   ranking: DealershipSalesRankingRow[];
   rankingDays: number;
+  canInvite: boolean;
 }
 
-export function TeamPanel({ employees, ranking, rankingDays }: TeamPanelProps) {
+export function TeamPanel({
+  employees,
+  ranking,
+  rankingDays,
+  canInvite,
+}: TeamPanelProps) {
   const [editEmployee, setEditEmployee] =
     useState<DealershipEmployeePanelRow | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -76,12 +84,18 @@ export function TeamPanel({ employees, ranking, rankingDays }: TeamPanelProps) {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Equipe</CardTitle>
-          <CardDescription>
-            Perfis de RH e comissão. Novos logins são criados pela equipe AutoPainel
-            no painel mestre.
-          </CardDescription>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Equipe</CardTitle>
+            <CardDescription>
+              Perfis de RH e comissão. O titular pode convidar vendedores e gestores.
+            </CardDescription>
+          </div>
+          {canInvite ? (
+            <Button type="button" size="sm" onClick={() => setInviteOpen(true)}>
+              Convidar colaborador
+            </Button>
+          ) : null}
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
@@ -133,6 +147,8 @@ export function TeamPanel({ employees, ranking, rankingDays }: TeamPanelProps) {
           }
         }}
       />
+
+      <TeamInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </div>
   );
 }

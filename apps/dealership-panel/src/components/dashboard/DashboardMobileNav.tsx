@@ -25,10 +25,13 @@ import {
 } from "@autopainel/shared/ui";
 import { cn } from "@autopainel/shared/lib/utils";
 
+import { NavAttentionBadge } from "@/components/dashboard/nav-attention-badge";
+
 interface DashboardMobileNavProps {
   primaryNav: Array<{ href: string; label: string; description: string }>;
   optionalNav: Array<{ href: string; label: string; description: string }>;
   storefrontUrl: string;
+  navAttentionCounts?: Partial<Record<string, number>>;
 }
 
 const PRIMARY_ICONS: Record<string, LucideIcon> = {
@@ -50,6 +53,7 @@ export function DashboardMobileNav({
   primaryNav,
   optionalNav,
   storefrontUrl,
+  navAttentionCounts = {},
 }: DashboardMobileNavProps) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
@@ -76,8 +80,11 @@ export function DashboardMobileNav({
         aria-current={active ? "page" : undefined}
       >
         <Icon className="size-4 shrink-0" aria-hidden />
-        <span className="min-w-0">
-          <span className="block">{item.label}</span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="block">{item.label}</span>
+            <NavAttentionBadge count={navAttentionCounts[item.href] ?? 0} />
+          </span>
           <span
             className={cn(
               "block text-xs font-normal",

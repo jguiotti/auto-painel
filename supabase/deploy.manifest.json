@@ -31,6 +31,10 @@
     {
       "name": "social-publish-worker",
       "verify_jwt": false
+    },
+    {
+      "name": "notify-dealership-new-lead",
+      "verify_jwt": false
     }
   ]
 }

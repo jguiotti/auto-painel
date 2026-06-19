@@ -14,8 +14,8 @@ import { resolveVehicleTypeLabel } from "@autopainel/shared/lib/vehicle/vehicle-
 import { Badge, Button, Separator } from "@autopainel/shared/ui";
 
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
+import { StorefrontWhatsAppLeadDialog } from "@/components/storefront/storefront-whatsapp-lead-dialog";
 import { formatBrl } from "@/lib/format/format-brl";
-import { buildStorefrontWhatsAppUrl } from "@/lib/phone/build-storefront-whatsapp-url";
 
 import { VehicleEngagementSection } from "./vehicle-engagement-section";
 
@@ -74,22 +74,15 @@ export function VehicleDetailLayout({
   const dealership = usePublicDealership();
   const images = vehicle.images?.filter(Boolean) ?? [];
   const [activeIndex, setActiveIndex] = useState(0);
+  const [whatsappOpen, setWhatsappOpen] = useState(false);
   const activeImage = images[activeIndex] ?? null;
 
   const typeLabel = vehicle.vehicle_type
     ? resolveVehicleTypeLabel(vehicle.vehicle_type, vehicle.vehicle_type_custom)
     : null;
 
-  const whatsappHref =
-    dealership?.whatsapp_number && dealership.slug
-      ? buildStorefrontWhatsAppUrl({
-          phone: dealership.whatsapp_number,
-          message: `Olá! Tenho interesse no ${vehicle.brand} ${vehicle.model}${vehicle.version ? ` ${vehicle.version}` : ""} (${vehicle.model_year}) anunciado no site.`,
-          dealershipSlug: dealership.slug,
-          campaign: "vehicle_interest",
-          content: vehicle.public_slug,
-        })
-      : null;
+  const whatsappVehicleMessage = `Olá! Tenho interesse no ${vehicle.brand} ${vehicle.model}${vehicle.version ? ` ${vehicle.version}` : ""} (${vehicle.model_year}) anunciado no site.`;
+  const showWhatsAppCta = Boolean(dealership?.whatsapp_number && dealership.slug);
 
   const typeSpecItems = buildVehicleTypeSpecDisplayItems(vehicle.vehicle_type ?? "automovel", {
     gear_count: vehicle.gear_count ?? null,
@@ -240,11 +233,13 @@ export function VehicleDetailLayout({
                     FIPE: {formatBrl(Number(vehicle.fipe_price))}
                   </p>
                 ) : null}
-                {whatsappHref ? (
-                  <Button className="mt-4 w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white" asChild>
-                    <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                      Falar no WhatsApp
-                    </a>
+                {showWhatsAppCta ? (
+                  <Button
+                    type="button"
+                    className="mt-4 w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white"
+                    onClick={() => setWhatsappOpen(true)}
+                  >
+                    Falar no WhatsApp
                   </Button>
                 ) : null}
               </div>
@@ -364,11 +359,13 @@ export function VehicleDetailLayout({
               <p className="text-sm text-[var(--storefront-fg,var(--dealer-fg))]/70">
                 Agende um test drive ou solicite uma proposta sem compromisso.
               </p>
-              {whatsappHref ? (
-                <Button className="w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white" asChild>
-                  <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                    Quero este veículo no WhatsApp
-                  </a>
+              {showWhatsAppCta ? (
+                <Button
+                  type="button"
+                  className="w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white"
+                  onClick={() => setWhatsappOpen(true)}
+                >
+                  Quero este veículo no WhatsApp
                 </Button>
               ) : null}
               <Button variant="outline" className="w-full" asChild>
@@ -378,6 +375,24 @@ export function VehicleDetailLayout({
           </aside>
         </div>
       </div>
+
+      {showWhatsAppCta && dealership ? (
+        <StorefrontWhatsAppLeadDialog
+          open={whatsappOpen}
+          onOpenChange={setWhatsappOpen}
+          dealershipName={dealership.name}
+          dealershipSlug={dealership.slug}
+          whatsappNumber={dealership.whatsapp_number!}
+          source="vehicle_page"
+          vehicleId={vehicle.id}
+          campaign="vehicle_interest"
+          content={vehicle.public_slug}
+          defaultWhatsAppMessage={whatsappVehicleMessage}
+          title="Falar no WhatsApp"
+          description={`Informe seus dados para registrar interesse no ${vehicle.brand} ${vehicle.model} e abrir o WhatsApp com a equipe.`}
+          submitLabel="Continuar no WhatsApp"
+        />
+      ) : null}
     </article>
   );
 }

@@ -11,6 +11,24 @@ import {
   type VehicleFilterValues,
 } from "./vehicle-filters-panel";
 import { VehicleInventoryList } from "./vehicle-inventory-list";
+import { InventoryMobileFilterBar } from "./inventory-mobile-filter-bar";
+
+function countActiveStorefrontFilters(defaults: VehicleFilterValues): number {
+  let count = 0;
+  if (defaults.brand) count += 1;
+  if (defaults.model) count += 1;
+  if (defaults.minPrice || defaults.maxPrice) count += 1;
+  if (defaults.minYear || defaults.maxYear) count += 1;
+  if (defaults.vehicleType) count += 1;
+  if (defaults.minMileage || defaults.maxMileage) count += 1;
+  if (defaults.fuelType) count += 1;
+  if (defaults.transmission) count += 1;
+  if (defaults.color) count += 1;
+  if (defaults.minDisplacementCc || defaults.maxDisplacementCc) count += 1;
+  if (defaults.gearCount) count += 1;
+  if (defaults.sort !== "newest") count += 1;
+  return count;
+}
 
 interface StorefrontInventoryPageProps {
   vehicles: PublicVehicleCardModel[];
@@ -44,13 +62,10 @@ export function StorefrontInventoryPage({
         </header>
 
         <div className="mb-6 lg:hidden">
-          <VehicleFiltersPanel
-            panelId="mobile"
+          <InventoryMobileFilterBar
             defaults={filterDefaults}
             options={filterOptions}
-            variant="stacked"
-            mode="advanced"
-            targetPath="/estoque"
+            activeFilterCount={countActiveStorefrontFilters(filterDefaults)}
           />
         </div>
 

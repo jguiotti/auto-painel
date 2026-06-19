@@ -15,12 +15,10 @@ export default async function TeamPage() {
     "/painel/equipe",
   );
 
-  const canManage =
-    profile.role === "owner" ||
-    profile.role === "manager" ||
-    profile.role === "super_admin";
+  const canManageTeam =
+    profile.role === "owner" || profile.role === "super_admin";
 
-  if (!canManage) {
+  if (!canManageTeam) {
     redirect("/painel/conta/perfil");
   }
 
@@ -59,6 +57,7 @@ export default async function TeamPage() {
         employees={employees}
         ranking={ranking}
         rankingDays={RANKING_DAYS}
+        canInvite={profile.role === "owner" || profile.role === "super_admin"}
       />
     </div>
   );

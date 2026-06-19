@@ -11,6 +11,7 @@ interface DashboardMobileNavMountProps {
   primaryNav: Array<{ href: string; label: string; description: string }>;
   optionalNav: Array<{ href: string; label: string; description: string }>;
   storefrontUrl: string;
+  navAttentionCounts?: Partial<Record<string, number>>;
 }
 
 function subscribeToClientMount() {

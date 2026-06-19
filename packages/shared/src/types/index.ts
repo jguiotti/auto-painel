@@ -12,6 +12,7 @@ export * from "./social-carousel";
 export * from "./integrations-hub";
 export * from "./sale-receipt";
 export * from "./lead-crm";
+export * from "./customer-crm";
 export * from "./dealership-employee";
 
 export type BrandSlug = string;

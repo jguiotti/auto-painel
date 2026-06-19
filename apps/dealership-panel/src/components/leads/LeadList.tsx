@@ -15,6 +15,7 @@ import {
 } from "@autopainel/shared/ui";
 
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import { LeadClaimButton } from "@/components/leads/lead-claim-button";
 
 import { formatDatePt } from "@/lib/format/format-date-pt";
 import {
@@ -40,6 +41,8 @@ export interface LeadListItem {
   next_follow_up_at?: string | null;
   converted_vehicle_id?: string | null;
   assigned_user_id: string | null;
+  loss_reason_code?: string | null;
+  loss_reason_note?: string | null;
   notes?: LeadNoteItem[];
   vehicles: {
     id: string;
@@ -150,6 +153,10 @@ export function LeadList({
                   ) : null}
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <LeadClaimButton
+                        leadId={lead.id}
+                        canClaim={viewerRole === "seller" && lead.assigned_user_id === null}
+                      />
                       {onOpenDetail ? (
                         <Button
                           type="button"
@@ -204,7 +211,12 @@ export function LeadList({
                     </p>
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <LeadClaimButton
+                    leadId={lead.id}
+                    canClaim={viewerRole === "seller" && lead.assigned_user_id === null}
+                  />
+                  <div className="flex gap-2">
                   {onOpenDetail ? (
                     <Button
                       type="button"
@@ -220,6 +232,7 @@ export function LeadList({
                       WhatsApp
                     </a>
                   </Button>
+                  </div>
                 </div>
               </div>
               {vehicle ? (

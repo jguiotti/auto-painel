@@ -1,8 +1,14 @@
 import Link from "next/link";
 
 import { VehicleInventoryTable } from "@/components/inventory/VehicleInventoryTable";
+import { VehicleInventoryPagination } from "@/components/inventory/vehicle-inventory-pagination";
+import { VehicleInventoryToolbar } from "@/components/inventory/vehicle-inventory-toolbar";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import {
+  PANEL_INVENTORY_PAGE_SIZE,
+  parsePanelInventorySearchParams,
+} from "@/lib/inventory/panel-inventory-search-params";
 
 interface VehicleDbRow {
   id: string;
@@ -18,8 +24,8 @@ interface VehicleDbRow {
   is_featured: boolean;
   is_active: boolean;
   public_slug: string;
+  featured_sort_order: number | null;
   images: string[] | null;
-  /** Supabase may infer FK embed as object or single-element array depending on typings */
   dealership_units: { name: string } | { name: string }[] | null;
 }
 
@@ -33,14 +39,22 @@ function embeddedDealershipUnitName(
   return row?.name ?? null;
 }
 
-export default async function InventoryPage() {
-  const { supabase, dealershipId } = await requireDashboardSession();
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { supabase, dealershipId, profile } = await requireDashboardSession();
+  const filters = parsePanelInventorySearchParams(await searchParams);
+  const canManageFeaturedOrder =
+    profile.role === "owner" ||
+    profile.role === "manager" ||
+    profile.role === "super_admin";
 
-  const [{ data: vehiclesRaw, error }] = await Promise.all([
-    supabase
-      .from("vehicles")
-      .select(
-        `
+  let query = supabase
+    .from("vehicles")
+    .select(
+      `
         id,
         brand,
         model,
@@ -54,20 +68,51 @@ export default async function InventoryPage() {
         is_featured,
         is_active,
         public_slug,
+        featured_sort_order,
         images,
         dealership_units (
           name
         )
       `,
-      )
-      .eq("dealership_id", dealershipId)
-      .order("created_at", { ascending: false }),
-  ]);
+      { count: "exact" },
+    )
+    .eq("dealership_id", dealershipId);
 
-  if (error) {
+  if (filters.status === "available" || filters.status === "sold") {
+    query = query.eq("status", filters.status);
+  } else if (filters.status === "inactive") {
+    query = query.eq("is_active", false);
+  }
+
+  if (filters.featured === "yes") {
+    query = query.eq("is_featured", true);
+  } else if (filters.featured === "no") {
+    query = query.eq("is_featured", false);
+  }
+
+  if (filters.q) {
+    const pattern = `%${filters.q.replace(/[%]/g, "")}%`;
+    query = query.or(
+      `brand.ilike.${pattern},model.ilike.${pattern},public_slug.ilike.${pattern}`,
+    );
+  }
+
+  const offset = (filters.page - 1) * PANEL_INVENTORY_PAGE_SIZE;
+  const { data: vehiclesRaw, error, count: filteredCount } = await query
+    .order("is_featured", { ascending: false })
+    .order("featured_sort_order", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + PANEL_INVENTORY_PAGE_SIZE - 1);
+
+  const { count: totalCount, error: totalCountError } = await supabase
+    .from("vehicles")
+    .select("id", { count: "exact", head: true })
+    .eq("dealership_id", dealershipId);
+
+  if (error || totalCountError) {
     return (
       <p className="text-sm text-red-600 dark:text-red-400">
-        Não foi possível carregar o estoque: {error.message}
+        Não foi possível carregar o estoque: {error?.message ?? totalCountError?.message}
       </p>
     );
   }
@@ -85,9 +130,14 @@ export default async function InventoryPage() {
     is_featured: row.is_featured,
     is_active: row.is_active,
     public_slug: row.public_slug,
+    featured_sort_order: row.featured_sort_order,
     images: row.images,
     unit_name: embeddedDealershipUnitName(row.dealership_units),
   }));
+
+  const safeFilteredCount = filteredCount ?? vehicles.length;
+  const safeTotalCount = totalCount ?? safeFilteredCount;
+  const pageCount = Math.max(1, Math.ceil(safeFilteredCount / PANEL_INVENTORY_PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,7 +158,18 @@ export default async function InventoryPage() {
         </Link>
       </div>
 
-      <VehicleInventoryTable vehicles={vehicles} />
+      <VehicleInventoryToolbar
+        defaults={filters}
+        totalCount={safeTotalCount}
+        filteredCount={safeFilteredCount}
+      />
+
+      <VehicleInventoryTable
+        vehicles={vehicles}
+        canManageFeaturedOrder={canManageFeaturedOrder}
+      />
+
+      <VehicleInventoryPagination params={filters} pageCount={pageCount} />
     </div>
   );
 }

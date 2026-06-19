@@ -1,7 +1,6 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@autopainel/shared/ui";
 import { notFound } from "next/navigation";
 
 import { QrPrintToolbar } from "@/components/inventory/qr-print-toolbar";
@@ -9,7 +8,7 @@ import { getVehicleQrPrintPayload } from "@/lib/inventory/get-vehicle-qr-print-p
 
 interface VehicleQrPageProps {
   params: Promise<{ vehicleId: string }>;
-  searchParams: Promise<{ formato?: string }>;
+  searchParams: Promise<{ formato?: string; texto?: string }>;
 }
 
 export default async function VehicleQrPage({
@@ -17,8 +16,9 @@ export default async function VehicleQrPage({
   searchParams,
 }: VehicleQrPageProps) {
   const { vehicleId } = await params;
-  const { formato } = await searchParams;
+  const { formato, texto } = await searchParams;
   const printFormat: "a4" | "etiqueta" = formato === "etiqueta" ? "etiqueta" : "a4";
+  const promoText = typeof texto === "string" ? texto.trim() : "";
 
   if (!vehicleId || vehicleId.length < 10) {
     notFound();
@@ -40,10 +40,11 @@ export default async function VehicleQrPage({
   }
 
   const payload = result.payload;
+  const displayCta = promoText || payload.ctaText;
   const qrDataUrl = await QRCode.toDataURL(payload.publicVehicleUrl, {
     errorCorrectionLevel: "M",
     margin: 1,
-    width: printFormat === "a4" ? 360 : 240,
+    width: printFormat === "a4" ? 320 : 220,
     color: {
       dark: "#000000",
       light: "#ffffff",
@@ -76,12 +77,14 @@ export default async function VehicleQrPage({
             border: none !important;
             margin: 0 auto !important;
             break-inside: avoid;
+            page-break-inside: avoid;
             max-width: none !important;
             width: 100% !important;
+            min-height: auto !important;
           }
           @page {
-            size: ${printFormat === "a4" ? "A4" : "100mm 150mm"};
-            margin: ${printFormat === "a4" ? "10mm" : "4mm"};
+            size: ${printFormat === "a4" ? "A4 landscape" : "100mm 150mm"};
+            margin: ${printFormat === "a4" ? "8mm" : "4mm"};
           }
         }
       `}</style>
@@ -91,25 +94,34 @@ export default async function VehicleQrPage({
           Lâmina de venda com QR Code
         </h1>
         <p className="text-sm text-muted-foreground">
-          Confira o preview antes de imprimir. O QR direciona para a página pública do
-          veículo.
+          Confira o preview antes de imprimir. O QR direciona para a página pública do veículo.
         </p>
       </div>
 
-      <QrPrintToolbar vehicleId={vehicleId} format={printFormat} />
+      <QrPrintToolbar
+        vehicleId={vehicleId}
+        format={printFormat}
+        initialPromoText={promoText}
+      />
 
       <section
         className={`print-sheet mx-auto w-full rounded-2xl border bg-white text-zinc-900 shadow-sm ${
-          printFormat === "a4" ? "max-w-[210mm] p-8" : "max-w-[100mm] p-5"
+          printFormat === "a4"
+            ? "max-w-[297mm] p-8"
+            : "max-w-[100mm] min-h-[140mm] p-4"
         }`}
       >
-        <header className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
+        <header
+          className={`flex items-center justify-between gap-4 border-b border-zinc-200 ${
+            printFormat === "a4" ? "pb-5" : "pb-3"
+          }`}
+        >
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               Concessionária
             </p>
             <h2
-              className="truncate text-lg font-bold"
+              className={`truncate font-bold ${printFormat === "a4" ? "text-xl" : "text-base"}`}
               style={{ color: "var(--dealer-primary)" }}
             >
               {payload.dealershipName}
@@ -120,48 +132,61 @@ export default async function VehicleQrPage({
             <img
               src={payload.dealershipLogoUrl}
               alt={payload.dealershipName}
-              className="h-12 w-auto max-w-[140px] object-contain"
+              className={`w-auto object-contain ${printFormat === "a4" ? "h-14 max-w-[160px]" : "h-10 max-w-[100px]"}`}
             />
           ) : null}
         </header>
 
         <div
-          className={`mt-6 grid gap-6 ${
-            printFormat === "a4" ? "grid-cols-[1.2fr_1fr]" : "grid-cols-1"
+          className={`grid gap-6 ${
+            printFormat === "a4"
+              ? "mt-6 grid-cols-[1.35fr_0.85fr] items-center"
+              : "mt-4 grid-cols-1"
           }`}
         >
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               Veículo
             </p>
-            <h3 className="text-2xl font-bold">{payload.vehicleTitle}</h3>
+            <h3 className={`font-bold ${printFormat === "a4" ? "text-3xl" : "text-xl"}`}>
+              {payload.vehicleTitle}
+            </h3>
             <p className="text-sm text-zinc-600">{payload.vehicleSubtitle}</p>
             <p
-              className="text-3xl font-extrabold"
+              className={`font-extrabold ${printFormat === "a4" ? "text-4xl" : "text-2xl"}`}
               style={{ color: "var(--dealer-accent)" }}
             >
               {payload.vehiclePriceFormatted}
             </p>
-            <p className="text-sm text-zinc-700">{payload.ctaText}</p>
-            <p className="break-all text-xs text-zinc-500">{payload.publicVehicleUrl}</p>
+            <p
+              className={`whitespace-pre-line text-zinc-700 ${
+                printFormat === "a4" ? "text-base" : "text-xs"
+              }`}
+            >
+              {displayCta}
+            </p>
+            {printFormat === "a4" ? (
+              <p className="break-all text-xs text-zinc-500">{payload.publicVehicleUrl}</p>
+            ) : null}
           </div>
 
-          <Card className="border-zinc-200 bg-zinc-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">QR Code do veículo</CardTitle>
-              <CardDescription>
-                Escaneie para abrir os detalhes e a simulação.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* eslint-disable-next-line @next/next/no-img-element -- QR code generated as data URL */}
-              <img
-                src={qrDataUrl}
-                alt={`QR Code para ${payload.vehicleTitle}`}
-                className="mx-auto block w-full max-w-[260px] rounded-md border border-zinc-200 bg-white p-2"
-              />
-            </CardContent>
-          </Card>
+          <div
+            className={`flex flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 ${
+              printFormat === "a4" ? "p-5" : "p-3"
+            }`}
+          >
+            <p className="mb-3 text-center text-sm font-semibold text-zinc-700">
+              Escaneie para ver detalhes
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- QR code generated as data URL */}
+            <img
+              src={qrDataUrl}
+              alt={`QR Code para ${payload.vehicleTitle}`}
+              className={`block rounded-md border border-zinc-200 bg-white p-2 ${
+                printFormat === "a4" ? "max-w-[240px]" : "max-w-[180px]"
+              }`}
+            />
+          </div>
         </div>
       </section>
     </div>

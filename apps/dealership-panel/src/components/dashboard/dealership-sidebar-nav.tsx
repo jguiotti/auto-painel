@@ -14,6 +14,8 @@ import {
 
 import { cn } from "@autopainel/shared/lib/utils";
 
+import { NavAttentionBadge } from "@/components/dashboard/nav-attention-badge";
+
 interface NavItem {
   href: string;
   label: string;
@@ -28,6 +30,7 @@ interface NavGroup {
 interface DealershipSidebarNavProps {
   primaryNav: Array<{ href: string; label: string; description: string }>;
   optionalNav: Array<{ href: string; label: string; description: string }>;
+  navAttentionCounts?: Partial<Record<string, number>>;
 }
 
 const PRIMARY_ICONS: Record<string, LucideIcon> = {
@@ -84,6 +87,7 @@ function toNavGroups(
 export function DealershipSidebarNav({
   primaryNav,
   optionalNav,
+  navAttentionCounts = {},
 }: DealershipSidebarNavProps) {
   const pathname = usePathname() ?? "";
   const groups = toNavGroups(primaryNav, optionalNav);
@@ -112,7 +116,8 @@ export function DealershipSidebarNav({
                     aria-current={active ? "page" : undefined}
                   >
                     <Icon className="size-4 shrink-0" aria-hidden />
-                    {item.label}
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <NavAttentionBadge count={navAttentionCounts[item.href] ?? 0} />
                   </Link>
                 </li>
               );

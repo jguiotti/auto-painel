@@ -19,7 +19,7 @@ const storefrontLabelClassName = "text-[var(--dealer-fg)]";
 
 interface StorefrontContactFormProps {
   dealershipName: string;
-  source: "contact_page" | "whatsapp_float";
+  source: "contact_page" | "whatsapp_float" | "vehicle_page";
   vehicleId?: string | null;
   onSuccess?: (payload: { clientName: string; phone: string; message: string }) => void;
   submitLabel?: string;

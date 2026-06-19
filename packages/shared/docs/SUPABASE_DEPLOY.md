@@ -62,8 +62,28 @@ Depois: `npm run sync:env` (só copia vars Supabase dos apps; deploy lê a raiz)
 - `classifieds-oauth-callback`
 - `meta-oauth-callback`
 - `platform-health-ping`
+- `classifieds-sync-worker`
+- `social-publish-worker`
+- `notify-dealership-new-lead` — outbox `lead_notification_outbox`; requer secret `RESEND_API_KEY` no projeto hospedado
 
 Nova função: adicionar ao manifest + commit; o workflow publica no próximo push.
+
+### Notificação de leads (P2)
+
+| Item | Onde |
+| --- | --- |
+| Cron GitHub | `.github/workflows/lead-notification-dispatch.yml` (a cada 15 min) |
+| Script manual | `node scripts/dispatch-lead-notification-worker.mjs` |
+| Secrets Edge (Dashboard ou CLI) | `RESEND_API_KEY` (obrigatório); opcional `LEAD_NOTIFICATION_FROM_EMAIL` |
+| Secrets GitHub (cron) | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (mesmos dos workers de integração) |
+
+```bash
+supabase secrets set RESEND_API_KEY=re_... --project-ref wcgevmvystdhqpzwuyig
+# opcional:
+supabase secrets set LEAD_NOTIFICATION_FROM_EMAIL="AutoPainel <notificacoes@autopainel.com.br>" --project-ref wcgevmvystdhqpzwuyig
+```
+
+O aviso local `WARN: environment variable is unset: RESEND_API_KEY` vem do `config.toml` (SMTP Auth local) e **não** impede `db push` nem deploy de funções; e-mails de lead só funcionam no remoto após definir o secret acima.
 
 ## Migrações fora de ordem
 

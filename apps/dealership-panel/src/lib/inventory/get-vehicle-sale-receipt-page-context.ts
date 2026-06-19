@@ -1,7 +1,7 @@
 import "server-only";
 
 import { isSaleReceiptModuleEnabled } from "@autopainel/shared/lib/dealership-features";
-import { resolveDealershipLogoUrl } from "@autopainel/shared/lib/theme/branding";
+import { resolveDealershipLogoLightUrl } from "@autopainel/shared/lib/theme/branding";
 import { resolveVehicleTypeLabel } from "@autopainel/shared/lib/vehicle/vehicle-type-labels";
 import type { VehicleSaleReceiptRecord } from "@autopainel/shared/types/sale-receipt";
 
@@ -36,11 +36,21 @@ export interface SaleReceiptVehicleSummary {
   vehicleTypeCustom: string | null;
 }
 
+export interface SaleReceiptLeadOption {
+  id: string;
+  client_name: string;
+  phone: string;
+  client_email: string | null;
+  document_cpf: string | null;
+  billing_address: string | null;
+}
+
 export interface SaleReceiptPageContext {
   enabled: boolean;
   vehicle: SaleReceiptVehicleSummary;
   dealership: SaleReceiptDealershipHeader;
   receipt: VehicleSaleReceiptRecord | null;
+  leadOptions: SaleReceiptLeadOption[];
   error?: string;
 }
 
@@ -59,7 +69,8 @@ export async function getVehicleSaleReceiptPageContext(
     `/painel/estoque/${vehicleId}/recibo`,
   );
 
-  const [featuresRes, vehicleResult, dealershipResult, receiptResult] = await Promise.all([
+  const [featuresRes, vehicleResult, dealershipResult, receiptResult, leadsResult] =
+    await Promise.all([
     supabase.rpc("effective_feature_keys_for_active_dealership", {
       p_dealership_id: dealershipId,
     }),
@@ -71,7 +82,7 @@ export async function getVehicleSaleReceiptPageContext(
       .maybeSingle(),
     supabase
       .from("dealerships")
-      .select("name, cnpj, logo_url, contact_email, whatsapp_number, content_config")
+      .select("name, cnpj, logo_url, theme_config, contact_email, whatsapp_number, content_config")
       .eq("id", dealershipId)
       .maybeSingle(),
     supabase
@@ -80,6 +91,15 @@ export async function getVehicleSaleReceiptPageContext(
       .eq("vehicle_id", vehicleId)
       .eq("dealership_id", dealershipId)
       .maybeSingle(),
+    supabase
+      .from("leads")
+      .select(
+        "id, client_name, phone, client_email, customer_id, customers(document_cpf, billing_address)",
+      )
+      .eq("dealership_id", dealershipId)
+      .or(`vehicle_id.eq.${vehicleId},converted_vehicle_id.eq.${vehicleId}`)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const activeFeatures = Array.isArray(featuresRes.data)
@@ -93,6 +113,7 @@ export async function getVehicleSaleReceiptPageContext(
       vehicle: emptyVehicleSummary(vehicleId),
       dealership: emptyDealershipHeader(),
       receipt: null,
+      leadOptions: [],
       error: "Não foi possível carregar os dados do veículo. Verifique se as migrações de recibo foram aplicadas no Supabase.",
     };
   }
@@ -106,6 +127,7 @@ export async function getVehicleSaleReceiptPageContext(
       vehicle: emptyVehicleSummary(vehicleId),
       dealership: emptyDealershipHeader(),
       receipt: null,
+      leadOptions: [],
       error: "Veículo não encontrado nesta loja.",
     };
   }
@@ -116,6 +138,7 @@ export async function getVehicleSaleReceiptPageContext(
       vehicle: buildVehicleSummary(vehicle),
       dealership: emptyDealershipHeader(),
       receipt: null,
+      leadOptions: [],
       error: "Não foi possível carregar os dados da concessionária.",
     };
   }
@@ -126,6 +149,7 @@ export async function getVehicleSaleReceiptPageContext(
       vehicle: buildVehicleSummary(vehicle),
       dealership: buildDealershipHeader(dealership),
       receipt: null,
+      leadOptions: [],
       error: "A emissão de recibo de venda não está incluída no plano da sua loja.",
     };
   }
@@ -136,6 +160,7 @@ export async function getVehicleSaleReceiptPageContext(
       vehicle: buildVehicleSummary(vehicle),
       dealership: buildDealershipHeader(dealership),
       receipt: null,
+      leadOptions: [],
       error: "Só é possível emitir recibo para veículos marcados como vendidos.",
     };
   }
@@ -146,11 +171,14 @@ export async function getVehicleSaleReceiptPageContext(
       ? mapSaleReceiptRow(receiptResult.data as Parameters<typeof mapSaleReceiptRow>[0])
       : null;
 
+  const leadOptions = mapSaleReceiptLeadOptions(leadsResult.data);
+
   return {
     enabled: true,
     vehicle: buildVehicleSummary(vehicle),
     dealership: buildDealershipHeader(dealership),
     receipt,
+    leadOptions,
   };
 }
 
@@ -228,16 +256,67 @@ function buildDealershipHeader(dealership: {
   name: string;
   cnpj: string | null;
   logo_url: string | null;
+  theme_config?: unknown;
   contact_email: string | null;
   whatsapp_number: string | null;
   content_config: unknown;
 }): SaleReceiptDealershipHeader {
   return {
     name: dealership.name,
-    logoUrl: resolveDealershipLogoUrl(null, dealership.logo_url),
+    logoUrl: resolveDealershipLogoLightUrl(dealership.theme_config ?? null, dealership.logo_url),
     cnpj: dealership.cnpj?.trim() || null,
     address: parseHqAddress(dealership.content_config),
     phone: dealership.whatsapp_number?.trim() || null,
     email: dealership.contact_email?.trim() || null,
   };
+}
+
+function formatBillingAddress(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const parts = [
+    record.street,
+    record.number,
+    record.complement,
+    record.district,
+    record.city,
+    record.state,
+    record.postal_code,
+  ]
+    .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+    .map((part) => part.trim());
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+function mapSaleReceiptLeadOptions(rows: unknown): SaleReceiptLeadOption[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.map((row) => {
+    const record = row as {
+      id: string;
+      client_name: string;
+      phone: string;
+      client_email: string | null;
+      customers?:
+        | { document_cpf: string | null; billing_address: unknown }
+        | Array<{ document_cpf: string | null; billing_address: unknown }>
+        | null;
+    };
+    const customer = Array.isArray(record.customers)
+      ? record.customers[0]
+      : record.customers;
+
+    return {
+      id: record.id,
+      client_name: record.client_name,
+      phone: record.phone,
+      client_email: record.client_email,
+      document_cpf: customer?.document_cpf ?? null,
+      billing_address: formatBillingAddress(customer?.billing_address),
+    };
+  });
 }

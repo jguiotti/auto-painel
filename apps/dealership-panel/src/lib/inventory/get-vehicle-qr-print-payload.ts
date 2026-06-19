@@ -1,11 +1,12 @@
 import "server-only";
 
-import { buildDealershipPublicVehicleUrl } from "@autopainel/shared/lib/dealership-public-url";
+import {
+  resolveDealershipStorefrontPublicUrl,
+} from "@autopainel/shared/lib/tenant/dealership-subdomain-surface-urls";
 import {
   resolveDealershipBranding,
-  resolveDealershipLogoUrl,
+  resolveDealershipLogoLightUrl,
 } from "@autopainel/shared/lib/theme/branding";
-import { headers } from "next/headers";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { formatBrl } from "@/lib/format/format-brl";
@@ -63,7 +64,7 @@ export async function getVehicleQrPrintPayload(
         .single(),
       supabase
         .from("dealerships")
-        .select("name, slug, custom_domain, logo_url, theme_settings")
+        .select("name, slug, custom_domain, logo_url, theme_config, theme_settings")
         .eq("id", dealershipId)
         .single(),
     ]);
@@ -78,24 +79,20 @@ export async function getVehicleQrPrintPayload(
     return { error: "Concessionária não encontrada para gerar a lâmina de QR." };
   }
 
-  const headerList = await headers();
-  const requestHost = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  const requestProto = headerList.get("x-forwarded-proto") ?? "https";
-  const requestOrigin = requestHost ? `${requestProto}://${requestHost}` : null;
+  const storefrontBase = dealership.custom_domain
+    ? `https://${dealership.custom_domain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`
+    : resolveDealershipStorefrontPublicUrl(dealership.slug).replace(/\/+$/, "");
 
-  const publicVehicleUrl = buildDealershipPublicVehicleUrl({
-    customDomain: dealership.custom_domain,
-    dealershipSlug: dealership.slug,
-    platformRootDomain: process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN ?? null,
-    requestOrigin,
-    publicSlug: vehicle.public_slug,
-  });
+  const publicVehicleUrl = `${storefrontBase}/veiculo/${encodeURIComponent(vehicle.public_slug)}`;
 
   const branding = resolveDealershipBranding({
     theme_settings: dealership.theme_settings,
-    theme_config: null,
+    theme_config: dealership.theme_config,
   });
-  const dealershipLogoUrl = resolveDealershipLogoUrl(null, dealership.logo_url);
+  const dealershipLogoUrl = resolveDealershipLogoLightUrl(
+    dealership.theme_config,
+    dealership.logo_url,
+  );
 
   return {
     payload: {

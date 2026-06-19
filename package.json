@@ -23,6 +23,8 @@
     "sync:env": "node scripts/sync-env-local.mjs",
     "seed:demo-users": "NODE_PATH=./packages/shared/node_modules node scripts/seed-demo-dealership-users.mjs",
     "seed:admin-user": "NODE_PATH=./packages/shared/node_modules node scripts/seed-admin-super-user.mjs",
+    "seed:local-access": "npm run seed:admin-user && npm run seed:demo-users",
+    "supabase:reset:dev": "supabase db reset && npm run seed:local-access",
     "provision:super-admin": "NODE_PATH=./packages/shared/node_modules node scripts/provision-platform-super-admin.mjs",
     "sync:dealership-from-remote": "NODE_PATH=./packages/shared/node_modules node scripts/sync-dealership-from-remote.mjs",
     "supabase:start": "supabase start",

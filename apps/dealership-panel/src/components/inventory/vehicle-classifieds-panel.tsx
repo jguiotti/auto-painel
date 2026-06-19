@@ -122,19 +122,26 @@ export function VehicleClassifiedsPanel({
     });
   }
 
-  function handleDelist() {
+  function handleDelist(providers?: ClassifiedsProvider[]) {
     setMessage(null);
     startTransition(async () => {
-      const result = await delistVehicleFromClassifiedsAction(vehicleId);
+      const result = await delistVehicleFromClassifiedsAction(vehicleId, providers);
       if ("error" in result && result.error) {
         setMessage(result.error);
         return;
       }
-      setMessage("Remoção iniciada nos portais onde o veículo estava publicado.");
+      setMessage(
+        providers?.length === 1
+          ? `Remoção iniciada em ${PROVIDER_LABEL[providers[0]]}.`
+          : "Remoção iniciada nos portais selecionados.",
+      );
     });
   }
 
   const hasPublishedListing = listings.some((entry) => entry.syncStatus === "published");
+  const publishedProviders = listings
+    .filter((entry) => entry.syncStatus === "published")
+    .map((entry) => entry.provider);
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -181,9 +188,28 @@ export function VehicleClassifiedsPanel({
               {isPending ? "Publicando…" : "Publicar nos portais selecionados"}
             </Button>
             {hasPublishedListing ? (
-              <Button type="button" variant="outline" disabled={isPending} onClick={handleDelist}>
-                Remover dos portais
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => handleDelist()}
+                >
+                  Remover de todos publicados
+                </Button>
+                {publishedProviders.map((provider) => (
+                  <Button
+                    key={`delist-${provider}`}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => handleDelist([provider])}
+                  >
+                    Remover só {PROVIDER_LABEL[provider]}
+                  </Button>
+                ))}
+              </>
             ) : null}
           </div>
         </div>

@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@autopainel/shared/ui";
-
-import { StorefrontContactForm } from "@/components/storefront/storefront-contact-form";
-import { buildStorefrontWhatsAppUrl } from "@/lib/phone/build-storefront-whatsapp-url";
+import { StorefrontWhatsAppLeadDialog } from "@/components/storefront/storefront-whatsapp-lead-dialog";
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -30,23 +21,6 @@ export function StorefrontWhatsAppFloat() {
     return null;
   }
 
-  function handleLeadSuccess(payload: { clientName: string; phone: string; message: string }) {
-    const defaultMessage = `Olá! Meu nome é ${payload.clientName}. Vim pelo site da ${dealership?.name}.`;
-    const composed = payload.message.trim()
-      ? `${defaultMessage}\n\n${payload.message.trim()}`
-      : defaultMessage;
-
-    const href = buildStorefrontWhatsAppUrl({
-      phone: dealership!.whatsapp_number!,
-      message: composed,
-      dealershipSlug: dealership!.slug,
-      campaign: "whatsapp_float",
-    });
-
-    setOpen(false);
-    window.open(href, "_blank", "noopener,noreferrer");
-  }
-
   return (
     <>
       <button
@@ -59,29 +33,15 @@ export function StorefrontWhatsAppFloat() {
         <WhatsAppIcon className="size-7" />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md border-[color-mix(in_srgb,var(--dealer-primary)_20%,transparent)] !bg-[var(--dealer-surface)] text-[var(--dealer-fg)] [&>button]:text-[var(--dealer-fg)]/70 [&>button]:hover:text-[var(--dealer-fg)] [&>button]:focus:ring-[var(--dealer-primary)]">
-          <DialogHeader>
-            <DialogTitle
-              className="text-[var(--dealer-fg)]"
-              style={{ fontFamily: "var(--dealer-font-heading)" }}
-            >
-              Falar no WhatsApp
-            </DialogTitle>
-            <DialogDescription className="text-[var(--dealer-fg)]/70">
-              Preencha seus dados para abrir uma conversa com {dealership.name}. Seus dados serão
-              registrados para que a equipe possa te atender.
-            </DialogDescription>
-          </DialogHeader>
-          <StorefrontContactForm
-            dealershipName={dealership.name}
-            source="whatsapp_float"
-            submitLabel="Continuar no WhatsApp"
-            showEmail={false}
-            onSuccess={handleLeadSuccess}
-          />
-        </DialogContent>
-      </Dialog>
+      <StorefrontWhatsAppLeadDialog
+        open={open}
+        onOpenChange={setOpen}
+        dealershipName={dealership.name}
+        dealershipSlug={dealership.slug}
+        whatsappNumber={dealership.whatsapp_number}
+        source="whatsapp_float"
+        campaign="whatsapp_float"
+      />
     </>
   );
 }

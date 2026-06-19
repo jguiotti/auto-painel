@@ -281,6 +281,24 @@ Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
 
 **Épico Fase 1 (e-mail + DNS multitenant) — encerrado 2026-06-17:** Resend + Supabase SMTP produção, wildcards Cloudflare, provisionamento Vercel por slug, rotas Auth admin/painel, convite colaborador com e-mail.
 
+**Épico feedback operacional (jun/2026) — P0 + P1 + P2 implementados (2026-06-10):**
+
+| Onda | Entregue |
+| --- | --- |
+| **P0** | WhatsApp modal ficha; QR URL vitrine; claim lead + badge Contatos |
+| **P1** | Estoque filtros/paginação/ordem destaques; CRM status/motivo perda; filtros mobile vitrine |
+| **P2** | QR A4 paisagem + texto promo; recibo pré-preenche via lead; delist por portal; equipe só owner + convite painel; Edge `notify-dealership-new-lead`; logo claro/escuro admin |
+
+| Área | Paths / contratos |
+| --- | --- |
+| Edge e-mail lead | `supabase/functions/notify-dealership-new-lead`, cron `.github/workflows/lead-notification-dispatch.yml`, `scripts/dispatch-lead-notification-worker.mjs` |
+| Convite equipe (painel) | `packages/shared/src/lib/auth/invite-dealership-collaborator.ts`, `apps/dealership-panel/src/app/painel/equipe/actions.ts` |
+| Logo dual | `theme_config.logo_light_url` / `logo_dark_url`, admin `dealership-form.tsx`, `resolveDealershipLogoLightUrl` |
+
+Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
+
+**Aplicar local:** `npm run supabase:reset`; deploy Edge: incluir `notify-dealership-new-lead` no manifest.
+
 ---
 
 ## Deploy

@@ -25,6 +25,11 @@ async function readDealershipVisualContext() {
     ? featureRes.data.filter((entry): entry is string => typeof entry === "string")
     : [];
 
+  const { data: contactsAttentionCount } = await supabase.rpc(
+    "count_dealership_leads_needing_attention",
+    { p_dealership_id: dealershipId },
+  );
+
   const dealershipName = dealership?.name ?? "Painel";
   const dealershipSlug = dealership?.slug ?? "";
   const columnLogoUrl = dealership?.logo_url ?? null;
@@ -47,6 +52,8 @@ async function readDealershipVisualContext() {
     dealershipLogoCandidateUrls,
     dealershipFaviconUrl,
     activeFeatureKeys,
+    contactsAttentionCount:
+      typeof contactsAttentionCount === "number" ? contactsAttentionCount : 0,
   };
 }
 
@@ -77,6 +84,7 @@ export default async function PainelLayout({
     dealershipLogoUrl,
     dealershipLogoCandidateUrls,
     activeFeatureKeys,
+    contactsAttentionCount,
   } = await readDealershipVisualContext();
 
   return (
@@ -88,6 +96,7 @@ export default async function PainelLayout({
       dealershipId={dealershipId}
       activeFeatureKeys={activeFeatureKeys}
       viewerRole={profile.role}
+      contactsAttentionCount={contactsAttentionCount}
     >
       {children}
     </DashboardShell>
