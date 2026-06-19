@@ -1,4 +1,7 @@
-import { buildMarketingWhatsAppUrl, MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
+"use client";
+
+import { useMarketingWhatsApp } from "@/components/marketing-whatsapp-provider";
+import { MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -14,18 +17,17 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function WhatsAppFloatButton() {
-  const href = buildMarketingWhatsAppUrl();
+  const { openMarketingWhatsAppDialog } = useMarketingWhatsApp();
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
+      onClick={openMarketingWhatsAppDialog}
       className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-emerald-900/30 transition hover:scale-105 hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
       aria-label={`Falar no WhatsApp — ${MARKETING_WHATSAPP_DISPLAY}`}
       title="Falar no WhatsApp"
     >
       <WhatsAppIcon className="size-7" />
-    </a>
+    </button>
   );
 }

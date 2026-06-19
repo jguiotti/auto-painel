@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import type { LeadPipelineStatus } from "@autopainel/shared/types/lead-crm";
+import { validateBuyerDocument } from "@autopainel/shared/lib/validators/buyer-document";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
@@ -194,12 +195,32 @@ export async function createManualLeadAction(input: {
   clientEmail?: string;
   message?: string;
   vehicleId?: string | null;
+  document?: string;
+  billingAddress?: Record<string, string>;
 }): Promise<LeadActionResult & { leadId?: string }> {
   const { supabase, profile } = await requireDashboardSession();
 
   if (!canManageLeadCrm(profile.role)) {
     return { error: "Sem permissão para cadastrar contatos." };
   }
+
+  let documentCpf: string | null = null;
+  let documentCnpj: string | null = null;
+
+  const documentRaw = input.document?.trim() ?? "";
+  if (documentRaw) {
+    const validation = validateBuyerDocument(documentRaw);
+    if (!validation.isValid || !validation.kind) {
+      return { error: "Informe um CPF ou CNPJ válido." };
+    }
+    if (validation.kind === "cpf") {
+      documentCpf = validation.normalized;
+    } else {
+      documentCnpj = validation.normalized;
+    }
+  }
+
+  const billingAddress = input.billingAddress ?? {};
 
   const { data, error } = await supabase.rpc("create_dealership_manual_lead", {
     p_client_name: input.clientName.trim(),
@@ -208,6 +229,9 @@ export async function createManualLeadAction(input: {
     p_message: input.message?.trim() || null,
     p_vehicle_id: input.vehicleId || null,
     p_assign_to_self: profile.role === "seller",
+    p_document_cpf: documentCpf,
+    p_document_cnpj: documentCnpj,
+    p_billing_address: billingAddress,
   });
 
   if (error) {

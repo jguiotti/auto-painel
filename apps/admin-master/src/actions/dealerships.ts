@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import googleFontFamilies from "@autopainel/shared/data/google-fonts-families.json";
 
 import { requireAdminSession } from "@/lib/auth/require-admin";
+import { provisionDealershipHostsInBackground } from "@/lib/provision-dealership-hosts";
 import { digitsOnly, normalizeDomainHostname } from "@/lib/br-format";
 
 export interface ActionResult {
@@ -63,9 +64,12 @@ const REVALIDATE_PATHS = [
   "/painel/concessionarias",
   "/painel/dashboard",
   "/painel/financeiro",
+  "/painel/leads-comerciais",
   "/painel/planos",
   "/painel/usuarios",
 ];
+
+const INTERNAL_REFERENCE_SLUGS = new Set(["guiotti", "demo"]);
 
 const CNPJ_LENGTH_HINT =
   "O CNPJ deve ter 14 números (ex.: 12.345.678/0001-90). Complete os dois dígitos após o hífen.";
@@ -922,6 +926,7 @@ export async function createDealershipAction(
   }
 
   REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  provisionDealershipHostsInBackground(slug);
   return { success: true };
 }
 
@@ -1003,12 +1008,28 @@ export async function updateDealershipAction(
 
   const { data: existing, error: loadErr } = await supabase
     .from("dealerships")
-    .select("theme_settings, theme_config, content_config")
+    .select("theme_settings, theme_config, content_config, slug, status")
     .eq("id", id)
     .single();
 
   if (loadErr || !existing) {
     return { error: "Concessionária não encontrada." };
+  }
+
+  const existingSlug =
+    typeof existing.slug === "string" ? existing.slug.trim().toLowerCase() : "";
+
+  if (INTERNAL_REFERENCE_SLUGS.has(existingSlug)) {
+    if (slug !== existingSlug) {
+      return {
+        error: "Lojas de referência (Guiotti, Demo) não podem ter o subdomínio alterado.",
+      };
+    }
+    if (status !== "active") {
+      return {
+        error: "Lojas de referência (Guiotti, Demo) devem permanecer ativas.",
+      };
+    }
   }
 
   const theme_settings = mergeBrandColors(
@@ -1219,6 +1240,24 @@ export async function updateDealershipAction(
 export async function deleteDealershipAction(id: string): Promise<ActionResult> {
   await requireAdminSession();
   const supabase = createSupabaseServiceRoleClient();
+
+  const { data: existing, error: loadErr } = await supabase
+    .from("dealerships")
+    .select("slug")
+    .eq("id", id)
+    .single();
+
+  if (loadErr || !existing) {
+    return { error: "Concessionária não encontrada." };
+  }
+
+  const existingSlug =
+    typeof existing.slug === "string" ? existing.slug.trim().toLowerCase() : "";
+  if (INTERNAL_REFERENCE_SLUGS.has(existingSlug)) {
+    return {
+      error: "Lojas de referência (Guiotti, Demo) não podem ser excluídas.",
+    };
+  }
 
   const { error } = await supabase.from("dealerships").delete().eq("id", id);
 

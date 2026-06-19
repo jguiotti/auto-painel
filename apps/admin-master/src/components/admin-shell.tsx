@@ -3,6 +3,9 @@
 import {
   BookOpen,
   Building2,
+  CalendarDays,
+  FileSignature,
+  Handshake,
   KeyRound,
   Layers,
   LayoutDashboard,
@@ -63,6 +66,15 @@ function pageTitleFromPath(pathname: string): string {
   if (pathname.startsWith("/painel/financeiro")) {
     return "Financeiro";
   }
+  if (pathname.startsWith("/painel/leads-comerciais")) {
+    return "Leads comerciais";
+  }
+  if (pathname.startsWith("/painel/contratos")) {
+    return "Contratos";
+  }
+  if (pathname.startsWith("/painel/calendario-conteudo")) {
+    return "Calendário de conteúdo";
+  }
   if (pathname.startsWith("/painel/documentacao")) {
     return "Documentação interna";
   }
@@ -85,6 +97,9 @@ export function AdminShell({
   const nav = [
     { href: "/painel/dashboard", label: "Painel", icon: LayoutDashboard },
     { href: "/painel/concessionarias", label: "Concessionárias", icon: Building2 },
+    { href: "/painel/leads-comerciais", label: "Leads comerciais", icon: Handshake },
+    { href: "/painel/contratos", label: "Contratos", icon: FileSignature },
+    { href: "/painel/calendario-conteudo", label: "Calendário", icon: CalendarDays },
     { href: "/painel/planos", label: "Planos", icon: Layers },
     { href: "/painel/modulos", label: "Módulos", icon: Package },
     { href: "/painel/usuarios", label: "Usuários", icon: Users },

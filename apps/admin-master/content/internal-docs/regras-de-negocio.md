@@ -261,4 +261,42 @@ Ajustes solicitados por lojistas após uso real. **Status: encerrado (2026-06-19
 
 Detalhe técnico: `documentacao-tecnica.md`.
 
-*Última atualização: junho/2026 (épico encerrado)*
+---
+
+## Épico crescimento & operação (jun/2026)
+
+### Decisões PM
+
+| Tema | Decisão |
+| --- | --- |
+| Loja inativa | Bloqueia **painel e vitrine** até pagamento confirmado |
+| Preços públicos | R$ 197 / 397 / 997 (Essencial / Profissional / Completo); setup único **R$ 497** |
+| Faixas de estoque | Essencial até 40 · Profissional 41–80 · Completo 81+ veículos ativos |
+| CRM B2B | Módulo **`/painel/leads-comerciais`** |
+| Auto-provision | Sim — Cloudflare + Vercel após criar loja no admin |
+| Guiotti + Demo | Sempre ativas; `billing_exempt`; não inativar/excluir |
+
+### Regras de negócio (resumo)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-GR-001** | Loja `suspended` ou `pending_setup`: vitrine mostra `/loja-inativa` (shell genérico); estoque e páginas públicas não acessíveis. |
+| **BZ-GR-002** | Painel: utilizador autenticado com loja não `active` redireciona para `/conta-inativa`. |
+| **BZ-GR-003** | Preços no marketing-site refletem `pricing_plans.price_amount`; fallback estático alinhado aos mesmos valores. |
+| **BZ-GR-004** | Leads do site entram em `saas_prospects` com pipeline comercial gerido no admin. |
+| **BZ-GR-005** | Slugs `guiotti` e `demo` são referência interna — protegidos contra inativação e exclusão. |
+| **BZ-GR-006** | Contrato comercial: rascunho editável (notas); envio congela `body_snapshot_md`; assinatura registra `signature_provider_ref`. |
+| **BZ-GR-007** | Calendário editorial marketing gerido no admin (`platform_content_calendar_items`). |
+
+### Microcopy (Fase 2 — UX Writer)
+
+| Superfície | Título / mensagem |
+| --- | --- |
+| **Marketing `/planos`** | Mensalidade a partir de R$ 197/mês; setup único R$ 497; faixas por estoque (40 / 41–80 / 81+ veículos); FAQ com valores |
+| **Vitrine `/loja-inativa`** | Título: nome da loja ou «Loja temporariamente indisponível»; corpo: pausa até regularização do plano; CTA WhatsApp suporte |
+| **Painel `/conta-inativa`** | «Conta inativa» — pagamento pendente ou configuração; painel e vitrine indisponíveis até regularização |
+| **Admin `/painel/leads-comerciais`** | Pipeline: Novo → Qualificação → Demo agendada → Demo realizada → Proposta → Negociação → Ganho / Onboarding / Perdido |
+| **Contato marketing** | WhatsApp **+55 13 99743-5851**; e-mail **contato@autopainel.com.br** |
+| **Marketing WhatsApp (float + contato)** | Popup único com formulário de lead; **não** abre `wa.me` — equipe retorna pelo número informado |
+
+*Última atualização: junho/2026 (épico crescimento em andamento)*

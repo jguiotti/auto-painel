@@ -116,6 +116,9 @@ export interface CreateDealershipManualLeadArgs {
   p_message?: string | null;
   p_vehicle_id?: string | null;
   p_assign_to_self?: boolean;
+  p_document_cpf?: string | null;
+  p_document_cnpj?: string | null;
+  p_billing_address?: Record<string, unknown> | null;
 }
 
 /** `public.list_dealership_public_units` — contact page unit addresses. */
@@ -148,6 +151,29 @@ export interface PlatformHealthPingResult {
   ok: boolean;
   pinged_at: string;
   database: string;
+}
+
+/** `public.resolve_dealership_storefront_tenant` — vitrine tenant incl. suspended/pending_setup. */
+export interface ResolveDealershipStorefrontTenantArgs {
+  p_host: string;
+  p_platform_root_domain: string;
+}
+
+export type ResolveDealershipStorefrontTenantResult = Array<{
+  dealership_id: string;
+  dealership_slug: string;
+  dealership_name: string;
+  dealership_status: string;
+}>;
+
+/** `public.get_dealership_storefront_tenant_by_slug` — dev localhost tenant. */
+export interface GetDealershipStorefrontTenantBySlugArgs {
+  p_slug: string;
+}
+
+/** `public.get_dealership_storefront_shell_by_id` — inactive storefront shell. */
+export interface GetDealershipStorefrontShellByIdArgs {
+  p_id: string;
 }
 
 /** `public.upsert_dealership_social_carousel_settings` — template + watermark per dealership. */

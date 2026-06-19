@@ -4,8 +4,9 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { Separator } from "@autopainel/shared/ui";
 
 import { ContactForm } from "@/components/contact-form";
+import { MarketingWhatsAppTrigger } from "@/components/marketing-whatsapp-trigger";
 import { CONTACT_EMAIL, LEGAL_SITE_URL } from "@/lib/legal/constants";
-import { buildMarketingWhatsAppUrl, MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
+import { MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -50,14 +51,9 @@ export default function ContatoPage() {
               <span>
                 <span className="font-medium text-foreground">WhatsApp</span>
                 <br />
-                <a
-                  href={buildMarketingWhatsAppUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-marketing-accent hover:underline"
-                >
+                <MarketingWhatsAppTrigger className="text-marketing-accent hover:underline">
                   {MARKETING_WHATSAPP_DISPLAY}
-                </a>
+                </MarketingWhatsAppTrigger>
                 {" — ou deixe seu número no formulário."}
               </span>
             </li>

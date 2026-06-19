@@ -85,20 +85,20 @@ export const PLAN_MODULES: PlanModuleRow[] = [
 export const PRICING_PLANS = [
   {
     id: "starter",
-    name: "Starter",
-    tagline: "Presença digital essencial",
-    priceLabel: "Sob consulta",
+    name: "Essencial",
+    tagline: "Presença digital essencial — ideal para até 40 veículos",
+    priceLabel: "R$ 197/mês",
   },
   {
     id: "business",
-    name: "Business",
-    tagline: "Operação comercial completa",
-    priceLabel: "Sob consulta",
+    name: "Profissional",
+    tagline: "Simulador, QR Code e operação comercial — de 41 a 80 veículos",
+    priceLabel: "R$ 397/mês",
   },
   {
     id: "enterprise",
-    name: "Enterprise",
-    tagline: "Integrações e escala",
-    priceLabel: "Sob consulta",
+    name: "Completo",
+    tagline: "Integrações e escala digital — acima de 80 veículos",
+    priceLabel: "R$ 997/mês",
   },
 ] as const;

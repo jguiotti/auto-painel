@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { BrazilianAddressFields } from "@autopainel/shared/components/brazilian-address-fields";
+import { parseHqAddressFromForm } from "@autopainel/shared/lib/dealership/parse-hq-address-from-form";
 import {
   Button,
   Dialog,
@@ -32,6 +34,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [documentValue, setDocumentValue] = useState("");
   const [message, setMessage] = useState("");
 
   if (!canCreate) {
@@ -42,19 +45,26 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
     setClientName("");
     setPhone("");
     setClientEmail("");
+    setDocumentValue("");
     setMessage("");
     setError(null);
   }
 
-  function onSubmit(event: React.FormEvent) {
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const billingAddress = parseHqAddressFromForm(formData, "billing");
+
     startTransition(async () => {
       const res = await createManualLeadAction({
         clientName,
         phone,
         clientEmail: clientEmail || undefined,
         message: message || undefined,
+        document: documentValue || undefined,
+        billingAddress,
       });
       if (res.error) {
         setError(res.error);
@@ -82,7 +92,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
           Novo contato
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={onSubmit}>
           <DialogHeader>
             <DialogTitle>Cadastrar contato</DialogTitle>
@@ -90,7 +100,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
               Registre um interessado que entrou por telefone, balcão ou indicação.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid max-h-[min(70vh,32rem)] gap-4 overflow-y-auto py-4 pr-1">
             <div className="space-y-2">
               <Label htmlFor="manual-lead-name">Nome</Label>
               <Input
@@ -121,6 +131,18 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
                 autoComplete="email"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="manual-lead-document">CPF ou CNPJ (opcional)</Label>
+              <Input
+                id="manual-lead-document"
+                value={documentValue}
+                onChange={(event) => setDocumentValue(event.target.value)}
+                autoComplete="off"
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+              />
+            </div>
+            <BrazilianAddressFields prefix="billing" legend="Endereço (opcional)" />
             <div className="space-y-2">
               <Label htmlFor="manual-lead-message">Observação (opcional)</Label>
               <Textarea

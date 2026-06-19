@@ -1,6 +1,12 @@
 import { createSupabaseAnonClient } from "@autopainel/shared/lib/supabase";
 
 import {
+  formatMarketingPlanPriceLabel,
+  formatMarketingSetupFeeLabel,
+  MARKETING_PUBLIC_PLAN_NAMES,
+  resolveMarketingPlanStockBand,
+} from "@/lib/marketing-plan-prices";
+import {
   PLAN_MODULES,
   PRICING_PLANS,
 } from "@/lib/plans-catalog";
@@ -10,6 +16,8 @@ export interface PublicPricingPlan {
   name: string;
   description: string | null;
   priceLabel: string;
+  setupLabel: string;
+  stockBandLabel: string;
   tagline: string;
 }
 
@@ -23,33 +31,37 @@ export interface PublicPricingModule {
 export interface PublicPricingCatalog {
   plans: PublicPricingPlan[];
   modules: PublicPricingModule[];
+  setupFeeLabel: string;
   source: "database" | "static";
 }
 
 const MARKETING_PLAN_TAGLINES: Record<string, string> = {
-  starter: "Presença digital essencial",
-  business: "Operação comercial completa",
-  enterprise: "Integrações e escala",
+  starter: "Presença digital essencial — ideal para até 40 veículos",
+  business: "Simulador, QR Code e operação comercial — de 41 a 80 veículos",
+  enterprise: "Integrações e escala digital — acima de 80 veículos",
 };
 
-function formatPriceLabel(priceAmount: unknown): string {
-  const amount = Number(priceAmount);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return "Sob consulta";
-  }
-  return "Sob consulta";
+const SETUP_FEE_LABEL = formatMarketingSetupFeeLabel();
+
+function enrichPlan(slug: string, description: string | null, priceAmount: unknown) {
+  return {
+    slug,
+    name: MARKETING_PUBLIC_PLAN_NAMES[slug] ?? slug,
+    description,
+    priceLabel: formatMarketingPlanPriceLabel(slug, priceAmount),
+    setupLabel: SETUP_FEE_LABEL,
+    stockBandLabel: resolveMarketingPlanStockBand(slug),
+    tagline: MARKETING_PLAN_TAGLINES[slug] ?? description ?? "",
+  };
 }
 
 function staticFallbackCatalog(): PublicPricingCatalog {
   return {
     source: "static",
-    plans: PRICING_PLANS.map((plan) => ({
-      slug: plan.id,
-      name: plan.name,
-      description: plan.tagline,
-      priceLabel: plan.priceLabel,
-      tagline: plan.tagline,
-    })),
+    setupFeeLabel: SETUP_FEE_LABEL,
+    plans: PRICING_PLANS.map((plan) =>
+      enrichPlan(plan.id, plan.tagline, null),
+    ),
     modules: PLAN_MODULES.map((module) => ({
       key: module.key,
       label: module.label,
@@ -86,13 +98,10 @@ function mapRpcCatalog(payload: {
 
   return {
     source: "database",
-    plans: plans.map((plan) => ({
-      slug: plan.slug,
-      name: plan.name,
-      description: plan.description,
-      priceLabel: formatPriceLabel(plan.price_amount),
-      tagline: MARKETING_PLAN_TAGLINES[plan.slug] ?? plan.description ?? "",
-    })),
+    setupFeeLabel: SETUP_FEE_LABEL,
+    plans: plans.map((plan) =>
+      enrichPlan(plan.slug, plan.description, plan.price_amount),
+    ),
     modules: modules.map((module) => ({
       key: module.key,
       label: module.label,

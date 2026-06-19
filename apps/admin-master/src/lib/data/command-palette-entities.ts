@@ -51,6 +51,27 @@ const NAV_ENTITIES: CommandPaletteEntity[] = [
     searchValue: "usuários gestores provisionamento owner",
   },
   {
+    id: "nav-leads",
+    kind: "nav",
+    label: "Leads comerciais",
+    href: "/painel/leads-comerciais",
+    searchValue: "leads comerciais crm b2b pipeline vendas",
+  },
+  {
+    id: "nav-contracts",
+    kind: "nav",
+    label: "Contratos comerciais",
+    href: "/painel/contratos",
+    searchValue: "contratos assinatura comercial saas",
+  },
+  {
+    id: "nav-content-calendar",
+    kind: "nav",
+    label: "Calendário de conteúdo",
+    href: "/painel/calendario-conteudo",
+    searchValue: "calendário conteúdo marketing editorial",
+  },
+  {
     id: "nav-finance",
     kind: "nav",
     label: "Financeiro",

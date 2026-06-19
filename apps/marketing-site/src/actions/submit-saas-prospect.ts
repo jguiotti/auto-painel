@@ -21,6 +21,7 @@ export async function submitSaasProspectAction(
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const companyNameRaw = String(formData.get("company_name") ?? "").trim();
   const messageRaw = String(formData.get("message") ?? "").trim();
+  const leadChannel = String(formData.get("lead_channel") ?? "contact_form").trim();
   const privacyConsent = formData.get("privacy_consent") === "true";
   const marketingConsent = formData.get("marketing_consent") === "true";
 
@@ -34,6 +35,10 @@ export async function submitSaasProspectAction(
 
   if (email.length < 3 || !EMAIL_RE.test(email)) {
     return { error: "Informe um e-mail válido." };
+  }
+
+  if (leadChannel === "whatsapp_float" && phoneRaw.length < 8) {
+    return { error: "Informe seu WhatsApp ou telefone para continuar." };
   }
 
   if (phoneRaw.length > 40) {
@@ -66,6 +71,7 @@ export async function submitSaasProspectAction(
     source: "marketing_site",
     metadata: {
       privacy_policy_version: PRIVACY_POLICY_VERSION,
+      lead_channel: leadChannel,
     } as Record<string, unknown>,
     privacy_policy_accepted_at: nowIso,
     privacy_policy_version: PRIVACY_POLICY_VERSION,

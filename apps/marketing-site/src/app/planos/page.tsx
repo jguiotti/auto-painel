@@ -12,12 +12,12 @@ import { fetchPublicPricingCatalog } from "@/lib/public-pricing-catalog";
 export const metadata: Metadata = {
   title: "Planos e módulos",
   description:
-    "Compare planos Starter, Business e Enterprise do AutoPainel. Módulos de estoque, financiamento, integrações OLX, WebMotors, Meta e mais — sob consulta.",
+    "Compare planos Essencial, Profissional e Completo do AutoPainel. A partir de R$ 197/mês — estoque, CRM, simulador e integrações.",
   alternates: { canonical: `${LEGAL_SITE_URL}/planos` },
   openGraph: {
     title: "Planos e módulos | AutoPainel",
     description:
-      "Escolha o plano ideal para sua concessionária. Valores sob consulta.",
+      "Planos a partir de R$ 197/mês para concessionárias. Compare módulos e agende uma demonstração.",
     url: `${LEGAL_SITE_URL}/planos`,
   },
 };
@@ -26,7 +26,17 @@ const FAQ_ITEMS = [
   {
     question: "Quanto custa o AutoPainel?",
     answer:
-      "Os planos são sob consulta, de acordo com o porte da loja e módulos contratados. Solicite uma demonstração para receber proposta personalizada.",
+      "Mensalidade a partir de R$ 197/mês (Essencial), R$ 397/mês (Profissional) e R$ 997/mês (Completo), conforme módulos e faixa de estoque. Setup único opcional de R$ 497 (onboarding e importação inicial). Valores mensais; impostos podem ser aplicados conforme contrato.",
+  },
+  {
+    question: "Como o estoque influencia o plano?",
+    answer:
+      "Usamos o número de veículos ativos como referência: Essencial até 40, Profissional de 41 a 80 e Completo acima de 80. Na demonstração confirmamos a faixa ideal para a sua operação — se o pátio crescer, o plano pode ser ajustado.",
+  },
+  {
+    question: "O que inclui a taxa de setup?",
+    answer:
+      "Configuração assistida da vitrine e do painel, alinhamento de marca (logo e cores) e importação inicial do estoque. É cobrada uma única vez na contratação, separada da mensalidade.",
   },
   {
     question: "Preciso de agência para manter o site?",
@@ -71,7 +81,10 @@ export default async function PlanosPage() {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
             Monte a operação digital da sua loja com o que faz sentido hoje — e evolua quando
-            precisar. Todos os valores são <strong className="text-zinc-300">sob consulta</strong>.
+            precisar. Mensalidade a partir de{" "}
+            <strong className="text-zinc-300">R$ 197/mês</strong>; setup único opcional de{" "}
+            <strong className="text-zinc-300">R$ 497</strong>. O plano indicado depende do
+            volume de veículos no seu estoque (faixas na tabela abaixo).
           </p>
         </div>
 

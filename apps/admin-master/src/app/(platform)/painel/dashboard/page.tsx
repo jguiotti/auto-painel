@@ -1,9 +1,12 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  BarChart3,
   Building2,
   CircleCheck,
   Clock3,
+  ExternalLink,
+  HeartPulse,
   MessageSquare,
   Plus,
   Sparkles,
@@ -20,9 +23,20 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { fetchUpcomingContentCalendarItems } from "@/lib/data/platform-content-calendar";
+import {
+  CONTENT_CALENDAR_CHANNEL_LABELS,
+} from "@/lib/data/platform-content-calendar-shared";
+import { fetchPlatformCommercialLeads } from "@/lib/data/platform-commercial-leads";
+import { PLATFORM_LEAD_PIPELINE_LABELS } from "@/lib/data/platform-commercial-leads-shared";
+import { fetchPlatformHealthSummary } from "@/lib/data/platform-health";
 import { fetchPlatformMetrics } from "@/lib/data/platform-metrics";
 
 export const dynamic = "force-dynamic";
+
+const GA4_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID?.trim() || "G-VR8MDJE9H1";
+const GTM_CONTAINER_ID = process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-MV99ZXW9";
 
 function formatLeadDelta(current: number, previous: number): string {
   if (previous === 0) {
@@ -33,12 +47,42 @@ function formatLeadDelta(current: number, previous: number): string {
   return `${sign}${delta.toFixed(1)}% vs. 7 dias anteriores (${previous})`;
 }
 
+function formatDateTime(iso: string | null): string {
+  if (!iso) {
+    return "Sem registro";
+  }
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
+function formatCalendarDate(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(
+    new Date(`${iso}T12:00:00`),
+  );
+}
+
 export default async function DashboardPage() {
-  const m = await fetchPlatformMetrics();
+  const [m, health, upcomingContent, commercialLeads] = await Promise.all([
+    fetchPlatformMetrics(),
+    fetchPlatformHealthSummary(),
+    fetchUpcomingContentCalendarItems(5),
+    fetchPlatformCommercialLeads(),
+  ]);
+
   const leadsTrendLabel = formatLeadDelta(
     m.platformLeadsLast7Days,
     m.platformLeadsPrevious7Days,
   );
+
+  const openPipelineCount = commercialLeads.filter((lead) =>
+    ["new", "qualification", "demo_scheduled", "demo_done", "proposal_sent", "negotiation"].includes(
+      lead.pipeline_status,
+    ),
+  ).length;
+
+  const pipelinePreview = ["new", "proposal_sent", "negotiation"] as const;
 
   const kpiCards = [
     {
@@ -63,11 +107,18 @@ export default async function DashboardPage() {
       href: "/painel/financeiro",
     },
     {
-      title: "Leads (7 dias)",
+      title: "Leads vitrine (7d)",
       value: m.platformLeadsLast7Days,
       description: leadsTrendLabel,
       icon: MessageSquare,
-      href: undefined,
+      href: "/painel/leads-comerciais",
+    },
+    {
+      title: "Pipeline B2B aberto",
+      value: openPipelineCount,
+      description: "Leads comerciais em andamento",
+      icon: Sparkles,
+      href: "/painel/leads-comerciais",
     },
     {
       title: "Configuração pendente",
@@ -84,11 +135,11 @@ export default async function DashboardPage() {
       href: "/painel/financeiro",
     },
     {
-      title: "Prospects comerciais",
+      title: "Prospects marketing",
       value: m.saasProspectCount,
-      description: "Interessados no site institucional",
+      description: "Formulários autopainel.com.br",
       icon: Sparkles,
-      href: undefined,
+      href: "/painel/leads-comerciais",
     },
   ];
 
@@ -97,7 +148,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Painel global</h1>
         <p className="text-sm text-muted-foreground">
-          Visão consolidada da operação multitenant e funil comercial.
+          Operação multitenant, funil comercial, saúde da plataforma e marketing.
         </p>
       </div>
 
@@ -120,6 +171,76 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saúde Supabase</CardTitle>
+            <HeartPulse className="size-4 text-muted-foreground" aria-hidden />
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            <p>
+              Último ping:{" "}
+              <span className="font-medium">{formatDateTime(health.lastPingAt)}</span>
+            </p>
+            <p className="text-muted-foreground">
+              {health.lastSuccess === null
+                ? "Sem histórico — cron GitHub ou npm run supabase:ping"
+                : health.lastSuccess
+                  ? `OK${health.lastLatencyMs != null ? ` · ${health.lastLatencyMs} ms` : ""}`
+                  : "Falha no último ping"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Analytics (GA4)</CardTitle>
+            <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              GA4: <code className="text-xs">{GA4_MEASUREMENT_ID}</code>
+            </p>
+            <p>
+              GTM: <code className="text-xs">{GTM_CONTAINER_ID}</code>
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={`https://analytics.google.com/analytics/web/#/p${GA4_MEASUREMENT_ID.replace("G-", "")}/reports/intelligenthome`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Abrir GA4
+                <ExternalLink className="ml-1 size-3.5" aria-hidden />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pipeline B2B</CardTitle>
+            <Sparkles className="size-4 text-muted-foreground" aria-hidden />
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {pipelinePreview.map((status) => {
+              const count = commercialLeads.filter((l) => l.pipeline_status === status).length;
+              return (
+                <p key={status} className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">
+                    {PLATFORM_LEAD_PIPELINE_LABELS[status]}
+                  </span>
+                  <span className="font-medium tabular-nums">{count}</span>
+                </p>
+              );
+            })}
+            <Button variant="link" className="h-auto p-0" asChild>
+              <Link href="/painel/leads-comerciais">Ver pipeline completo</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpiCards.map(({ title, value, description, icon: Icon, href }) => {
           const card = (
@@ -140,12 +261,47 @@ export default async function DashboardPage() {
           }
 
           return (
-            <Link key={title} href={href} className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link
+              key={title}
+              href={href}
+              className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               {card}
             </Link>
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Próximo conteúdo</CardTitle>
+            <CardDescription>Calendário editorial marketing AutoPainel</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/painel/calendario-conteudo">Calendário completo</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {upcomingContent.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma peça agendada. Adicione em Calendário de conteúdo.
+            </p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {upcomingContent.map((item) => (
+                <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-medium">{item.title}</span>
+                  <span className="text-muted-foreground">
+                    {formatCalendarDate(item.scheduled_for)} ·{" "}
+                    {CONTENT_CALENDAR_CHANNEL_LABELS[item.channel]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -160,13 +316,16 @@ export default async function DashboardPage() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/painel/planos">Planos comerciais</Link>
+            <Link href="/painel/leads-comerciais">Leads comerciais</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/painel/contratos/novo">Novo contrato</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/painel/calendario-conteudo">Calendário</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/painel/financeiro">Financeiro</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/painel/documentacao/tecnica">Documentação técnica</Link>
           </Button>
         </CardContent>
       </Card>

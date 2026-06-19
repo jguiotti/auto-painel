@@ -15,9 +15,8 @@ export default function ContaInativaPage() {
         <CardHeader>
           <CardTitle>Conta inativa</CardTitle>
           <CardDescription>
-            Esta concessionária está suspensa, em configuração ou encerrada. O painel e
-            a vitrine pública ficam indisponíveis até a operação AutoPainel reativar o
-            serviço.
+            Esta concessionária está com pagamento pendente ou em configuração. O painel e a
+            vitrine ficam indisponíveis até a regularização da assinatura AutoPainel.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">

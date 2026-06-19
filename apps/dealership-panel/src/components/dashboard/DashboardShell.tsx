@@ -18,6 +18,7 @@ import { signOutAction } from "@/app/painel/actions";
 import { DealershipBrandImage } from "@/components/branding/dealership-brand-image";
 import { DealershipSidebarNav } from "@/components/dashboard/dealership-sidebar-nav";
 import { DashboardMobileNavMount } from "@/components/dashboard/dashboard-mobile-nav-mount";
+import { PanelOnboardingWizard } from "@/components/dashboard/panel-onboarding-wizard";
 import {
   DealershipNotificationProvider,
   DealershipNotificationTrigger,
@@ -225,6 +226,7 @@ export function DashboardShell({
           </main>
         </div>
       </div>
+      <PanelOnboardingWizard />
     </DealershipNotificationProvider>
   );
 }

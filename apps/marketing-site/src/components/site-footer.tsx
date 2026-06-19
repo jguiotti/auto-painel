@@ -2,7 +2,6 @@ import { Facebook, Instagram } from "lucide-react";
 import Link from "next/link";
 
 import { BRAND_SLOGAN, BRAND_SOCIAL_LINKS, LOGO_DESTAQUES_SRC } from "@/lib/brand";
-import { PRIVACY_EMAIL } from "@/lib/legal/constants";
 
 import { FooterBackToTop } from "./footer-back-to-top";
 
@@ -67,11 +66,6 @@ export function SiteFooter() {
                 <Link className="transition hover:text-white" href="/politica-de-cookies">
                   Política de Cookies
                 </Link>
-              </li>
-              <li>
-                <a className="transition hover:text-white" href={`mailto:${PRIVACY_EMAIL}`}>
-                  {PRIVACY_EMAIL}
-                </a>
               </li>
             </ul>
           </div>

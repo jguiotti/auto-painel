@@ -307,6 +307,38 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 
 ---
 
+## Épico crescimento & operação (jun/2026) — em andamento
+
+| Onda | Escopo | Status |
+| --- | --- | --- |
+| **P0** | Telefone marketing `+55 13 99743-5851`; doc Email Routing | Entregue |
+| **P1** | Preços públicos; vitrine `/loja-inativa`; CRM `/painel/leads-comerciais`; painel `/conta-inativa` | Entregue (base) |
+| **P2** | Contratos; auto-provision pós-create; Guiotti/Demo protegidas | Entregue |
+| **P3** | Dashboard admin + GA4 + calendário conteúdo | Entregue (base) |
+| **P4** | Wizard painel; lead enriquecido; marketing guerrilla | Entregue (wizard + lead; guerrilla pendente) |
+
+| Área | Paths / contratos |
+| --- | --- |
+| Migração P1 | `supabase/migrations/20260620120000_growth_epic_pricing_storefront_crm.sql` |
+| Migração P2 contratos | `supabase/migrations/20260620140000_growth_epic_platform_contracts.sql` |
+| Migração P3 calendário | `supabase/migrations/20260620150000_growth_epic_content_calendar.sql` |
+| Contratos admin | `/painel/contratos`, `/painel/contratos/novo`, `/painel/contratos/[id]` |
+| Calendário admin | `/painel/calendario-conteudo` |
+| Build fix CRM | `platform-commercial-leads-shared.ts` (sem `server-only`) vs `platform-commercial-leads.ts` |
+| Preços marketing | `marketing-plan-prices.ts` — 197 / 397 / 997 + setup 497 + faixas estoque; migração `20260620160000` |
+| Vitrine inativa | RPC `resolve_dealership_storefront_tenant`, `get_dealership_storefront_shell_by_id`; rota `customer-site` `/loja-inativa` |
+| Painel inativo | `require-dashboard-session.ts` → `/conta-inativa` (status ≠ `active`) |
+| CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` |
+| Lojas internas | `dealerships.billing_exempt`; trigger `enforce_internal_dealership_protection` (slugs `guiotti`, `demo`) |
+| Auto-provision | `provisionDealershipHostsInBackground` em `createDealershipAction` → `scripts/dealership-hosts-provision.mjs --cloudflare` |
+| Email routing | `packages/shared/docs/CLOUDFLARE_EMAIL_ROUTING.md` |
+| WhatsApp marketing | Popup único `MarketingWhatsAppProvider` — **sem** link `wa.me`; lead → `saas_prospects` |
+| Migração P4 | `supabase/migrations/20260620170000_growth_epic_p4_manual_lead_enrichment.sql` |
+| Wizard painel | `panel-onboarding-wizard.tsx` — cookie `ap_panel_onboarding_v1`, 1× por navegador |
+| Lead manual enriquecido | `create-manual-lead-dialog.tsx` — CPF/CNPJ + endereço; RPC `create_dealership_manual_lead` com `customer_id` |
+
+---
+
 ## Deploy
 
 | Destino | Guia |

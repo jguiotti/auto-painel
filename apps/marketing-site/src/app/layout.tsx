@@ -10,6 +10,7 @@ import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { MarketingJsonLd } from "@/components/marketing-json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { MarketingWhatsAppProvider } from "@/components/marketing-whatsapp-provider";
 import { WhatsAppFloatButton } from "@/components/whatsapp-float-button";
 import { fontMardoto, fontOswald, FAVICON_SRC } from "@/lib/brand";
 import { COOKIE_CONSENT_COOKIE, hasAnalyticsConsent } from "@/lib/cookie-consent";
@@ -77,11 +78,13 @@ export default async function RootLayout({
         {analyticsAllowed ? (
           <AutopainelGoogleTagManagerBody appSurface="marketing" />
         ) : null}
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
-        <CookieConsentBanner />
-        <WhatsAppFloatButton />
+        <MarketingWhatsAppProvider>
+          <SiteHeader />
+          <main>{children}</main>
+          <SiteFooter />
+          <CookieConsentBanner />
+          <WhatsAppFloatButton />
+        </MarketingWhatsAppProvider>
       </body>
     </html>
   );
