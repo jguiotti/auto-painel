@@ -281,13 +281,19 @@ Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
 
 **Épico Fase 1 (e-mail + DNS multitenant) — encerrado 2026-06-17:** Resend + Supabase SMTP produção, wildcards Cloudflare, provisionamento Vercel por slug, rotas Auth admin/painel, convite colaborador com e-mail.
 
-**Épico feedback operacional (jun/2026) — P0 + P1 + P2 implementados (2026-06-10):**
+**Épico feedback operacional (jun/2026) — encerrado 2026-06-19** (commit `237e20a`, deploy Vercel admin/painel/vitrine + Supabase remoto):
 
 | Onda | Entregue |
 | --- | --- |
-| **P0** | WhatsApp modal ficha; QR URL vitrine; claim lead + badge Contatos |
-| **P1** | Estoque filtros/paginação/ordem destaques; CRM status/motivo perda; filtros mobile vitrine |
+| **P0** | WhatsApp modal ficha + hero test drive; QR URL vitrine; claim lead + badge Contatos |
+| **P1** | Estoque filtros/paginação/ordem destaques; CRM status/motivo perda + exclusão via `ConfirmActionDialog`; filtros mobile vitrine (tema escuro) |
 | **P2** | QR A4 paisagem + texto promo; recibo pré-preenche via lead; delist por portal; equipe só owner + convite painel; Edge `notify-dealership-new-lead`; logo claro/escuro admin |
+
+| Pós-deploy operador | Ação |
+| --- | --- |
+| Resend | `RESEND_API_KEY` real no Supabase Edge (Dashboard → API Keys) |
+| Local pós-reset | `npm run supabase:reset:dev` ou `npm run seed:local-access` |
+| Vercel vitrine prod | projeto **`auto-painel-customer-site`** (não usar `autopainel-customer` — removido como duplicata) |
 
 | Área | Paths / contratos |
 | --- | --- |

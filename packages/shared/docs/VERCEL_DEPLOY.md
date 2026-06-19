@@ -41,7 +41,7 @@ Repetir para cada app (Import Git Repository → mesmo repo, **Root Directory** 
 | `apps/marketing-site` | autopainel-marketing |
 | `apps/admin-master` | autopainel-admin |
 | `apps/dealership-panel` | autopainel-panel |
-| `apps/customer-site` | autopainel-customer |
+| `apps/customer-site` | `auto-painel-customer-site` |
 
 **Framework Preset:** Next.js (detectado).  
 **Node.js:** 20.x (Settings → General).  
@@ -222,7 +222,9 @@ SOCIAL_CAROUSEL_RENDER_SECRET=
 
 Supabase Auth → Redirect URLs: `https://*.loja.autopainel.com.br/**` (pattern wildcard se disponível) ou listar slugs activos.
 
-### `autopainel-customer`
+### `auto-painel-customer-site`
+
+Projeto canónico da vitrine (`*.autopainel.com.br`). **Não** criar duplicata `autopainel-customer` — removido em jun/2026.
 
 ```
 NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=autopainel.com.br

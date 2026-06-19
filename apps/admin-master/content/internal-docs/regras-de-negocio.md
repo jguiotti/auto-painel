@@ -227,7 +227,7 @@ Especificação completa da squad (convites, boas-vindas, recuperar senha, marca
 
 ## Épico feedback operacional (PRD aprovado — jun/2026)
 
-Ajustes solicitados por lojistas após uso real. **Status:** UX Writer + UX aprovados; aguardando arquitetura e implementação.
+Ajustes solicitados por lojistas após uso real. **Status: encerrado (2026-06-19)** — P0, P1 e P2 em produção; ver `documentacao-tecnica.md`.
 
 ### Decisões PM (Open Questions fechadas)
 
@@ -257,7 +257,8 @@ Ajustes solicitados por lojistas após uso real. **Status:** UX Writer + UX apro
 | **BZ-FO-008** | E-mail transacional a equipe comercial a cada novo lead. |
 | **BZ-FO-009** | Admin: logo fundo claro + logo fundo escuro; vitrine segue tema; painel/impressos sempre logo claro. |
 | **BZ-FO-010** | Despublicar classificados: ação por portal (OLX, WebMotors, iCarros). Meta **fora** deste épico. |
+| **BZ-FO-011** | Exclusão de contato no CRM: confirmação via `ConfirmActionDialog` (nunca `window.confirm`). |
 
-Detalhe técnico: `documentacao-tecnica.md` (após implementação).
+Detalhe técnico: `documentacao-tecnica.md`.
 
-*Última atualização: junho/2026*
+*Última atualização: junho/2026 (épico encerrado)*

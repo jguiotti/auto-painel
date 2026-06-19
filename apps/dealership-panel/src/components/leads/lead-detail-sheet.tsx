@@ -18,6 +18,7 @@ import {
 } from "@autopainel/shared/types/lead-crm";
 import {
   Button,
+  ConfirmActionDialog,
   Input,
   Label,
   Select,
@@ -114,22 +115,6 @@ export function LeadDetailSheet({
         setError(res.error);
         return;
       }
-      router.refresh();
-    });
-  }
-
-  function handleDelete() {
-    if (!window.confirm("Excluir este contato permanentemente? Esta ação não pode ser desfeita.")) {
-      return;
-    }
-    setError(null);
-    startTransition(async () => {
-      const res = await deleteLeadAction(lead!.id);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
-      onOpenChange(false);
       router.refresh();
     });
   }
@@ -379,15 +364,37 @@ export function LeadDetailSheet({
           />
 
           {canManageAssignments ? (
-            <Button
-              type="button"
-              variant="destructive"
-              className="w-full"
+            <ConfirmActionDialog
+              title="Excluir contato?"
+              description={
+                <p>
+                  Esta ação remove o contato permanentemente do CRM. Não é possível
+                  desfazer.
+                </p>
+              }
+              confirmLabel="Excluir contato"
+              confirmPendingLabel="Excluindo…"
+              confirmVariant="destructive"
               disabled={pending}
-              onClick={handleDelete}
-            >
-              Excluir contato
-            </Button>
+              onConfirm={async () => {
+                const res = await deleteLeadAction(lead.id);
+                if (res.error) {
+                  return { error: res.error };
+                }
+                onOpenChange(false);
+                router.refresh();
+              }}
+              trigger={
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={pending}
+                >
+                  Excluir contato
+                </Button>
+              }
+            />
           ) : null}
 
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700" asChild>
