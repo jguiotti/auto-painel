@@ -252,3 +252,27 @@ export interface UpsertDealershipCustomerArgs {
   p_notes?: string | null;
   p_customer_id?: string | null;
 }
+
+/** `public.transfer_sales_rep_portfolio` — move confirmed attributions to another rep. */
+export interface TransferSalesRepPortfolioArgs {
+  p_from_sales_rep_id: string;
+  p_to_sales_rep_id: string;
+  p_effective_at: string;
+  p_dealership_ids?: string[] | null;
+  p_notes?: string | null;
+}
+
+/** `public.confirm_dealership_sales_attribution` — confirm link and seed first ledger line. */
+export interface ConfirmDealershipSalesAttributionArgs {
+  p_attribution_id: string;
+}
+
+/** `public.clawback_dealership_sales_commissions` — estorno churn 30d. */
+export interface ClawbackDealershipSalesCommissionsArgs {
+  p_dealership_id: string;
+}
+
+/** `public.approve_sales_commission_ledger_entries` — bulk approve pending lines. */
+export interface ApproveSalesCommissionLedgerEntriesArgs {
+  p_entry_ids: string[];
+}

@@ -17,8 +17,8 @@ export interface MarketingHighlight {
 
 export const HERO_TRUST_POINTS = [
   "Site e painel exclusivos da sua loja",
-  "Estoque isolado — nenhuma outra concessionária acessa seus dados",
-  "Demonstração gratuita em 15 minutos",
+  "3 vitrines demo ao vivo para comparar layout",
+  "Loja configurada em até 1 dia útil após contratação",
 ] as const;
 
 export const PILLARS: MarketingHighlight[] = [
@@ -72,40 +72,58 @@ export const DIFFERENTIATORS: MarketingHighlight[] = [
 export const WORKFLOW_STEPS = [
   {
     step: "01",
-    title: "Configure a identidade",
-    text: "Logo, cores, um dos três layouts e domínio — a vitrine já nasce com cara de marca forte.",
+    title: "Entre em contato",
+    text: "Escolha o plano, confirme o setup e envie logo e cores — nossa equipe assume daqui.",
   },
   {
     step: "02",
-    title: "Monte a equipe",
-    text: "Convide vendedores e gestores. Cada um entra no painel com o acesso que você definir.",
+    title: "Configuração em 1 dia",
+    text: "Montamos vitrine, painel, domínio e importação inicial do estoque. Você recebe acesso treinado.",
   },
   {
     step: "03",
-    title: "Publique e capture leads",
-    text: "Estoque no ar, contatos centralizados e SEO trabalhando enquanto sua equipe foca em fechar negócio.",
+    title: "Publique e venda",
+    text: "Estoque no ar, leads centralizados e SEO trabalhando enquanto sua equipe foca em fechar negócio.",
   },
 ] as const;
 
-export const GUIOTTI_STOREFRONT_URL = "https://guiotti.autopainel.com.br";
-
-export const SHOWCASE_LAYOUT_VARIANTS = [
+/** Public demo storefronts — one per layout template (layout_id 1–3). */
+export const DEMO_SHOWCASE_STORES = [
   {
-    id: 1,
+    slug: "demo-2",
+    url: "https://demo-2.autopainel.com.br",
+    layoutId: 1 as const,
     name: "Layout Premium",
-    description: "Hero destacado, filtros laterais e vitrine de alto impacto visual.",
-    swatches: ["#C5A059", "#1a1a1a", "#f5f5f4"],
+    tagline: "Hero de impacto, filtros laterais e vitrine editorial.",
+    swatches: ["#dc2626", "#18181b", "#fafafa"] as const,
+    themeLabel: "Tema escuro",
   },
   {
-    id: 2,
+    slug: "demo-3",
+    url: "https://demo-3.autopainel.com.br",
+    layoutId: 2 as const,
     name: "Layout Clássico",
-    description: "Navegação limpa, grid de veículos e foco na conversão de leads.",
-    swatches: ["#2563eb", "#0f172a", "#e2e8f0"],
+    tagline: "Navegação limpa, grid de veículos e foco em conversão.",
+    swatches: ["#0d9488", "#0f172a", "#e2e8f0"] as const,
+    themeLabel: "Tema escuro",
   },
   {
-    id: 3,
+    slug: "demo",
+    url: "https://demo.autopainel.com.br",
+    layoutId: 3 as const,
     name: "Layout Moderno",
-    description: "Cards amplos, tipografia forte e experiência mobile-first.",
-    swatches: ["#0891b2", "#18181b", "#fafafa"],
+    tagline: "Cards amplos, tipografia forte e experiência mobile-first.",
+    swatches: ["#818cf8", "#0f172a", "#111827"] as const,
+    themeLabel: "Tema escuro",
   },
 ] as const;
+
+export const SHOWCASE_LAYOUT_VARIANTS = DEMO_SHOWCASE_STORES.map((store) => ({
+  id: store.layoutId,
+  name: store.name,
+  description: store.tagline,
+  swatches: [...store.swatches],
+  url: store.url,
+  slug: store.slug,
+  themeLabel: store.themeLabel,
+}));

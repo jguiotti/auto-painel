@@ -168,20 +168,37 @@ Clique **Salvar** em cada uma.
 
 > **Não confundir:** «Criar eventos personalizados» dentro do **fluxo Web** ≠ dimensões personalizadas. São menus diferentes.
 
-## A.4 Eventos principais (conversões) — faça DEPOIS do GTM
+## A.4 Eventos principais (conversões) — **não crie eventos manualmente**
 
-**Não** crie eventos manualmente aqui. Só marque conversão quando o evento **já existir** (vindo do GTM):
+### O que confundir (e o que fazer)
 
-1. **Admin** → **Exibição de dados** → **Eventos**.
-2. Aguarde aparecer na lista (ex.: `lead_form_submit`) — teste com GTM Preview + DebugView.
-3. Ative o toggle **Marcar como evento principal** na linha do evento.
+| Tela no GA4 | O que parece | O que fazer |
+| --- | --- | --- |
+| **Fluxos de dados → Criar evento** | «Criar sem código» | **Ignore** para `ap_*` — não lê o dataLayer |
+| **Eventos** (Exibição de dados) | Lista `close_convert_lead`, etc. | Eventos **chegam sozinhos** do GTM após publicar a tag `GA4 — Event — AP Custom` |
+| **Eventos → Marcar como principal** | Toggle estrela | **Aqui** você marca conversão — só depois do evento aparecer na lista |
+
+### Passo a passo (só conversões)
+
+1. Publique o GTM (variáveis ✅ + acionador `ap_custom_event` + tag `GA4 — Event — AP Custom`).
+2. No site, dispare uma ação real (ex.: enviar `/contato`, clicar WhatsApp na vitrine).
+3. GA4 → **Admin** → **Exibição de dados** → **Eventos** (não «Fluxos de dados»).
+4. Aguarde alguns minutos (ou use **DebugView** em tempo real).
+5. Quando `lead_form_submit`, `whatsapp_click`, `cta_click`, etc. **aparecerem na tabela**, ligue o toggle **«Marcar como evento principal»** em cada um.
 
 Eventos candidatos a conversão:
 
 | Evento | Superfície | Significado |
 | --- | --- | --- |
 | `lead_form_submit` | marketing | Formulário `/contato` enviado |
-| `lead_submit` | vitrine | Lead na loja (quando implementado) |
+| `whatsapp_click` | marketing + vitrine | Abriu fluxo WhatsApp |
+| `cta_click` | marketing | Clique em CTA (hero, planos, header) |
+| `lead_submit` | vitrine | Lead na loja |
+| `vehicle_share_click` | vitrine | Compartilhou veículo |
+
+**DebugView (teste imediato):** Admin → **DebugView** (menu «Configurar») ou instale a extensão [Google Analytics Debugger](https://chromewebstore.google.com/detail/google-analytics-debugger/jnkmfdileelhofjcijamephohjechhna). Navegue com GTM Preview aberto e veja os hits `ap_custom_event`.
+
+**Dimensões:** já criadas em A.3 — não são «eventos»; são campos extras nos relatórios (`ap_dealership_slug`, etc.).
 
 ---
 
@@ -424,6 +441,96 @@ GTM (GTM-MV99ZXW9) — você já tem Tag GA ✅
 | Dimensões vazias em Explorar | Dimensões não registradas ou < 48h | Admin → Definições personalizadas |
 | Marketing sem dados | Cookies não aceitos | Aceitar analytics no banner |
 | `lead_form_submit` não aparece | Formulário com erro ou GTM bloqueado | Enviar form válido; conferir Preview |
+| Meus acessos aparecem no GA4 | IP da equipe sem filtro | `GA4_INTERNAL_TRAFFIC_IPS` + filtro interno GA4 |
+
+---
+
+# Excluir tráfego interno (IP da equipe)
+
+Evita sujar métricas quando você, devs ou operadores navegam no site em produção.
+
+# Excluir tráfego interno — a partir da tela «Detalhes da stream da Web»
+
+Se você já está vendo **Detalhes da stream da Web** (`autopainel.com.br`, ID `G-VR8MDJE9H1`):
+
+1. **Feche** qualquer painel lateral aberto (ex.: «Métrica otimizada» — isso **não** é tráfego interno).
+2. Role até a seção **Tag do Google** (parte inferior da página).
+3. Clique em **Definir as configurações da tag** — a descrição menciona «tráfego interno».
+4. **Mostrar tudo** → **Definir tráfego interno** → **Criar** → cadastre seu IP (`traffic_type`: `internal`).
+5. Volte ao **Administrador** → **Coleta e modificação de dados** → **Filtros de dados** → filtro **Tráfego interno** → **Excluir** → **Testando** → depois **Ativo**.
+
+> **Definições personalizadas** (dimensões `ap_*`) ficam em **Exibição de dados** — menu diferente.
+
+## Camada 1 — Código (recomendado, imediato após deploy)
+
+1. Descubra seu IP público: abra [https://ifconfig.me/ip](https://ifconfig.me/ip) (ou `curl ifconfig.me` no terminal).
+2. Na **raiz** do monorepo, em `.env.local`:
+
+```bash
+GA4_INTERNAL_TRAFFIC_IPS=SEU.IP.AQUI
+# Vários IPs (escritório + casa): 203.0.113.10,198.51.100.22
+```
+
+3. Rode `npm run sync:env` (se usar sync) e **redeploy** os 4 apps na Vercel com a mesma variável em **Environment Variables** (Production + Preview, se quiser).
+4. Confirme: abra o site → DevTools → Console → `window.__AP_ANALYTICS_EXCLUDED` deve ser `true` e **não** deve existir request a `googletagmanager.com`.
+
+**IPv6:** inclua o endereço completo se sua rede usar IPv6.
+
+**Localhost:** `127.0.0.1` só filtra se você acessar via esse host; em dev local o GTM pode continuar carregando — isso é desejável para testar DebugView.
+
+## Camada 2 — GA4 Admin (backup e relatórios históricos)
+
+> **Você está no lugar errado se vê:** Administrador → **Exibição de dados** → **Definições personalizadas** (dimensões `ap_event`, `ap_dealership_slug`, etc.). Isso é para **relatórios**, não para IP.
+>
+> **Tráfego interno fica em:** Administrador → **Coleta e modificação de dados** (coluna Propriedade).
+
+São **dois passos obrigatórios** no GA4 — definir a regra de IP no fluxo e ativar o filtro na propriedade.
+
+### Passo A — Definir IPs (regra no fluxo Web)
+
+1. [analytics.google.com](https://analytics.google.com) → propriedade **AutoPainel**.
+2. **Administrador** (engrenagem, canto inferior esquerdo).
+3. Coluna **Propriedade** → **Coleta e modificação de dados** → **Fluxos de dados**.
+4. Clique no fluxo **Web** (`autopainel.com.br` — ID de métricas `G-VR8MDJE9H1`).
+5. Role até **Configurações da tag** → **Configurar definições da tag** (ou *Configure tag settings*).
+6. **Mostrar tudo** (*Show all*).
+7. **Definir tráfego interno** (*Define internal traffic*) → **Criar**.
+8. Preencha:
+   - **Nome da regra:** `Equipe AutoPainel`
+   - **Valor do parâmetro traffic_type:** `internal` (padrão — mantenha)
+   - **Correspondência de endereço IP:** *IP address equals* → seu IP (use o link «Qual é o meu endereço IP?» na própria tela ou [ifconfig.me/ip](https://ifconfig.me/ip))
+9. **Criar** / **Salvar**.
+
+### Passo B — Ativar filtro (excluir da propriedade)
+
+1. Volte ao **Administrador**.
+2. **Coleta e modificação de dados** → **Filtros de dados** (*Data filters* — **não** está em Exibição de dados).
+3. Se já existir filtro **Tráfego interno** (*Internal traffic*):
+   - Abra → operação **Excluir** (*Exclude*)
+   - **Estado do filtro:** comece em **Testando** (*Testing*), depois mude para **Ativo** (*Active*)
+4. Se não existir → **Criar filtro** → tipo **Tráfego interno** → nome `Excluir equipe AutoPainel` → **Excluir** → **Testando** → Salvar.
+
+### Validar
+
+- Com filtro em **Testando:** Explorar → dimensão **Nome do filtro de dados de teste** — seus hits devem aparecer marcados.
+- Depois de confirmar, mude o filtro para **Ativo** (exclusão permanente).
+
+> Filtros afetam dados **futuros**; não removem histórico. Com `.env.local` + `GA4_INTERNAL_TRAFFIC_IPS` o GTM nem carrega — esta camada GA4 é backup.
+
+## Camada 3 — GTM (opcional)
+
+Se preferir marcar em vez de bloquear no código: variável **IP do visitante** no GTM + acionador de exceção nas tags GA. O código AutoPainel já bloqueia antes do GTM carregar — use GTM só se tiver tags de terceiros fora do nosso snippet.
+
+---
+
+### Checklist validação GA4 (operacional)
+
+1. **GTM Preview** — site com preview; tag **Tag GA** dispara em Initialization.
+2. **Variáveis dataLayer** — `ap_app_surface`, `ap_dealership_slug` na vitrine.
+3. **DebugView** — hits `ap_custom_event` com `ap_event` correto.
+4. **Dimensões** — Admin → **Exibição de dados** → **Definições personalizadas** (5 dimensões `ap_*`).
+5. **Tráfego interno** — Passos A+B acima (ou só `GA4_INTERNAL_TRAFFIC_IPS` no código).
+6. **Conversões** — Admin → Eventos → marcar `lead_form_submit`, `lead_submit`, `whatsapp_click`, etc.
 
 ---
 

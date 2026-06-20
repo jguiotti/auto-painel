@@ -8,6 +8,8 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { assertSupabaseLocalOnly } from "./lib/assert-supabase-local-only.mjs";
+
 const DEMO_PASSWORD = "LojaDemo123!";
 
 const DEMO_USERS = [
@@ -197,6 +199,8 @@ async function main() {
   if (!url || !serviceKey) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local");
   }
+
+  assertSupabaseLocalOnly(url, "seed:demo-users");
 
   const admin = createClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },

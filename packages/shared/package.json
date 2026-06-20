@@ -243,6 +243,21 @@
       "import": "./src/lib/analytics/push-autopainel-analytics-event.ts",
       "default": "./src/lib/analytics/push-autopainel-analytics-event.ts"
     },
+    "./components/analytics/analytics-tracked-link": {
+      "types": "./src/components/analytics/analytics-tracked-link.tsx",
+      "import": "./src/components/analytics/analytics-tracked-link.tsx",
+      "default": "./src/components/analytics/analytics-tracked-link.tsx"
+    },
+    "./lib/share/build-share-url-with-utm": {
+      "types": "./src/lib/share/build-share-url-with-utm.ts",
+      "import": "./src/lib/share/build-share-url-with-utm.ts",
+      "default": "./src/lib/share/build-share-url-with-utm.ts"
+    },
+    "./lib/next/supabase-storage-image-remote-patterns": {
+      "types": "./src/lib/next/supabase-storage-image-remote-patterns.ts",
+      "import": "./src/lib/next/supabase-storage-image-remote-patterns.ts",
+      "default": "./src/lib/next/supabase-storage-image-remote-patterns.ts"
+    },
     "./lib/auth/send-password-setup-email": {
       "types": "./src/lib/auth/send-password-setup-email.ts",
       "import": "./src/lib/auth/send-password-setup-email.ts",

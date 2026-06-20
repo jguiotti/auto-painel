@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   calculateFinanceSimulation,
   FINANCE_TERM_MONTHS_OPTIONS,
   type FinanceTermMonths,
 } from "@autopainel/shared/lib/finance/calculate-finance-simulation";
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
   Card,
   CardContent,
@@ -58,6 +59,7 @@ export function FinanceSimulator({
   );
 
   const isValidSimulation = simulationResult.financedAmount > 0;
+  const simulationTrackTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!onSnapshotChange) {
@@ -82,6 +84,36 @@ export function FinanceSimulator({
       estimatedTotalInterest: simulationResult.estimatedTotalInterest,
     });
   }, [isValidSimulation, onSnapshotChange, simulationResult]);
+
+  useEffect(() => {
+    if (!isValidSimulation) {
+      return;
+    }
+
+    if (simulationTrackTimeoutRef.current !== null) {
+      window.clearTimeout(simulationTrackTimeoutRef.current);
+    }
+
+    simulationTrackTimeoutRef.current = window.setTimeout(() => {
+      pushAutopainelAnalyticsEvent({
+        ap_event: "finance_simulation",
+        ap_event_category: "engagement",
+        ap_event_label: `${termMonths}x`,
+        ap_financed_amount: simulationResult.financedAmount,
+      });
+    }, 800);
+
+    return () => {
+      if (simulationTrackTimeoutRef.current !== null) {
+        window.clearTimeout(simulationTrackTimeoutRef.current);
+      }
+    };
+  }, [
+    effectiveDown,
+    isValidSimulation,
+    simulationResult.financedAmount,
+    termMonths,
+  ]);
 
   return (
     <Card aria-labelledby="finance-simulator-title">

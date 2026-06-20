@@ -1,7 +1,7 @@
 import "server-only";
 
 import { isSaleReceiptModuleEnabled } from "@autopainel/shared/lib/dealership-features";
-import { resolveDealershipLogoLightUrl } from "@autopainel/shared/lib/theme/branding";
+import { resolveDealershipLogoForLightBackground } from "@autopainel/shared/lib/theme/branding";
 import { resolveVehicleTypeLabel } from "@autopainel/shared/lib/vehicle/vehicle-type-labels";
 import type { VehicleSaleReceiptRecord } from "@autopainel/shared/types/sale-receipt";
 
@@ -263,7 +263,7 @@ function buildDealershipHeader(dealership: {
 }): SaleReceiptDealershipHeader {
   return {
     name: dealership.name,
-    logoUrl: resolveDealershipLogoLightUrl(dealership.theme_config ?? null, dealership.logo_url),
+    logoUrl: resolveDealershipLogoForLightBackground(dealership.theme_config ?? null, dealership.logo_url),
     cnpj: dealership.cnpj?.trim() || null,
     address: parseHqAddress(dealership.content_config),
     phone: dealership.whatsapp_number?.trim() || null,

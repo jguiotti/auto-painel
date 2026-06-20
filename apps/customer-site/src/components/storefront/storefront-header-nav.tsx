@@ -69,7 +69,7 @@ export function StorefrontHeaderNav({
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          className="hidden bg-[var(--dealer-accent)] px-4 text-white hover:opacity-95 sm:inline-flex"
+          className="hidden bg-[var(--dealer-accent)] px-4 text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95 sm:inline-flex"
           asChild
         >
           <Link href="/contato">Contato</Link>
@@ -105,7 +105,7 @@ export function StorefrontHeaderNav({
           {navLinks}
           <Link
             href="/contato"
-            className="mt-2 rounded-md bg-[var(--dealer-accent)] px-3 py-2 text-center text-sm font-medium text-white"
+            className="mt-2 rounded-md bg-[var(--dealer-accent)] px-3 py-2 text-center text-sm font-medium text-[var(--dealer-accent-fg,#ffffff)]"
             onClick={() => setMobileOpen(false)}
           >
             Fale conosco

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
   Button,
   Card,
@@ -75,6 +76,12 @@ export function LeadCaptureForm({
     }
 
     if (result && "success" in result && result.success) {
+      pushAutopainelAnalyticsEvent({
+        ap_event: "lead_submit",
+        ap_event_category: "conversion",
+        ap_event_label: effectiveType === "simulation" ? "finance_simulator" : "vehicle_page",
+        ap_vehicle_id: vehicleId,
+      });
       setSuccessMessage(
         "Perfeito! Nossa equipe vai entrar em contato em breve com as melhores condições para você.",
       );
@@ -172,7 +179,7 @@ export function LeadCaptureForm({
             type="submit"
             disabled={isSubmitting}
             size="lg"
-            className="bg-[var(--secondary-color,var(--dealer-accent))] text-base font-semibold text-white hover:opacity-95"
+            className="bg-[var(--secondary-color,var(--dealer-accent))] text-base font-semibold text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95"
           >
             {isSubmitting
               ? "Enviando…"

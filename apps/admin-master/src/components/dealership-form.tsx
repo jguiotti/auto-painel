@@ -604,20 +604,20 @@ export function DealershipForm({
           />
 
           <DealershipBrandUpload
-            fileInputName="logo_light_file"
-            hiddenUrlName="logo_light_url"
+            fileInputName="logo_dark_file"
+            hiddenUrlName="logo_dark_url"
             label="Logo para fundo claro"
-            description="Usado no painel, impressos (QR/recibo) e vitrine clara. Se vazio, reutiliza o logo do cabeçalho."
-            initialRemoteUrl={defaults.logo_light_url}
+            description="Marca escura ou colorida para vitrine clara, painel e impressos. Se vazio, reutiliza o logo do cabeçalho."
+            initialRemoteUrl={defaults.logo_dark_url || defaults.logo_light_url}
             disabled={pending}
           />
 
           <DealershipBrandUpload
-            fileInputName="logo_dark_file"
-            hiddenUrlName="logo_dark_url"
+            fileInputName="logo_light_file"
+            hiddenUrlName="logo_light_url"
             label="Logo para fundo escuro"
-            description="Usado na vitrine em modo escuro. Se vazio, reutiliza o logo do cabeçalho."
-            initialRemoteUrl={defaults.logo_dark_url}
+            description="Marca clara ou branca para vitrine escura. Se vazio, reutiliza o logo do cabeçalho."
+            initialRemoteUrl={defaults.logo_light_url || defaults.logo_dark_url}
             disabled={pending}
           />
 

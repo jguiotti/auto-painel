@@ -92,7 +92,7 @@ export function StorefrontHomeLayout({
               </p>
             </div>
             <Button
-              className="mt-4 bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-white hover:opacity-95 md:mt-0"
+              className="mt-4 bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95 md:mt-0"
               asChild
             >
               <Link href="/simular-financiamento">{copy.financeCta}</Link>

@@ -115,6 +115,7 @@ export function DealershipsTable({
   const [deleteTarget, setDeleteTarget] = useState<DealershipAdminRow | null>(
     null,
   );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -192,12 +193,15 @@ export function DealershipsTable({
       return;
     }
     const id = deleteTarget.id;
+    setDeleteError(null);
     startTransition(async () => {
       const result = await deleteDealershipAction(id);
-      setDeleteTarget(null);
-      if (!result.error) {
-        router.refresh();
+      if (result.error) {
+        setDeleteError(result.error);
+        return;
       }
+      setDeleteTarget(null);
+      router.refresh();
     });
   }
 
@@ -397,7 +401,10 @@ export function DealershipsTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => setDeleteTarget(row)}
+                          onClick={() => {
+                            setDeleteError(null);
+                            setDeleteTarget(row);
+                          }}
                         >
                           <Trash2 className="mr-2 size-4" />
                           Excluir
@@ -417,6 +424,7 @@ export function DealershipsTable({
         onOpenChange={(o) => {
           if (!o) {
             setDeleteTarget(null);
+            setDeleteError(null);
           }
         }}
       >
@@ -426,8 +434,18 @@ export function DealershipsTable({
             <AlertDialogDescription>
               Esta ação remove a loja <strong>{deleteTarget?.name}</strong> e pode
               apagar estoque e dados vinculados (cascata). Não é reversível.
+              {deleteTarget?.slug === "guiotti" || deleteTarget?.slug === "demo" ? (
+                <span className="mt-2 block text-destructive">
+                  Lojas de referência (Guiotti, Demo) não podem ser excluídas.
+                </span>
+              ) : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
             <Button

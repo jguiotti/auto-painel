@@ -155,7 +155,8 @@ export default function FuncionalidadesPage() {
           Quer ver site, painel e equipe funcionando juntos na sua operação?
         </p>
         <p className="mt-2 text-muted-foreground">
-          Planos sob consulta — agende uma demonstração e receba retorno da nossa equipe.
+          Compare planos com preços transparentes ou agende uma demonstração — mostramos vitrine,
+          painel e proposta com setup incluído.
         </p>
         <Button
           className="mt-6 bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"

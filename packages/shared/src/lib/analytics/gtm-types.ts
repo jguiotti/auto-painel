@@ -19,5 +19,7 @@ export interface AutopainelGtmRuntime {
 declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[];
+    /** Set server-side when GA4_INTERNAL_TRAFFIC_IPS matches the visitor. */
+    __AP_ANALYTICS_EXCLUDED?: boolean;
   }
 }

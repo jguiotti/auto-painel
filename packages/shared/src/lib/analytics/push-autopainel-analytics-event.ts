@@ -19,6 +19,10 @@ export function pushAutopainelAnalyticsEvent(
     return;
   }
 
+  if (window.__AP_ANALYTICS_EXCLUDED) {
+    return;
+  }
+
   window.dataLayer = window.dataLayer ?? [];
   window.dataLayer.push({
     event: "ap_custom_event",

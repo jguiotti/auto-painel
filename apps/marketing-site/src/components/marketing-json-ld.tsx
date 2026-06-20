@@ -35,11 +35,14 @@ export function MarketingJsonLd({ pathname = "/" }: MarketingJsonLdProps) {
     description:
       "Site whitelabel, estoque, leads e integrações para concessionárias — sem depender de agência.",
     offers: {
-      "@type": "Offer",
+      "@type": "AggregateOffer",
       priceCurrency: "BRL",
-      price: "0",
-      description: "Planos sob consulta — solicite demonstração",
-      url: `${LEGAL_SITE_URL}/contato`,
+      lowPrice: "197",
+      highPrice: "997",
+      offerCount: "3",
+      description:
+        "Planos Essencial, Profissional e Completo a partir de R$ 197/mês. Setup único obrigatório R$ 497.",
+      url: `${LEGAL_SITE_URL}/planos`,
     },
     provider: {
       "@type": "Organization",

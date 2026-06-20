@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Check, Minus } from "lucide-react";
 
+import { AnalyticsTrackedLink } from "@autopainel/shared/components/analytics/analytics-tracked-link";
 import { Button } from "@autopainel/shared/ui";
 
 import { BASE_INCLUDED_FEATURES } from "@/lib/plans-catalog";
@@ -43,7 +43,7 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
           crescimento.
         </p>
         <p className="mt-4 text-sm text-zinc-400">
-          <span className="font-medium text-zinc-300">Setup único (opcional):</span>{" "}
+          <span className="font-medium text-zinc-300">Setup único (obrigatório):</span>{" "}
           {setupFeeLabel} — onboarding assistido, configuração da vitrine e importação
           inicial do estoque. Cobrado uma vez na contratação; não entra na mensalidade.
         </p>
@@ -131,13 +131,20 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
             <p className="mt-2 text-sm text-zinc-400">
               Setup:{" "}
               <span className="font-medium text-zinc-300">{plan.setupLabel}</span>
-              <span className="text-zinc-500"> (único, opcional)</span>
+              <span className="text-zinc-500"> (único, obrigatório)</span>
             </p>
             <Button
               className="mt-6 w-full bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
               asChild
             >
-              <Link href="/contato">Falar com vendas</Link>
+              <AnalyticsTrackedLink
+                href="/contato"
+                apEvent="cta_click"
+                apEventCategory="conversion"
+                apEventLabel={`plan_card_${plan.slug}`}
+              >
+                Falar com vendas
+              </AnalyticsTrackedLink>
             </Button>
           </div>
         ))}

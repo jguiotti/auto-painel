@@ -52,7 +52,7 @@ export function InventoryMobileFilterBar({
             <SlidersHorizontal className="size-4" aria-hidden />
             Filtros
             {activeFilterCount > 0 ? (
-              <span className="rounded-full bg-[var(--primary-color,var(--dealer-primary))] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              <span className="rounded-full bg-[var(--primary-color,var(--dealer-primary))] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--dealer-primary-fg,#ffffff)]">
                 {activeFilterCount}
               </span>
             ) : null}

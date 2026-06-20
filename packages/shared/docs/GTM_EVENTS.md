@@ -55,17 +55,24 @@ Campos de contexto (`ap_app_surface`, etc.) já foram enviados no bootstrap da p
 | `ap_event` | Categoria | Quando | Status |
 | --- | --- | --- | --- |
 | `lead_form_submit` | conversion | Formulário `/contato` sucesso | ✅ implementado |
-| `cookie_consent_accept` | consent | Aceitar analytics no banner | backlog |
-| `whatsapp_click` | engagement | Clique no float WhatsApp | backlog |
-| `cta_click` | engagement | CTAs hero (label = destino) | backlog |
+| `cookie_consent_accept` | consent | Aceitar todos os cookies | ✅ implementado |
+| `cookie_consent_essential` | consent | Apenas cookies essenciais | ✅ implementado |
+| `whatsapp_click` | conversion | Abrir dialog WhatsApp (float/trigger) | ✅ implementado |
+| `cta_click` | engagement / conversion | CTAs hero, header, planos, bottom (`ap_event_label` = destino) | ✅ implementado |
+
+Labels comuns em `cta_click`: `hero_demo`, `hero_planos`, `header_demo`, `bottom_demo`, `bottom_funcionalidades`, `plan_card_starter`, `plan_card_business`, `plan_card_enterprise`.
 
 ### Vitrine (`customer_storefront`)
 
-| `ap_event` | Categoria | Quando |
-| --- | --- | --- |
-| `vehicle_detail_view` | engagement | Abrir ficha `/veiculo/[slug]` |
-| `lead_submit` | conversion | Formulário lead / simulador / WhatsApp |
-| `finance_simulation` | engagement | Simulação financiamento concluída |
+| `ap_event` | Categoria | Quando | Status |
+| --- | --- | --- | --- |
+| `vehicle_detail_view` | engagement | Abrir ficha `/veiculo/[slug]` | ✅ implementado |
+| `vehicle_share_click` | engagement | Clique em canal de compartilhamento (`ap_event_label` = whatsapp, facebook, instagram, tiktok, …) | ✅ implementado |
+| `lead_submit` | conversion | Formulário lead / simulador / WhatsApp (`ap_event_label` = source) | ✅ implementado |
+| `whatsapp_click` | conversion | Float ou CTA veículo antes do dialog | ✅ implementado |
+| `finance_simulation` | engagement | Simulação financiamento válida (debounce 800ms) | ✅ implementado |
+| `cookie_consent_accept` | consent | Aceitar analytics na vitrine | ✅ implementado |
+| `cookie_consent_essential` | consent | Apenas essenciais na vitrine | ✅ implementado |
 
 ### Painel loja (`dealership_panel`)
 
@@ -148,9 +155,16 @@ Uma página por superfície com filtro global.
 
 ## Referência marketing (/marketing)
 
-Ao pedir estratégia de crescimento ao agente Marketing, incluir:
+Funil de conversão — métricas e próximos passos:
 
-1. **Métrica:** eventos `ap_event` + conversões GA4 por superfície
-2. **Ferramenta:** GTM + GA4 (container `NEXT_PUBLIC_GTM_ID`)
-3. **Prazo:** 48h após publicar container para dados estáveis
-4. **Próximo passo:** implementar eventos backlog na app correspondente
+1. **Métrica principal:** taxa `cta_click` → `lead_form_submit` / `whatsapp_click` por `ap_event_label` (hero, header, planos).
+2. **Vitrine viral:** `vehicle_share_click` por canal + retorno via UTM `utm_source=share` no GA4.
+3. **Ferramenta:** GTM + GA4 (`NEXT_PUBLIC_GTM_ID`); variáveis DL `ap_app_surface`, `ap_dealership_slug`, `ap_event`, `ap_event_label`.
+4. **Prazo:** 48h após publicar container para dados estáveis no Explorador GA4.
+5. **Próximo passo:** marcar conversões GA4 (`lead_form_submit`, `lead_submit`, `whatsapp_click`) e criar funil Looker Studio por superfície.
+
+Componentes:
+
+- `AnalyticsTrackedLink` — `@autopainel/shared/components/analytics/analytics-tracked-link`
+- Marketing CTAs — `apps/marketing-site/src/components/marketing-tracked-ctas.tsx`
+- Compartilhamento veículo — `apps/customer-site/src/components/storefront/vehicle-share-section.tsx`

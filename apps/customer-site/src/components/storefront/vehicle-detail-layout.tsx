@@ -11,10 +11,12 @@ import {
   type VehicleTypeSpecFields,
 } from "@autopainel/shared/lib/vehicle/vehicle-type-spec-options";
 import { resolveVehicleTypeLabel } from "@autopainel/shared/lib/vehicle/vehicle-type-labels";
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import { Badge, Button, Separator } from "@autopainel/shared/ui";
 
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
 import { StorefrontWhatsAppLeadDialog } from "@/components/storefront/storefront-whatsapp-lead-dialog";
+import { VehicleShareSection } from "@/components/storefront/vehicle-share-section";
 import { formatBrl } from "@/lib/format/format-brl";
 
 import { VehicleEngagementSection } from "./vehicle-engagement-section";
@@ -236,12 +238,28 @@ export function VehicleDetailLayout({
                 {showWhatsAppCta ? (
                   <Button
                     type="button"
-                    className="mt-4 w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white"
-                    onClick={() => setWhatsappOpen(true)}
+                    className="mt-4 w-full bg-[var(--secondary-color,var(--dealer-accent))] text-[var(--dealer-accent-fg,#ffffff)]"
+                    onClick={() => {
+                      pushAutopainelAnalyticsEvent({
+                        ap_event: "whatsapp_click",
+                        ap_event_category: "conversion",
+                        ap_event_label: "vehicle_page_mobile",
+                        ap_vehicle_slug: vehicle.public_slug,
+                      });
+                      setWhatsappOpen(true);
+                    }}
                   >
                     Falar no WhatsApp
                   </Button>
                 ) : null}
+                <VehicleShareSection
+                  vehicleSlug={vehicle.public_slug}
+                  brand={vehicle.brand}
+                  model={vehicle.model}
+                  version={vehicle.version}
+                  modelYear={vehicle.model_year}
+                  price={Number(vehicle.price)}
+                />
               </div>
             </div>
 
@@ -362,12 +380,28 @@ export function VehicleDetailLayout({
               {showWhatsAppCta ? (
                 <Button
                   type="button"
-                  className="w-full bg-[var(--secondary-color,var(--dealer-accent))] text-white"
-                  onClick={() => setWhatsappOpen(true)}
+                  className="w-full bg-[var(--secondary-color,var(--dealer-accent))] text-[var(--dealer-accent-fg,#ffffff)]"
+                  onClick={() => {
+                    pushAutopainelAnalyticsEvent({
+                      ap_event: "whatsapp_click",
+                      ap_event_category: "conversion",
+                      ap_event_label: "vehicle_page_sidebar",
+                      ap_vehicle_slug: vehicle.public_slug,
+                    });
+                    setWhatsappOpen(true);
+                  }}
                 >
                   Quero este veículo no WhatsApp
                 </Button>
               ) : null}
+              <VehicleShareSection
+                vehicleSlug={vehicle.public_slug}
+                brand={vehicle.brand}
+                model={vehicle.model}
+                version={vehicle.version}
+                modelYear={vehicle.model_year}
+                price={Number(vehicle.price)}
+              />
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/estoque">Ver mais veículos</Link>
               </Button>

@@ -37,6 +37,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link className="transition hover:text-white" href="/perguntas-frequentes">
+                  Perguntas frequentes
+                </Link>
+              </li>
+              <li>
                 <Link className="transition hover:text-white" href="/contato">
                   Demonstração
                 </Link>

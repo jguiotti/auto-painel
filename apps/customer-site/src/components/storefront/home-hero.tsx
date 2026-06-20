@@ -55,7 +55,7 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
 
   const stockLink = (
     <Button
-      className="bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-white hover:opacity-95"
+      className="bg-[var(--secondary-color,var(--dealer-accent))] px-8 text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95"
       asChild
     >
       <Link href="/estoque">{copy.heroCtaStock}</Link>

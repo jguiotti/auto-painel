@@ -52,7 +52,7 @@ export function HomeInventoryTeaser({
             </p>
           </div>
           <Button
-            className="bg-[var(--secondary-color,var(--dealer-accent))] text-white hover:opacity-95"
+            className="bg-[var(--secondary-color,var(--dealer-accent))] text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95"
             asChild
           >
             <Link href="/estoque">Ver estoque completo</Link>
@@ -72,7 +72,11 @@ export function HomeInventoryTeaser({
         )}
 
         <div className="mt-8 flex justify-center">
-          <Button variant="outline" asChild>
+          <Button
+            variant="outline"
+            className="border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_25%,transparent)] bg-[var(--dealer-surface)] text-[var(--dealer-fg)] hover:bg-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_8%,transparent)]"
+            asChild
+          >
             <Link href="/estoque">Explorar todos os veículos</Link>
           </Button>
         </div>

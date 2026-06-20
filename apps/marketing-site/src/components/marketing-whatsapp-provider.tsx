@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
+
 import { MarketingWhatsAppLeadDialog } from "@/components/marketing-whatsapp-lead-dialog";
 
 interface MarketingWhatsAppContextValue {
@@ -22,6 +24,11 @@ export function MarketingWhatsAppProvider({ children }: { children: ReactNode })
   const [open, setOpen] = useState(false);
 
   const openMarketingWhatsAppDialog = useCallback(() => {
+    pushAutopainelAnalyticsEvent({
+      ap_event: "whatsapp_click",
+      ap_event_category: "conversion",
+      ap_event_label: "marketing_whatsapp_dialog",
+    });
     setOpen(true);
   }, []);
 

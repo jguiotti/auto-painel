@@ -481,7 +481,7 @@ export function VehicleFiltersPanel({
         <Button
           type="button"
           onClick={applyFilters}
-          className="bg-[var(--secondary-color,var(--dealer-accent))] text-white hover:opacity-95"
+          className="bg-[var(--secondary-color,var(--dealer-accent))] text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95"
         >
           Ver veículos
         </Button>

@@ -1,33 +1,58 @@
 import { Users } from "lucide-react";
+import Link from "next/link";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@autopainel/shared/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@autopainel/shared/ui";
 
+import { PlatformStoreUsersTable } from "@/components/platform-store-users-table";
 import { ProvisionManagerForm } from "@/components/provision-manager-form";
 import { fetchDealerships } from "@/lib/data/dealerships";
+import {
+  fetchPlatformUsers,
+  splitPlatformUsersByAudience,
+} from "@/lib/data/platform-users";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsuariosPage() {
-  const dealerships = await fetchDealerships();
+  const [dealerships, allUsers] = await Promise.all([
+    fetchDealerships(),
+    fetchPlatformUsers(),
+  ]);
+  const { storeUsers } = splitPlatformUsersByAudience(allUsers);
 
   return (
-    <div>
-      <div className="mb-8 flex items-start gap-3">
-        <Users className="mt-1 size-8 text-muted-foreground" aria-hidden />
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usuários da concessionária</h1>
-          <p className="text-sm text-muted-foreground">
-            Cadastre o primeiro gestor (dono) da loja. A conta é criada no Supabase Auth com
-            senha temporária exibida uma vez nesta tela.
-          </p>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <Users className="mt-1 size-8 text-muted-foreground" aria-hidden />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Usuários das lojas</h1>
+            <p className="text-sm text-muted-foreground">
+              Liste, filtre e remova titulares, gestores e vendedores vinculados às
+              concessionárias. Operadores do painel administrativo ficam em{" "}
+              <Link href="/painel/equipe" className="font-medium text-primary hover:underline">
+                Equipe AutoPainel
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </div>
-      <Card className="max-w-xl">
+
+      <PlatformStoreUsersTable users={storeUsers} />
+
+      <Card className="max-w-xl border-border shadow-sm">
         <CardHeader>
-          <CardTitle>Novo gestor (owner)</CardTitle>
+          <CardTitle>Novo gestor (titular)</CardTitle>
           <CardDescription>
-            Preencha e-mail, nome completo e a loja. A senha temporária será exibida uma vez —
-            repasse por canal seguro.
+            Cadastre o primeiro gestor de uma loja. A senha temporária é exibida uma vez nesta
+            tela — repasse por canal seguro.
           </CardDescription>
         </CardHeader>
         <CardContent>

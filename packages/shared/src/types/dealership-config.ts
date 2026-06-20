@@ -18,9 +18,9 @@ export interface DealershipThemeConfig {
   logo_url?: string;
   /** Wide / horizontal logo for storefront header navigation. */
   header_logo_url?: string;
-  /** Logo on light backgrounds (panel, print, storefront light theme). */
+  /** Light-colored logo (`logo_light_url`) for dark backgrounds / dark storefront theme. */
   logo_light_url?: string;
-  /** Logo on dark backgrounds (storefront dark theme). */
+  /** Dark-colored logo (`logo_dark_url`) for light backgrounds / light storefront theme. */
   logo_dark_url?: string;
   /** Tall / stacked logo for storefront footer. */
   footer_logo_url?: string;

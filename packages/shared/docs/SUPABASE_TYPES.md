@@ -44,6 +44,10 @@ Tabela **`public.dealership_classifieds_oauth_apps`**: `oauth_client_id` + **`oa
 
 Tabela **`public.dealership_meta_oauth_apps`** (1:1 `dealership_id`): **App ID** e **App Secret** cifrado para o fluxo OAuth Meta **da concessionária**. RLS: sem acesso JWT. Tipos em **`meta-oauth-app.ts`**. Migração **`supabase/migrations/20260508231000_dealership_meta_oauth_apps.sql`**. Cifra do secret com **`META_TOKENS_CRYPTO_SECRET`** (consistente com tokens em `dealership_meta_credentials`).
 
+### `platform_sales_*` (equipe comercial)
+
+Escopo **plataforma** (não tenant loja). Tabelas: **`platform_sales_reps`**, **`platform_sales_rep_bank_accounts`**, **`platform_sales_rep_dealership_attributions`**, **`platform_commission_ledger_entries`**, **`platform_payout_batches`**, etc. Helpers: **`current_platform_sales_rep_id()`**, **`is_platform_sales_rep()`**. RPCs: **`transfer_sales_rep_portfolio`**, **`confirm_dealership_sales_attribution`**, **`clawback_dealership_sales_commissions`**, **`approve_sales_commission_ledger_entries`**. Tipos: **`platform-sales-squad.ts`**, args em **`supabase-rpc.ts`**. Migração: **`20260620180100_platform_sales_squad.sql`**. Doc: **`PLATFORM_SALES_SQUAD_ARCHITECTURE.md`**.
+
 ## Generated types (optional)
 
 You may complement with `supabase gen types` and merge with hand-written types; consume shared types from **`@autopainel/shared/types`** in all apps.

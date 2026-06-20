@@ -1,8 +1,8 @@
 import {
   resolveDealershipFooterLogoUrl,
+  resolveDealershipHeaderLogoForThemeMode,
   resolveGoogleFontsHrefFromTheme,
-  resolveDealershipLogoDarkUrl,
-  resolveDealershipLogoLightUrl,
+  resolveStorefrontThemeMode,
 } from "@autopainel/shared/lib/theme/branding";
 import { buildStorefrontCssVariables } from "@autopainel/shared/lib/theme/storefront-css-vars";
 
@@ -31,18 +31,15 @@ export function StorefrontShell({
     theme_settings: dealership.theme_settings,
     theme_config: dealership.theme_config,
   });
-  const themeMode =
-    dealership.theme_config &&
-    typeof dealership.theme_config === "object" &&
-    !Array.isArray(dealership.theme_config) &&
-    (dealership.theme_config as { storefront_theme_mode?: string }).storefront_theme_mode ===
-      "dark"
-      ? "dark"
-      : "light";
-  const headerLogoSrc =
-    themeMode === "dark"
-      ? resolveDealershipLogoDarkUrl(dealership.theme_config, dealership.logo_url ?? null)
-      : resolveDealershipLogoLightUrl(dealership.theme_config, dealership.logo_url ?? null);
+  const themeMode = resolveStorefrontThemeMode({
+    theme_settings: dealership.theme_settings,
+    theme_config: dealership.theme_config,
+  });
+  const headerLogoSrc = resolveDealershipHeaderLogoForThemeMode(
+    themeMode,
+    dealership.theme_config,
+    dealership.logo_url ?? null,
+  );
   const footerLogoSrc = resolveDealershipFooterLogoUrl(
     dealership.theme_config,
     dealership.logo_url ?? null,
@@ -84,6 +81,7 @@ export function StorefrontShell({
           fontFamily: "var(--storefront-font-body, var(--dealer-font-body))",
         }}
         data-storefront-layout={layoutId}
+        data-storefront-theme={themeMode}
       >
         <header
           className={`relative sticky top-0 z-30 border-b backdrop-blur ${headerClass} ${headerTone}`}

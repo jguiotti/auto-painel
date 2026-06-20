@@ -1,7 +1,9 @@
 import { cookies, headers } from "next/headers";
 
+import { isInternalAnalyticsTrafficFromHeaders } from "../../lib/analytics/is-internal-analytics-traffic";
 import { resolveAutopainelGtmRuntime } from "../../lib/analytics/resolve-autopainel-gtm-runtime";
 import type { AutopainelAppSurface } from "../../lib/analytics/gtm-types";
+import { AnalyticsExclusionBootstrap } from "./analytics-exclusion-bootstrap";
 import {
   GoogleTagManagerBody,
   GoogleTagManagerDataLayerBootstrap,
@@ -21,6 +23,10 @@ export async function AutopainelGoogleTagManagerHead({
 }: AutopainelGoogleTagManagerHeadProps) {
   const headerStore = await headers();
   const cookieStore = await cookies();
+
+  if (isInternalAnalyticsTrafficFromHeaders(headerStore)) {
+    return <AnalyticsExclusionBootstrap />;
+  }
 
   const runtime = resolveAutopainelGtmRuntime({
     appSurface,
@@ -52,6 +58,10 @@ export async function AutopainelGoogleTagManagerBody({
 }: AutopainelGoogleTagManagerBodyProps) {
   const headerStore = await headers();
   const cookieStore = await cookies();
+
+  if (isInternalAnalyticsTrafficFromHeaders(headerStore)) {
+    return null;
+  }
 
   const runtime = resolveAutopainelGtmRuntime({
     appSurface,

@@ -48,7 +48,7 @@ export function VehicleInventoryList({ vehicles }: VehicleInventoryListProps) {
                   </span>
                 )}
                 {vehicle.is_featured ? (
-                  <Badge className="absolute left-3 top-3 bg-[var(--secondary-color,var(--dealer-accent))] text-white hover:bg-[var(--secondary-color,var(--dealer-accent))]">
+                  <Badge className="absolute left-3 top-3 bg-[var(--secondary-color,var(--dealer-accent))] text-[var(--dealer-accent-fg,#ffffff)] hover:bg-[var(--secondary-color,var(--dealer-accent))]">
                     Destaque
                   </Badge>
                 ) : null}

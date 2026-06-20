@@ -37,9 +37,12 @@ export default function TermosDeUsoPage() {
 
       <h2>2. Site institucional</h2>
       <p>
-        O conteúdo do site é informativo. Preços, funcionalidades e disponibilidade de módulos
-        podem variar conforme plano comercial acordado — valores indicados como{" "}
-        <strong>sob consulta</strong> até formalização comercial.
+        O conteúdo do site é informativo. Preços publicados em{" "}
+        <Link href="/planos" className="text-marketing-accent hover:underline">
+          /planos
+        </Link>{" "}
+        (mensalidades e setup) são referência comercial; condições finais constam do contrato
+        assinado entre as partes.
       </p>
 
       <h2>3. Cadastro e conta</h2>

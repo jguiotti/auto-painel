@@ -154,13 +154,32 @@ Depois, no **Registro.br** (ou Cloudflare), criam-se dois registros CNAME aponta
 | Ver todas as lojas | Concessionárias |
 | Alterar plano de uma loja | Ficha da concessionária → Plano |
 | Editar textos da home da vitrine | Ficha → Conteúdo / Whitelabel |
-| Convidar ou remover usuário | Ficha → Equipe |
+| Convidar ou remover usuário da loja | Ficha → Equipe **ou** menu **Usuários das lojas** |
+| Ver todos os usuários das lojas | **Usuários das lojas** (`/painel/usuarios`) |
+| Operadores do painel administrativo | **Equipe AutoPainel** (`/painel/equipe`) — `super_admin` |
+| Vendedores comerciais internos (comissão) | **Em implementação** — PRD + copy prontos; ver `PRD_PLATFORM_SALES_SQUAD.md` |
 | Consultar documentação | Menu **Documentação interna** |
 | Lojas demo para testes | Slugs `guiotti`, `autoprime`, `ecodrive`, `demo` |
 
 ---
 
-## Integrações (visão para operações)
+## Equipe comercial AutoPainel (BZ — PM aprovado jun/2026)
+
+> PRD: `packages/shared/docs/PRD_PLATFORM_SALES_SQUAD.md` · Copy: `UX_COPY_PLATFORM_SALES_SQUAD.md`
+
+| ID | Regra |
+| --- | --- |
+| BZ-SQ-01 | Comissão só após vínculo comercial **confirmado** e loja faturando |
+| BZ-SQ-02 | **Comissão recorrente** mensal enquanto a loja estiver ativa na carteira do representante |
+| BZ-SQ-03 | Cancelamento da loja em **até 30 dias** após fechamento → **estorno total** das comissões já creditadas |
+| BZ-SQ-04 | Representante que sai → **repasse de carteira** para outro rep; comissões futuras vão ao novo responsável |
+| BZ-SQ-05 | Split SDR + closer na mesma loja: soma das participações ≤ 100% |
+| BZ-SQ-06 | Representante comercial ≠ operador `super_admin` ≠ vendedor da loja cliente |
+| BZ-SQ-07 | Representante vê **próprio extrato** e edita **próprios** dados PIX (v1) |
+
+**Onde operar (quando implementado):** menu Equipe comercial · portal `/painel/comercial/extrato` (rep).
+
+---
 
 | Integração | O que o gestor faz no painel | Observação |
 | --- | --- | --- |

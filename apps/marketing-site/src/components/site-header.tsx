@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import {
-  Button,
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
@@ -10,6 +9,7 @@ import {
 } from "@autopainel/shared/ui";
 
 import { LOGO_HORIZONTAL_SRC } from "@/lib/brand";
+import { MarketingHeaderDemoCta } from "@/components/marketing-tracked-ctas";
 
 const navLinkClass =
   "text-sm font-medium text-zinc-400 transition-colors hover:text-white";
@@ -46,19 +46,17 @@ export function SiteHeader() {
                 </Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <Link className={navLinkClass} href="/perguntas-frequentes">
+                  FAQ
+                </Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            size="sm"
-            className="bg-marketing-accent px-3 text-zinc-950 hover:bg-marketing-accent/90 sm:px-4"
-            asChild
-          >
-            <Link href="/contato">
-              <span className="sm:hidden">Demo</span>
-              <span className="hidden sm:inline">Agendar demonstração</span>
-            </Link>
-          </Button>
+        <MarketingHeaderDemoCta />
         </div>
       </div>
     </header>

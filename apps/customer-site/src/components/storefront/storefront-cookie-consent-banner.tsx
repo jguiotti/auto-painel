@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { Button } from "@autopainel/shared/ui";
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 
 import {
   buildCookieConsentValue,
@@ -12,23 +13,35 @@ import {
   parseCookieConsent,
 } from "@/lib/cookie-consent";
 
+function readShouldShowConsentBanner(): boolean {
+  const existing = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${COOKIE_CONSENT_COOKIE}=`))
+    ?.split("=")[1];
+
+  const levels = parseCookieConsent(existing ? decodeURIComponent(existing) : null);
+  return levels.length === 0;
+}
+
+function subscribeToCookieConsent() {
+  return () => {};
+}
+
 export function StorefrontCookieConsentBanner() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const existing = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${COOKIE_CONSENT_COOKIE}=`))
-      ?.split("=")[1];
-
-    const levels = parseCookieConsent(existing ? decodeURIComponent(existing) : null);
-    setVisible(levels.length === 0);
-  }, []);
+  const visible = useSyncExternalStore(
+    subscribeToCookieConsent,
+    readShouldShowConsentBanner,
+    () => false,
+  );
 
   function persistConsent(levels: ("essential" | "analytics")[]) {
     const value = buildCookieConsentValue(levels);
     document.cookie = `${COOKIE_CONSENT_COOKIE}=${encodeURIComponent(value)}; ${cookieConsentCookieOptions()}`;
-    setVisible(false);
+    pushAutopainelAnalyticsEvent({
+      ap_event: levels.includes("analytics") ? "cookie_consent_accept" : "cookie_consent_essential",
+      ap_event_category: "consent",
+      ap_event_label: levels.includes("analytics") ? "all" : "essential_only",
+    });
     window.location.reload();
   }
 

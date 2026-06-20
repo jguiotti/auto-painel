@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  BriefcaseBusiness,
   Building2,
   CalendarDays,
   FileSignature,
@@ -61,7 +62,10 @@ function pageTitleFromPath(pathname: string): string {
     return "Módulos";
   }
   if (pathname.startsWith("/painel/usuarios")) {
-    return "Usuários";
+    return "Usuários das lojas";
+  }
+  if (pathname.startsWith("/painel/equipe")) {
+    return "Equipe AutoPainel";
   }
   if (pathname.startsWith("/painel/financeiro")) {
     return "Financeiro";
@@ -102,7 +106,8 @@ export function AdminShell({
     { href: "/painel/calendario-conteudo", label: "Calendário", icon: CalendarDays },
     { href: "/painel/planos", label: "Planos", icon: Layers },
     { href: "/painel/modulos", label: "Módulos", icon: Package },
-    { href: "/painel/usuarios", label: "Usuários", icon: Users },
+    { href: "/painel/usuarios", label: "Usuários das lojas", icon: Users },
+    { href: "/painel/equipe", label: "Equipe AutoPainel", icon: BriefcaseBusiness },
     { href: "/painel/financeiro", label: "Financeiro", icon: Wallet },
     {
       href: "/painel/documentacao",

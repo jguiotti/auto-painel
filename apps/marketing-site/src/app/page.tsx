@@ -1,13 +1,10 @@
 import {
-  ArrowRight,
   Check,
   Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 
 import {
   Badge,
-  Button,
   Card,
   CardDescription,
   CardHeader,
@@ -15,6 +12,10 @@ import {
 } from "@autopainel/shared/ui";
 
 import { MarketingShowcase } from "@/components/marketing-showcase";
+import {
+  MarketingHomeBottomCtas,
+  MarketingHomeHeroCtas,
+} from "@/components/marketing-tracked-ctas";
 import {
   DIFFERENTIATORS,
   HERO_TRUST_POINTS,
@@ -55,26 +56,7 @@ export default function MarketingHomePage() {
             Cada loja opera no seu ambiente: ninguém de fora acessa seu estoque nem seus
             contatos.
           </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Button
-              size="lg"
-              className="bg-marketing-accent text-zinc-950 shadow-lg shadow-cyan-500/20 hover:bg-marketing-accent/90"
-              asChild
-            >
-              <Link href="/contato">
-                Agendar demonstração gratuita
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white/20 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10"
-              asChild
-            >
-              <Link href="/planos">Ver planos e módulos</Link>
-            </Button>
-          </div>
+          <MarketingHomeHeroCtas />
           <ul className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
             {HERO_TRUST_POINTS.map((point) => (
               <li
@@ -156,8 +138,8 @@ export default function MarketingHomePage() {
               Do primeiro login à primeira venda
             </h2>
             <p className="mt-4 text-zinc-400">
-              Onboarding enxuto: em dias, não meses, sua loja está no ar com identidade
-              profissional e equipe treinada no painel.
+              Onboarding assistido: em até um dia útil sua loja está no ar com identidade
+              profissional — nossa equipe configura vitrine, painel e estoque inicial.
             </p>
           </div>
           <ol className="mt-12 grid gap-8 md:grid-cols-3">
@@ -182,27 +164,11 @@ export default function MarketingHomePage() {
                 Veja como fica na sua concessionária
               </h2>
               <p className="mt-3 text-muted-foreground">
-                Planos sob consulta — Starter, Business ou Enterprise conforme porte e
-                módulos. Agende uma demo e receba proposta personalizada, sem compromisso.
+                Preços transparentes a partir de R$ 197/mês — compare planos e módulos.
+                Agende uma demonstração gratuita e receba proposta com setup incluído.
               </p>
             </div>
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
-                asChild
-              >
-                <Link href="/contato">Quero uma demonstração</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
-                asChild
-              >
-                <Link href="/funcionalidades">Explorar funcionalidades</Link>
-              </Button>
-            </div>
+            <MarketingHomeBottomCtas />
           </div>
         </div>
       </section>

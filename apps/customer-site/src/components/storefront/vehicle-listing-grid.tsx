@@ -146,7 +146,7 @@ function VehicleCard({
             </p>
             <Link
               href={`/veiculo/${vehicle.public_slug}`}
-              className="mt-4 border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_25%,transparent)] py-2.5 text-center text-xs font-bold uppercase tracking-widest text-[var(--storefront-fg,var(--dealer-fg))]/80 transition group-hover:bg-[var(--secondary-color,var(--dealer-accent))] group-hover:text-white"
+              className="mt-4 border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_25%,transparent)] py-2.5 text-center text-xs font-bold uppercase tracking-widest text-[var(--storefront-fg,var(--dealer-fg))]/80 transition group-hover:bg-[var(--secondary-color,var(--dealer-accent))] group-hover:text-[var(--dealer-accent-fg,#ffffff)]"
             >
               Quero este veículo
             </Link>

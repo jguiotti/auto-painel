@@ -11,11 +11,11 @@ import { MARKETING_WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 export const metadata: Metadata = {
   title: "Contato",
   description:
-    "Solicite uma demonstração do AutoPainel para sua concessionária. Planos sob consulta.",
+    "Solicite uma demonstração do AutoPainel. Planos a partir de R$ 197/mês + setup R$ 497.",
   openGraph: {
     title: "Contato — AutoPainel",
     description:
-      "Solicite uma demonstração do AutoPainel para sua concessionária. Planos sob consulta.",
+      "Solicite uma demonstração do AutoPainel. Planos a partir de R$ 197/mês + setup R$ 497.",
     url: `${LEGAL_SITE_URL}/contato`,
   },
   alternates: { canonical: `${LEGAL_SITE_URL}/contato` },

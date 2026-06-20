@@ -15,6 +15,7 @@ import type {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import googleFontFamilies from "@autopainel/shared/data/google-fonts-families.json";
 
+import { deleteAuthUserOrOrphanProfile } from "@/lib/auth/delete-auth-user-or-orphan-profile";
 import { requireAdminSession } from "@/lib/auth/require-admin";
 import { provisionDealershipHostsInBackground } from "@/lib/provision-dealership-hosts";
 import { digitsOnly, normalizeDomainHostname } from "@/lib/br-format";
@@ -112,6 +113,66 @@ function friendlyDealershipDbError(rawMessage: string): string {
     );
   }
   return `Erro ao salvar: ${trimmed}`;
+}
+
+function friendlyDeleteDealershipError(rawMessage: string): string {
+  const trimmed = rawMessage.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("internal reference dealerships")) {
+    return "Lojas de referência (Guiotti, Demo) não podem ser excluídas.";
+  }
+  if (lower.includes("foreign key") || trimmed.includes("23503")) {
+    return "Não foi possível excluir: ainda existem dados vinculados a esta loja.";
+  }
+  return friendlyDealershipDbError(trimmed);
+}
+
+async function purgeDealershipTenantData(
+  supabase: SupabaseClient,
+  dealershipId: string,
+): Promise<{ error?: string }> {
+  const { error: receiptsError } = await supabase
+    .from("vehicle_sale_receipts")
+    .delete()
+    .eq("dealership_id", dealershipId);
+
+  if (receiptsError) {
+    return { error: friendlyDeleteDealershipError(receiptsError.message) };
+  }
+
+  const { error: leadsError } = await supabase
+    .from("leads")
+    .delete()
+    .eq("dealership_id", dealershipId);
+
+  if (leadsError) {
+    return { error: friendlyDeleteDealershipError(leadsError.message) };
+  }
+
+  const { data: profileRows, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("dealership_id", dealershipId);
+
+  if (profilesError) {
+    return { error: friendlyDeleteDealershipError(profilesError.message) };
+  }
+
+  for (const row of profileRows ?? []) {
+    const userId = typeof row.id === "string" ? row.id : null;
+    if (!userId) {
+      continue;
+    }
+
+    const removed = await deleteAuthUserOrOrphanProfile(supabase, userId);
+    if (removed.error) {
+      return {
+        error: `Não foi possível remover um usuário vinculado: ${removed.error}`,
+      };
+    }
+  }
+
+  return {};
 }
 
 function parsePricingPlanIdFromForm(formData: FormData): string | null {
@@ -1259,10 +1320,15 @@ export async function deleteDealershipAction(id: string): Promise<ActionResult> 
     };
   }
 
+  const purgeResult = await purgeDealershipTenantData(supabase, id);
+  if (purgeResult.error) {
+    return { error: purgeResult.error };
+  }
+
   const { error } = await supabase.from("dealerships").delete().eq("id", id);
 
   if (error) {
-    return { error: error.message };
+    return { error: friendlyDeleteDealershipError(error.message) };
   }
 
   REVALIDATE_PATHS.forEach((p) => revalidatePath(p));

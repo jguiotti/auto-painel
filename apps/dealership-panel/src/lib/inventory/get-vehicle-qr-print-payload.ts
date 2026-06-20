@@ -5,7 +5,7 @@ import {
 } from "@autopainel/shared/lib/tenant/dealership-subdomain-surface-urls";
 import {
   resolveDealershipBranding,
-  resolveDealershipLogoLightUrl,
+  resolveDealershipLogoForLightBackground,
 } from "@autopainel/shared/lib/theme/branding";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
@@ -89,7 +89,7 @@ export async function getVehicleQrPrintPayload(
     theme_settings: dealership.theme_settings,
     theme_config: dealership.theme_config,
   });
-  const dealershipLogoUrl = resolveDealershipLogoLightUrl(
+  const dealershipLogoUrl = resolveDealershipLogoForLightBackground(
     dealership.theme_config,
     dealership.logo_url,
   );

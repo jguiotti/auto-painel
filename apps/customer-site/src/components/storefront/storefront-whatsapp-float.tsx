@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
+
 import { StorefrontWhatsAppLeadDialog } from "@/components/storefront/storefront-whatsapp-lead-dialog";
 import { usePublicDealership } from "@/components/storefront/public-dealership-provider";
 
@@ -25,7 +27,14 @@ export function StorefrontWhatsAppFloat() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          pushAutopainelAnalyticsEvent({
+            ap_event: "whatsapp_click",
+            ap_event_category: "conversion",
+            ap_event_label: "whatsapp_float",
+          });
+          setOpen(true);
+        }}
         className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-emerald-900/30 transition hover:scale-105 hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
         aria-label="Falar no WhatsApp"
         title="Falar no WhatsApp"

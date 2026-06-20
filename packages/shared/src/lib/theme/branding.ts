@@ -88,6 +88,16 @@ function readStorefrontThemeMode(
   return legacyThemeMode === "dark" ? "dark" : "light";
 }
 
+export function resolveStorefrontThemeMode(sources: {
+  theme_settings?: unknown;
+  theme_config?: unknown;
+}): StorefrontThemeMode {
+  return readStorefrontThemeMode(
+    asRecord(sources.theme_settings),
+    asRecord(sources.theme_config),
+  );
+}
+
 export function resolveDealershipBranding(input: {
   theme_settings?: unknown;
   theme_config?: unknown;
@@ -151,38 +161,86 @@ export function collectDealershipLogoCandidateUrls(
     candidates.push(value);
   }
 
-  push(readString(tc, "logo_light_url"));
   push(readString(tc, "header_logo_url"));
   push(readString(tc, "logo_url"));
+  push(readString(tc, "logo_light_url"));
+  push(readString(tc, "logo_dark_url"));
   push(columnLogoUrl?.trim() || undefined);
 
   return candidates;
 }
 
-/** Logo for light backgrounds (panel, print, storefront light theme). */
+function readAccessibleThemeLogo(
+  theme_config: unknown,
+  key: "logo_light_url" | "logo_dark_url",
+): string | null {
+  const tc = asRecord(theme_config);
+  const value = readString(tc, key);
+  if (value && isBrandAssetUrlAccessible(value)) {
+    return value;
+  }
+  return null;
+}
+
+/**
+ * Light-colored logo variant (`logo_light_url`) — for dark backgrounds / dark storefront theme.
+ */
 export function resolveDealershipLogoLightUrl(
   theme_config: unknown,
   columnLogoUrl: string | null | undefined,
 ): string | null {
-  const tc = asRecord(theme_config);
-  const light = readString(tc, "logo_light_url");
-  if (light && isBrandAssetUrlAccessible(light)) {
-    return light;
-  }
-  return resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl);
+  return (
+    readAccessibleThemeLogo(theme_config, "logo_light_url") ??
+    resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl)
+  );
 }
 
-/** Logo for dark backgrounds (storefront dark theme). */
+/**
+ * Dark-colored logo variant (`logo_dark_url`) — for light backgrounds / light storefront theme.
+ */
 export function resolveDealershipLogoDarkUrl(
   theme_config: unknown,
   columnLogoUrl: string | null | undefined,
 ): string | null {
-  const tc = asRecord(theme_config);
-  const dark = readString(tc, "logo_dark_url");
-  if (dark && isBrandAssetUrlAccessible(dark)) {
-    return dark;
-  }
-  return resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl);
+  return (
+    readAccessibleThemeLogo(theme_config, "logo_dark_url") ??
+    resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl)
+  );
+}
+
+/** Logo for light backgrounds (panel print, QR, storefront light theme). */
+export function resolveDealershipLogoForLightBackground(
+  theme_config: unknown,
+  columnLogoUrl: string | null | undefined,
+): string | null {
+  return (
+    readAccessibleThemeLogo(theme_config, "logo_dark_url") ??
+    readAccessibleThemeLogo(theme_config, "logo_light_url") ??
+    resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl)
+  );
+}
+
+/** Logo for dark backgrounds (storefront dark theme). */
+export function resolveDealershipLogoForDarkBackground(
+  theme_config: unknown,
+  columnLogoUrl: string | null | undefined,
+): string | null {
+  return (
+    readAccessibleThemeLogo(theme_config, "logo_light_url") ??
+    readAccessibleThemeLogo(theme_config, "logo_dark_url") ??
+    resolveDealershipHeaderLogoUrl(theme_config, columnLogoUrl)
+  );
+}
+
+/** Header logo matching storefront theme. */
+export function resolveDealershipHeaderLogoForThemeMode(
+  themeMode: StorefrontThemeMode,
+  theme_config: unknown,
+  columnLogoUrl: string | null | undefined,
+): string | null {
+  return themeMode === "dark"
+    ? resolveDealershipLogoForDarkBackground(theme_config, columnLogoUrl)
+    : resolveDealershipLogoForLightBackground(theme_config, columnLogoUrl);
 }
 
 export function resolveDealershipHeaderLogoUrl(

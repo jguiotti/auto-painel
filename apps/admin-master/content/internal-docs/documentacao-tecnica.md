@@ -215,6 +215,7 @@ Tipos TypeScript: `packages/shared/src/types/supabase-rpc.ts`.
 ### Server Actions / rotas
 
 - **Admin:** `apps/admin-master/src/actions/` — CRUD concessionárias, docs, equipe.
+- **Excluir concessionária:** `deleteDealershipAction` remove recibos, leads, usuários Auth (`profiles`) e depois a linha em `dealerships`; Guiotti/Demo bloqueadas (trigger + app). UI exibe erro no dialog.
 - **Painel:** `apps/dealership-panel/src/actions/` — estoque, leads, integrações.
 - **OAuth callbacks:** rotas API em cada app + Edge Functions Supabase.
 
@@ -251,10 +252,48 @@ Guia: `DEALERSHIP_HOSTS_PROVISIONING.md`.
 
 - **Container:** `GTM-MV99ZXW9` (conta Auto Painel / `autopainel.com.br`).
 - Código: `packages/shared/src/components/analytics/`, helper `push-autopainel-analytics-event.ts`.
+- **Vitrine — compartilhamento:** `vehicle-share-section.tsx` (compacto, abaixo do preço). Facebook usa Open Graph da ficha (`build-vehicle-page-metadata.ts`: imagem, título, preço).
+- **Eventos v1 expandidos (2026-06):** marketing `cta_click`, `whatsapp_click`, consent; vitrine `vehicle_share_click`, `vehicle_detail_view`, `lead_submit`, `finance_simulation` — ver catálogo.
 - **Não** criar eventos `ap_*` no GA4 com “Criar sem código” — eles vêm do **GTM** via dataLayer.
 
 **Passo a passo completo (operacional):** [`GTM_GA4_SETUP.md`](../../../packages/shared/docs/GTM_GA4_SETUP.md)  
-**Catálogo de eventos:** [`GTM_EVENTS.md`](../../../packages/shared/docs/GTM_EVENTS.md)
+**Catálogo de eventos:** [`GTM_EVENTS.md`](../../../packages/shared/docs/GTM_EVENTS.md)  
+**Dev com banco remoto (recomendado):** [`SUPABASE_REMOTE_DEV.md`](../../../packages/shared/docs/SUPABASE_REMOTE_DEV.md)
+
+### Excluir tráfego interno (IP da equipe)
+
+Duas camadas recomendadas (use as duas):
+
+1. **Código** — `GA4_INTERNAL_TRAFFIC_IPS` no `.env.local` (já configurado).
+2. **GA4 Admin** — **não** é em «Definições personalizadas»; use **Coleta e modificação de dados** → **Fluxos de dados** (regra IP) + **Filtros de dados** (excluir). Ver [`GTM_GA4_SETUP.md`](../../../packages/shared/docs/GTM_GA4_SETUP.md) § «Excluir tráfego interno» Passos A e B.
+
+---
+
+### Checklist validação GA4 (operacional)
+
+1. **GTM Preview** — abrir site (marketing ou vitrine) com preview ligado; confirmar tag **Tag GA** dispara em Initialization.
+2. **Variáveis dataLayer** — no preview, evento de página deve expor `ap_app_surface`, `ap_dealership_slug` (vitrine).
+3. **DebugView** — Admin GA4 → DebugView (ou extensão GA Debugger); navegar e clicar CTA/WhatsApp/compartilhar veículo; ver hits `ap_custom_event` com `ap_event` correto.
+4. **Dimensões** — Admin GA4 → **Definições personalizadas** → criar 5 dimensões `ap_*` (não em Fluxos de dados).
+5. **Conversões** — Admin → Eventos → marcar como principal: `lead_form_submit`, `lead_submit`, `whatsapp_click`, `cta_click` (conforme funil).
+6. **Compartilhamento** — vitrine `/veiculo/[slug]` → clicar WhatsApp/Facebook; GTM deve registrar `vehicle_share_click` + `ap_event_label`.
+
+Se pageviews aparecem mas eventos custom não: falta acionador `ap_custom_event` + tag **GA4 — Event — AP Custom** no GTM (ver `GTM_GA4_SETUP.md` § B.4–B.5).
+
+---
+
+## Gestão de usuários (admin-master)
+
+| Rota | Público | Ação |
+| --- | --- | --- |
+| `/painel/usuarios` | Titular, gestor, vendedor (`dealership_id` preenchido) | Listagem, filtros, remoção |
+| `/painel/equipe` | Operadores `super_admin` (sem loja) | Listagem, remoção (mín. 1 operador) |
+
+**Arquivos:** `lib/data/platform-users.ts`, `actions/platform-users.ts`, `lib/auth/delete-auth-user-or-orphan-profile.ts`, componentes `platform-*-users-table.tsx`.
+
+**Perfis órfãos:** linha em `profiles` sem `auth.users` — remoção apaga só o profile; destrava exclusão de concessionária (`purgeDealershipTenantData`).
+
+**Equipe comercial (vendedores internos):** PRD + copy + UX + schema — [`PRD_PLATFORM_SALES_SQUAD.md`](../../../packages/shared/docs/PRD_PLATFORM_SALES_SQUAD.md), migração **`20260620180000_platform_sales_squad.sql`**, arquitetura **`PLATFORM_SALES_SQUAD_ARCHITECTURE.md`**, tipos **`platform-sales-squad.ts`**.
 
 ---
 
@@ -299,7 +338,7 @@ Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
 | --- | --- |
 | Edge e-mail lead | `supabase/functions/notify-dealership-new-lead`, cron `.github/workflows/lead-notification-dispatch.yml`, `scripts/dispatch-lead-notification-worker.mjs` |
 | Convite equipe (painel) | `packages/shared/src/lib/auth/invite-dealership-collaborator.ts`, `apps/dealership-panel/src/app/painel/equipe/actions.ts` |
-| Logo dual | `theme_config.logo_light_url` / `logo_dark_url`, admin `dealership-form.tsx`, `resolveDealershipLogoLightUrl` |
+| Logo dual | `theme_config.logo_light_url` (marca clara) / `logo_dark_url` (marca escura), admin `dealership-form.tsx`, `resolveDealershipLogoForLightBackground` / `ForDarkBackground` |
 
 Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 
@@ -325,7 +364,8 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Contratos admin | `/painel/contratos`, `/painel/contratos/novo`, `/painel/contratos/[id]` |
 | Calendário admin | `/painel/calendario-conteudo` |
 | Build fix CRM | `platform-commercial-leads-shared.ts` (sem `server-only`) vs `platform-commercial-leads.ts` |
-| Preços marketing | `marketing-plan-prices.ts` — 197 / 397 / 997 + setup 497 + faixas estoque; migração `20260620160000` |
+| Preços marketing | `marketing-plan-prices.ts` — 197 / 397 / 997 + setup **obrigatório** 497 + faixas estoque; migração `20260620160000` |
+| Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel **não** exposto publicamente; CTA `/contato`. Nova loja demo: `npm run dealership:hosts:provision -- <slug>` |
 | Vitrine inativa | RPC `resolve_dealership_storefront_tenant`, `get_dealership_storefront_shell_by_id`; rota `customer-site` `/loja-inativa` |
 | Painel inativo | `require-dashboard-session.ts` → `/conta-inativa` (status ≠ `active`) |
 | CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` |

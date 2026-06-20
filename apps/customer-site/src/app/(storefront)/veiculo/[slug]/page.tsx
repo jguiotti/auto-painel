@@ -1,12 +1,27 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { VehicleDetailLayout } from "@/components/storefront/vehicle-detail-layout";
 import { getPlatformFinanceMonthlyRatePercent } from "@/lib/finance/get-platform-finance-rate";
+import { buildVehiclePageMetadata } from "@/lib/seo/build-vehicle-page-metadata";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getResolvedDealershipId } from "@/lib/tenant/get-dealership-id";
 
 const PUBLIC_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+async function resolveVehiclePageUrl(slug: string): Promise<string> {
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host");
+  if (!host) {
+    return `/veiculo/${slug}`;
+  }
+
+  const protocol =
+    headersList.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "production" ? "https" : "http");
+  return `${protocol}://${host}/veiculo/${slug}`;
+}
 
 interface VehicleDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -36,14 +51,8 @@ export async function generateMetadata({
     return { title: "Veículo" };
   }
 
-  const title = `${vehicle.brand} ${vehicle.model}`;
-  return {
-    title,
-    description:
-      typeof vehicle.description === "string" && vehicle.description
-        ? vehicle.description.slice(0, 160)
-        : `${title} — seminovos`,
-  };
+  const pageUrl = await resolveVehiclePageUrl(slug);
+  return buildVehiclePageMetadata(vehicle, pageUrl);
 }
 
 export default async function VehicleDetailPage({ params }: VehicleDetailPageProps) {

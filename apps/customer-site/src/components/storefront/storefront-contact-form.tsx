@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
   Button,
   Input,
@@ -63,6 +64,12 @@ export function StorefrontContactForm({
     }
 
     if (result && "success" in result && result.success) {
+      pushAutopainelAnalyticsEvent({
+        ap_event: "lead_submit",
+        ap_event_category: "conversion",
+        ap_event_label: source,
+        ap_vehicle_id: vehicleId ?? undefined,
+      });
       const clientName = String(formData.get("client_name") ?? "").trim();
       const phone = String(formData.get("phone") ?? "").trim();
       const message = String(formData.get("message") ?? "").trim();
@@ -146,7 +153,7 @@ export function StorefrontContactForm({
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="bg-[var(--dealer-accent)] text-white hover:opacity-95"
+        className="bg-[var(--dealer-accent)] text-[var(--dealer-accent-fg,#ffffff)] hover:opacity-95"
       >
         {isSubmitting ? "Enviando…" : submitLabel}
       </Button>

@@ -8,6 +8,7 @@ import { sendPasswordSetupEmail } from "@autopainel/shared/lib/auth/send-passwor
 import { resolveDealershipPanelAuthRedirectOrigin } from "@autopainel/shared/lib/auth/resolve-auth-redirect-origins";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
+import { deleteAuthUserOrOrphanProfile } from "@/lib/auth/delete-auth-user-or-orphan-profile";
 import { requireAdminSession } from "@/lib/auth/require-admin";
 
 export interface CollaboratorActionResult {
@@ -325,11 +326,9 @@ export async function removeDealershipCollaboratorAction(
     };
   }
 
-  const { error: deleteAuthError } =
-    await supabase.auth.admin.deleteUser(profileUserId);
-
-  if (deleteAuthError) {
-    return { error: deleteAuthError.message ?? "Falha ao remover a conta." };
+  const removed = await deleteAuthUserOrOrphanProfile(supabase, profileUserId);
+  if (removed.error) {
+    return { error: removed.error };
   }
 
   REVALIDATE.forEach((p) => revalidatePath(p));
