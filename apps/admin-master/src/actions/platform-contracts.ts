@@ -199,7 +199,11 @@ export async function sendPlatformContractForSignatureAction(
 export async function markPlatformContractSignedAction(
   contractId: string,
   signatureRef: string,
-): Promise<ActionResult> {
+  options?: {
+    salesRepId?: string | null;
+    dealershipId?: string | null;
+  },
+): Promise<ActionResult & { attributionId?: string | null }> {
   await requireAdminSession();
   const ref = signatureRef.trim();
   if (ref.length < 2) {
@@ -209,7 +213,7 @@ export async function markPlatformContractSignedAction(
   const supabase = await createSupabaseServerClient();
   const { data: existing, error: loadError } = await supabase
     .from("platform_contracts")
-    .select("status")
+    .select("status, dealership_id")
     .eq("id", contractId)
     .single();
 
@@ -234,7 +238,36 @@ export async function markPlatformContractSignedAction(
     return { error: "Não foi possível registrar a assinatura." };
   }
 
+  const salesRepId = options?.salesRepId?.trim() || null;
+  const dealershipId =
+    options?.dealershipId?.trim() || (existing.dealership_id as string | null);
+
+  let attributionId: string | null = null;
+  if (salesRepId && dealershipId) {
+    const { data: attId, error: attError } = await supabase.rpc(
+      "provision_attribution_from_signed_contract",
+      {
+        p_contract_id: contractId,
+        p_sales_rep_id: salesRepId,
+        p_dealership_id: dealershipId,
+        p_confirm_immediately: true,
+      },
+    );
+    if (attError) {
+      REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+      revalidatePath(`/painel/contratos/${contractId}`);
+      revalidatePath("/painel/equipe/comercial");
+      return {
+        error:
+          "Contrato assinado, mas não foi possível criar o vínculo comercial automaticamente.",
+      };
+    }
+    attributionId = (attId as string | null) ?? null;
+  }
+
   REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
   revalidatePath(`/painel/contratos/${contractId}`);
-  return { success: true };
+  revalidatePath("/painel/equipe/comercial");
+  revalidatePath("/painel/leads-comerciais");
+  return { success: true, attributionId };
 }

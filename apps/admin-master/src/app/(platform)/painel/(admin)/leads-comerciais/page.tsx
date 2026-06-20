@@ -1,5 +1,7 @@
-import { PlatformCommercialLeadsTable } from "@/components/platform-commercial-leads-table";
+import { PlatformCommercialLeadsPageClient } from "@/components/platform-commercial-leads-page-client";
 import { fetchPlatformCommercialLeads } from "@/lib/data/platform-commercial-leads";
+import { fetchDealerships } from "@/lib/data/dealerships";
+import { fetchPlatformSalesReps } from "@/lib/data/platform-sales-squad";
 import {
   PLATFORM_LEAD_PIPELINE_LABELS,
   PLATFORM_LEAD_PIPELINE_STATUSES,
@@ -8,7 +10,11 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function LeadsComerciaisPage() {
-  const rows = await fetchPlatformCommercialLeads();
+  const [rows, salesReps, dealerships] = await Promise.all([
+    fetchPlatformCommercialLeads(),
+    fetchPlatformSalesReps(),
+    fetchDealerships(),
+  ]);
 
   const counts = PLATFORM_LEAD_PIPELINE_STATUSES.reduce(
     (acc, status) => {
@@ -58,7 +64,11 @@ export default async function LeadsComerciaisPage() {
         ))}
       </div>
 
-      <PlatformCommercialLeadsTable rows={rows} />
+      <PlatformCommercialLeadsPageClient
+        rows={rows}
+        salesReps={salesReps}
+        dealerships={dealerships}
+      />
     </div>
   );
 }

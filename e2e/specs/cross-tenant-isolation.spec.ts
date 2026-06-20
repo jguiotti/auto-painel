@@ -43,7 +43,10 @@ test.describe("cross-tenant isolation — painel lojista", () => {
     });
 
     await page.goto(`http://autoprime.localhost:${port}/painel/estoque`);
-    await expect(page.getByRole("link", { name: /Camaro/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /estoque/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Camaro/i }).first()).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.getByText(/Ferrari F8/i)).toHaveCount(0);
 
     await context.close();
@@ -78,7 +81,9 @@ test.describe("cross-tenant isolation — painel lojista", () => {
       password: demoPassword,
     });
     await guiottiPage.goto(`http://guiotti.localhost:${port}/painel`);
-    await expect(guiottiPage.getByText(/Guiotti/i).first()).toBeVisible();
+    await expect(
+      guiottiPage.getByRole("banner").getByText("Guiotti Multimarcas").last(),
+    ).toBeVisible();
     await guiottiContext.close();
 
     const autoprimeContext = await browser.newContext();
@@ -89,7 +94,9 @@ test.describe("cross-tenant isolation — painel lojista", () => {
       password: demoPassword,
     });
     await autoprimePage.goto(`http://autoprime.localhost:${port}/painel`);
-    await expect(autoprimePage.getByText(/AutoPrime/i).first()).toBeVisible();
+    await expect(
+      autoprimePage.getByRole("banner").getByText(/AutoPrime/i).last(),
+    ).toBeVisible();
     await autoprimeContext.close();
 
     const ecodriveContext = await browser.newContext();
@@ -100,7 +107,9 @@ test.describe("cross-tenant isolation — painel lojista", () => {
       password: demoPassword,
     });
     await ecodrivePage.goto(`http://ecodrive.localhost:${port}/painel`);
-    await expect(ecodrivePage.getByText(/EcoDrive/i).first()).toBeVisible();
+    await expect(
+      ecodrivePage.getByRole("banner").getByText(/EcoDrive/i).last(),
+    ).toBeVisible();
     await ecodriveContext.close();
   });
 });

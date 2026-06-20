@@ -32,16 +32,22 @@ function formatDate(iso: string): string {
 
 interface PlatformCommercialLeadsTableProps {
   rows: PlatformCommercialLeadRow[];
+  onLeadWon?: (lead: PlatformCommercialLeadRow) => void;
 }
 
 export function PlatformCommercialLeadsTable({
   rows,
+  onLeadWon,
 }: PlatformCommercialLeadsTableProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleStatusChange(leadId: string, nextStatus: string) {
+    const lead = rows.find((row) => row.id === leadId);
     startTransition(async () => {
-      await updatePlatformCommercialLeadPipelineAction(leadId, nextStatus);
+      const result = await updatePlatformCommercialLeadPipelineAction(leadId, nextStatus);
+      if (!result.error && nextStatus === "won" && lead && onLeadWon) {
+        onLeadWon(lead);
+      }
     });
   }
 

@@ -1,0 +1,60 @@
+name: Platform sales cron
+
+on:
+  schedule:
+    - cron: "0 8 1 * *"
+    - cron: "0 8 10 * *"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "monthly | payout"
+        required: true
+        default: monthly
+        type: choice
+        options:
+          - monthly
+          - payout
+
+concurrency:
+  group: platform-sales-cron-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  monthly-ledger:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'monthly' || github.event_name == 'schedule' && github.event.schedule == '0 8 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Generate monthly commission ledger
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" && test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          node scripts/platform-sales-cron.mjs monthly
+
+  payout-batch:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'payout' || github.event_name == 'schedule' && github.event.schedule == '0 8 10 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Generate payout batch
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" && test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          PREV_MONTH=$(date -u -d "1 month ago" +%Y-%m-01)
+          node scripts/platform-sales-cron.mjs payout --month "$PREV_MONTH"

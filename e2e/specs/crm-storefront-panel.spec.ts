@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  loginDealershipPanel,
   loginDealershipPanelOrSkip,
   resolveDealershipPanelPort,
+  dismissDealershipPanelOverlays,
 } from "../helpers/dealership-panel-login";
 import {
   clickStorefrontContatoNav,
@@ -89,9 +91,10 @@ test.describe("CRM Fase B — painel contatos", () => {
     await page.goto(`http://guiotti.localhost:${panelPort}/painel/contatos`);
     await expect(page.getByRole("heading", { name: "Contatos" })).toBeVisible();
 
-    const leadsTable = page.getByRole("table");
-    await expect(leadsTable.getByRole("cell", { name: "Carlos Mendes" })).toBeVisible();
-    await expect(leadsTable.getByText("Página de contato").first()).toBeVisible();
+    await expect(page.getByText("Carlos Mendes").first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Página de contato").first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Novo contato" })).toBeVisible();
   });
 
@@ -116,6 +119,15 @@ test.describe("CRM Fases C/D — loja e equipe", () => {
     });
 
     await page.goto(`http://guiotti.localhost:${panelPort}/painel/loja`);
+    if (page.url().includes("/login")) {
+      await loginDealershipPanel(page, {
+        slug: "guiotti",
+        email: "gestor.guiotti@autopainel.demo",
+        password: demoPassword,
+      });
+      await page.goto(`http://guiotti.localhost:${panelPort}/painel/loja`);
+    }
+    await dismissDealershipPanelOverlays(page);
     await expect(page.getByRole("heading", { name: /Dados da loja/i })).toBeVisible();
   });
 

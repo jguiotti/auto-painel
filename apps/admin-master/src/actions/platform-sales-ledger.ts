@@ -129,6 +129,73 @@ export async function cancelPendingLedgerEntryAction(
   return { success: true, entryId };
 }
 
+export async function generateMonthlyCommissionLedgerAction(
+  referenceMonth?: string | null,
+): Promise<ActionResult & { entriesCreated?: number }> {
+  await requireAdminSession();
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("generate_monthly_commission_ledger", {
+    p_reference_month: referenceMonth ?? null,
+  });
+
+  if (error) {
+    return { error: "Não foi possível gerar comissões do mês." };
+  }
+
+  revalidateLedgerPaths();
+  const payload = data as { entries_created?: number } | null;
+  return { success: true, entriesCreated: payload?.entries_created ?? 0 };
+}
+
+export async function generatePayoutBatchAction(
+  referenceMonth: string,
+): Promise<ActionResult & { batchId?: string }> {
+  await requireAdminSession();
+
+  if (!referenceMonth) {
+    return { error: "Informe a competência (YYYY-MM-01)." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("generate_payout_batch", {
+    p_reference_month: referenceMonth,
+    p_payment_date: null,
+  });
+
+  if (error) {
+    if (error.message.includes("already exists")) {
+      return { error: "Já existe um lote em aberto para esta competência." };
+    }
+    return { error: "Não foi possível gerar o lote de pagamento." };
+  }
+
+  revalidateLedgerPaths();
+  return { success: true, batchId: data as string };
+}
+
+export async function markPayoutBatchPaidAction(
+  batchId: string,
+): Promise<ActionResult> {
+  await requireAdminSession();
+
+  if (!batchId) {
+    return { error: "Lote inválido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("mark_payout_batch_paid", {
+    p_payout_batch_id: batchId,
+  });
+
+  if (error) {
+    return { error: "Não foi possível marcar o lote como pago." };
+  }
+
+  revalidateLedgerPaths();
+  return { success: true };
+}
+
 export async function runDealershipChurnClawbackAction(
   dealershipId: string,
 ): Promise<ActionResult & { clawbackRows?: number }> {

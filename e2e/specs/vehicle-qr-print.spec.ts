@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   loginDealershipPanel,
   resolveDealershipPanelPort,
+  dismissDealershipPanelOverlays,
 } from "../helpers/dealership-panel-login";
 
 test.describe("vehicle QR print — painel lojista", () => {
@@ -15,6 +16,7 @@ test.describe("vehicle QR print — painel lojista", () => {
 
     await loginDealershipPanel(page, { slug: "guiotti" });
     await page.goto(`http://guiotti.localhost:${port}/painel/estoque`);
+    await dismissDealershipPanelOverlays(page);
 
     const vehicleLink = page.getByRole("link", { name: /Ferrari/i }).first();
     if ((await vehicleLink.count()) === 0) {
@@ -23,6 +25,7 @@ test.describe("vehicle QR print — painel lojista", () => {
 
     await vehicleLink.click();
     await expect(page).toHaveURL(/\/painel\/estoque\/[^/]+$/);
+    await dismissDealershipPanelOverlays(page);
 
     const qrLink = page.getByRole("link", { name: /Gerar QR Code/i });
     if ((await qrLink.count()) === 0) {
@@ -33,7 +36,9 @@ test.describe("vehicle QR print — painel lojista", () => {
     }
 
     await qrLink.click();
-    await expect(page.getByRole("heading", { name: /QR Code/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Lâmina de venda com QR Code/i }),
+    ).toBeVisible();
     await expect(page.getByAltText(/QR Code para/i)).toBeVisible();
   });
 });

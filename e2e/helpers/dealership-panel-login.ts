@@ -1,5 +1,7 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type BrowserContext, type Page, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+
+const PANEL_ONBOARDING_COOKIE = "ap_panel_onboarding_v1";
 
 export interface DealershipPanelLoginOptions {
   slug?: string;
@@ -22,6 +24,45 @@ export function resolveDemoDealershipCredentials() {
   };
 }
 
+function panelOrigin(slug: string): string {
+  return `http://${slug}.localhost:${resolveDealershipPanelPort()}`;
+}
+
+/** Prevents the first-login onboarding dialog from blocking E2E clicks after clearCookies(). */
+export async function setPanelOnboardingCompleteCookie(
+  context: BrowserContext,
+  slug: string,
+) {
+  await context.addCookies([
+    {
+      name: PANEL_ONBOARDING_COOKIE,
+      value: "1",
+      url: panelOrigin(slug),
+    },
+  ]);
+}
+
+export async function dismissPanelOnboardingIfVisible(page: Page) {
+  const skipTour = page.getByRole("button", { name: "Pular tour" });
+  if (await skipTour.isVisible().catch(() => false)) {
+    await skipTour.click();
+    await expect(
+      page.getByRole("dialog", { name: "Bem-vindo ao painel" }),
+    ).toBeHidden();
+  }
+}
+
+/** Closes first-login tour and auto-open notification sheet that block Playwright clicks. */
+export async function dismissDealershipPanelOverlays(page: Page) {
+  await dismissPanelOnboardingIfVisible(page);
+
+  const notificationSheet = page.getByRole("dialog", { name: "Novidades da loja" });
+  if (await notificationSheet.isVisible().catch(() => false)) {
+    await page.keyboard.press("Escape");
+    await expect(notificationSheet).toBeHidden();
+  }
+}
+
 export async function loginDealershipPanel(
   page: Page,
   options: DealershipPanelLoginOptions = {},
@@ -33,11 +74,13 @@ export async function loginDealershipPanel(
   const redirectPath = options.redirectPath ?? "/painel";
   const port = resolveDealershipPanelPort();
 
+  await setPanelOnboardingCompleteCookie(page.context(), slug);
   await page.goto(`http://${slug}.localhost:${port}/login`);
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`));
+  await dismissDealershipPanelOverlays(page);
 }
 
 /**
@@ -55,6 +98,7 @@ export async function loginDealershipPanelOrSkip(
   const redirectPath = options.redirectPath ?? "/painel";
   const port = resolveDealershipPanelPort();
 
+  await setPanelOnboardingCompleteCookie(page.context(), slug);
   await page.goto(`http://${slug}.localhost:${port}/login`);
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
@@ -63,6 +107,7 @@ export async function loginDealershipPanelOrSkip(
   const redirectRe = new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`);
   try {
     await expect(page).toHaveURL(redirectRe, { timeout: 20_000 });
+    await dismissDealershipPanelOverlays(page);
   } catch {
     const strict =
       process.env.E2E_STRICT_PANEL_AUTH?.trim().toLowerCase() === "true";

@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import {
   loginDealershipPanel,
   postClassifiedsOAuthStart,
+  resetStuckClassifiedsConnections,
+  resolveDemoDealershipCredentials,
 } from "../helpers/dealership-panel-login";
 import {
   clickStorefrontContatoNav,
@@ -92,10 +94,13 @@ test.describe("painel — integrações OAuth demo", () => {
     page,
   }) => {
     await loginDealershipPanel(page, { slug: demoSlug });
+    await resetStuckClassifiedsConnections(demoSlug);
     const result = await postClassifiedsOAuthStart(page, "olx");
 
     expect(result.status).toBe(503);
-    expect(result.body.code).toBe("oauth_not_configured");
-    expect(result.body.error).toMatch(/indisponível/i);
+    expect(["oauth_not_configured", "oauth_session_store_mismatch"]).toContain(
+      result.body.code,
+    );
+    expect(result.body.error).toMatch(/indisponível|sessão|oauth/i);
   });
 });

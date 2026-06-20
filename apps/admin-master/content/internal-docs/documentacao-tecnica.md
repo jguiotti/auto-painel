@@ -435,11 +435,22 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Solução | RPC `bind_showcase_demo_panel_dealership` + gate em `require-dashboard-session.ts` rebinda o perfil ao tenant do host (`demo`, `demo-2`, `demo-3`) |
 | Migração | `supabase/migrations/20260620190300_showcase_demo_panel_shared_access.sql` |
 | Credenciais | `gestor.demo@autopainel.demo` / `LojaDemo123!` — ver `DEALERSHIP_HOSTS_PROVISIONING.md` |
-| Deploy remoto | `npm run supabase:deploy` (ou SQL manual no Dashboard) **antes** de testar produção |
+| Deploy remoto | ✅ `20260620190400` aplicada em produção (2026-06-20) |
 
 ---
 
-## Deploy
+## Platform Sales Squad v1.1 (2026-06-20)
+
+| Item | Detalhe |
+| --- | --- |
+| Migração | `20260620190400_platform_sales_squad_v11_jobs.sql` |
+| RPCs | `generate_monthly_commission_ledger`, `generate_payout_batch`, `mark_payout_batch_paid`, `provision_attribution_from_signed_contract` |
+| Cron | `.github/workflows/platform-sales-cron.yml` (dia 1 + dia 10) |
+| Scripts | `npm run platform-sales:cron:monthly`, `platform-sales:cron:payout`, `smoke:demo-showcase` |
+| Lead won | Sheet em `/painel/leads-comerciais` (`platform-commercial-lead-attribution-sheet.tsx`) |
+| Contrato assinado | Rep + loja no formulário → vínculo automático (`platform-contract-detail-actions.tsx`) |
+
+---
 
 | Destino | Guia |
 | --- | --- |

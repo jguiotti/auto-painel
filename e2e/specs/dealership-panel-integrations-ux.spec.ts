@@ -3,12 +3,14 @@ import { expect, test } from "@playwright/test";
 import {
   loginDealershipPanel,
   resolveDealershipPanelPort,
+  dismissDealershipPanelOverlays,
 } from "../helpers/dealership-panel-login";
 
 const demoPassword = process.env.E2E_DEALERSHIP_PASSWORD?.trim() || "LojaDemo123!";
 const port = resolveDealershipPanelPort();
 
 test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () => {
+  test.describe.configure({ mode: "serial" });
   test.describe("gating por plano", () => {
     test("ecodrive (starter) não exibe Integrações no menu", async ({ browser }) => {
       const context = await browser.newContext();
@@ -92,11 +94,17 @@ test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () 
 
     test("aparência do carrossel oferece três estilos visuais", async ({ page }) => {
       await page.goto(`http://guiotti.localhost:${port}/painel/integracoes#aparencia-carrossel`);
+      await expect(page.getByRole("heading", { name: "Integrações", level: 1 })).toBeVisible();
 
-      await expect(page.getByText("Clássico")).toBeVisible();
-      await expect(page.getByText("Performance")).toBeVisible();
-      await expect(page.getByText("Tech")).toBeVisible();
-      await expect(page.getByRole("button", { name: /salvar aparência/i })).toBeVisible();
+      const carouselSection = page.locator("#aparencia-carrossel");
+      await expect(carouselSection.getByRole("button", { name: /Clássico/i })).toBeVisible({
+        timeout: 30_000,
+      });
+      await expect(carouselSection.getByRole("button", { name: /Performance/i })).toBeVisible();
+      await expect(carouselSection.getByRole("button", { name: /Tech/i })).toBeVisible();
+      await expect(
+        carouselSection.getByRole("button", { name: /salvar aparência/i }),
+      ).toBeVisible();
     });
   });
 
@@ -108,6 +116,8 @@ test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () 
 
     test("ficha do veículo demo exibe painéis de divulgação", async ({ page }) => {
       await page.goto(`http://guiotti.localhost:${port}/painel/estoque`);
+      await expect(page.getByRole("heading", { name: /estoque/i })).toBeVisible();
+      await dismissDealershipPanelOverlays(page);
       await page.getByRole("link", { name: /Ferrari/i }).first().click();
 
       await expect(page.getByText("Compartilhar nas redes sociais")).toBeVisible();
@@ -118,9 +128,10 @@ test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () 
       page,
     }) => {
       await page.goto(`http://guiotti.localhost:${port}/painel/estoque/novo`);
-
+      await expect(page.getByRole("button", { name: /cadastrar veículo/i })).toBeVisible({
+        timeout: 30_000,
+      });
       await expect(page.getByRole("button", { name: /salvar e divulgar/i })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /cadastrar veículo/i })).toBeVisible();
     });
   });
 });

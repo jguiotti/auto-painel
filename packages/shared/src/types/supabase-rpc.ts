@@ -106,6 +106,30 @@ export interface BindShowcaseDemoPanelDealershipArgs {
   p_dealership_id: string;
 }
 
+/** `public.generate_monthly_commission_ledger` — v1.1 recurring commission job. */
+export interface GenerateMonthlyCommissionLedgerArgs {
+  p_reference_month?: string | null;
+}
+
+/** `public.generate_payout_batch` — v1.1 group approved lines into payout batch. */
+export interface GeneratePayoutBatchArgs {
+  p_reference_month: string;
+  p_payment_date?: string | null;
+}
+
+/** `public.mark_payout_batch_paid` — v1.1 finalize payout batch. */
+export interface MarkPayoutBatchPaidArgs {
+  p_payout_batch_id: string;
+}
+
+/** `public.provision_attribution_from_signed_contract` — v1.1 contract signed hook. */
+export interface ProvisionAttributionFromSignedContractArgs {
+  p_contract_id: string;
+  p_sales_rep_id: string;
+  p_dealership_id?: string | null;
+  p_confirm_immediately?: boolean;
+}
+
 /** `public.list_dealership_employees_for_panel` */
 export interface ListDealershipEmployeesForPanelArgs {
   p_dealership_id: string;

@@ -5,6 +5,8 @@ import { Button } from "@autopainel/shared/ui";
 
 import { PlatformContractDetailActions } from "@/components/platform-contract-detail-actions";
 import { fetchPlatformContractById } from "@/lib/data/platform-contracts";
+import { fetchDealerships } from "@/lib/data/dealerships";
+import { fetchPlatformSalesReps } from "@/lib/data/platform-sales-squad";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,11 @@ interface ContractDetailPageProps {
 
 export default async function ContractDetailPage({ params }: ContractDetailPageProps) {
   const { id } = await params;
-  const contract = await fetchPlatformContractById(id);
+  const [contract, salesReps, dealerships] = await Promise.all([
+    fetchPlatformContractById(id),
+    fetchPlatformSalesReps(),
+    fetchDealerships(),
+  ]);
   if (!contract) {
     notFound();
   }
@@ -31,7 +37,11 @@ export default async function ContractDetailPage({ params }: ContractDetailPageP
         </Button>
       </div>
 
-      <PlatformContractDetailActions contract={contract} />
+      <PlatformContractDetailActions
+        contract={contract}
+        salesReps={salesReps}
+        dealerships={dealerships}
+      />
 
       <article className="rounded-lg border bg-card p-6">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
