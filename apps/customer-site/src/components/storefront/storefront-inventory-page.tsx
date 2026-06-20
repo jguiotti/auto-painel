@@ -12,6 +12,8 @@ import {
 } from "./vehicle-filters-panel";
 import { VehicleInventoryList } from "./vehicle-inventory-list";
 import { InventoryMobileFilterBar } from "./inventory-mobile-filter-bar";
+import { StorefrontInventoryPagination } from "./storefront-inventory-pagination";
+import type { ParsedInventorySearchParams } from "@/lib/inventory/inventory-search-params";
 
 function countActiveStorefrontFilters(defaults: VehicleFilterValues): number {
   let count = 0;
@@ -33,15 +35,23 @@ function countActiveStorefrontFilters(defaults: VehicleFilterValues): number {
 interface StorefrontInventoryPageProps {
   vehicles: PublicVehicleCardModel[];
   totalCount: number;
+  page: number;
+  pageCount: number;
+  pageSize: number;
   filterDefaults: VehicleFilterValues;
   filterOptions: VehicleFilterOptionSet;
+  searchFilters: ParsedInventorySearchParams;
 }
 
 export function StorefrontInventoryPage({
   vehicles,
   totalCount,
+  page,
+  pageCount,
+  pageSize,
   filterDefaults,
   filterOptions,
+  searchFilters,
 }: StorefrontInventoryPageProps) {
   return (
     <div className="py-8 sm:py-10 lg:py-12">
@@ -102,7 +112,15 @@ export function StorefrontInventoryPage({
                 </Button>
               </div>
             ) : (
-              <VehicleInventoryList vehicles={vehicles} />
+              <>
+                <VehicleInventoryList vehicles={vehicles} />
+                <StorefrontInventoryPagination
+                  filters={{ ...searchFilters, page }}
+                  pageCount={pageCount}
+                  totalCount={totalCount}
+                  pageSize={pageSize}
+                />
+              </>
             )}
           </div>
         </div>

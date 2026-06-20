@@ -169,7 +169,11 @@ export default async function InventoryPage({
         canManageFeaturedOrder={canManageFeaturedOrder}
       />
 
-      <VehicleInventoryPagination params={filters} pageCount={pageCount} />
+      <VehicleInventoryPagination
+        params={filters}
+        pageCount={pageCount}
+        filteredCount={safeFilteredCount}
+      />
     </div>
   );
 }

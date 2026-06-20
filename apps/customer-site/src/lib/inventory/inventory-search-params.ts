@@ -1,7 +1,12 @@
-import type { ListPublicVehiclesFilteredArgs } from "@autopainel/shared/types";
+import type {
+  CountPublicVehiclesFilteredArgs,
+  ListPublicVehiclesFilteredArgs,
+} from "@autopainel/shared/types";
 
 import type { VehicleFilterValues } from "@/components/storefront/vehicle-filters-panel";
 import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
+
+export const STOREFRONT_INVENTORY_PAGE_SIZE = 12;
 
 export type InventorySortKey =
   | "newest"
@@ -14,6 +19,7 @@ export interface ParsedInventorySearchParams extends VehicleFilterValues {
   minMileage: string;
   maxMileage: string;
   sort: InventorySortKey;
+  page: number;
 }
 
 function parseOptionalNumber(value: string | undefined): number | null {
@@ -33,6 +39,14 @@ function parseOptionalInt(value: string | undefined): number | null {
     return null;
   }
   return Math.trunc(n);
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return parsed;
 }
 
 function parseSort(value: string | undefined): InventorySortKey {
@@ -72,6 +86,7 @@ export function parseInventorySearchParams(
     maxDisplacementCc: str("maxDisplacementCc") ?? "",
     gearCount: str("gearCount") ?? "",
     sort: parseSort(str("sort")),
+    page: parsePositiveInt(str("page"), 1),
   };
 }
 
@@ -99,6 +114,52 @@ export function toRpcFilterArgs(
   };
 }
 
+export function toRpcCountArgs(
+  dealershipId: string,
+  filters: ParsedInventorySearchParams,
+): CountPublicVehiclesFilteredArgs {
+  return toRpcFilterArgs(dealershipId, filters);
+}
+
+export function toRpcPagedListArgs(
+  dealershipId: string,
+  filters: ParsedInventorySearchParams,
+): ListPublicVehiclesFilteredArgs {
+  const offset = (filters.page - 1) * STOREFRONT_INVENTORY_PAGE_SIZE;
+  return {
+    ...toRpcFilterArgs(dealershipId, filters),
+    p_limit: STOREFRONT_INVENTORY_PAGE_SIZE,
+    p_offset: offset,
+    p_sort: filters.sort,
+  };
+}
+
+export function buildStorefrontInventoryQueryString(
+  filters: ParsedInventorySearchParams,
+): string {
+  const search = new URLSearchParams();
+  if (filters.brand) search.set("brand", filters.brand);
+  if (filters.model) search.set("model", filters.model);
+  if (filters.minPrice) search.set("minPrice", filters.minPrice);
+  if (filters.maxPrice) search.set("maxPrice", filters.maxPrice);
+  if (filters.minYear) search.set("minYear", filters.minYear);
+  if (filters.maxYear) search.set("maxYear", filters.maxYear);
+  if (filters.vehicleType) search.set("vehicleType", filters.vehicleType);
+  if (filters.minMileage) search.set("minMileage", filters.minMileage);
+  if (filters.maxMileage) search.set("maxMileage", filters.maxMileage);
+  if (filters.fuelType) search.set("fuelType", filters.fuelType);
+  if (filters.transmission) search.set("transmission", filters.transmission);
+  if (filters.color) search.set("color", filters.color);
+  if (filters.minDisplacementCc) search.set("minDisplacementCc", filters.minDisplacementCc);
+  if (filters.maxDisplacementCc) search.set("maxDisplacementCc", filters.maxDisplacementCc);
+  if (filters.gearCount) search.set("gearCount", filters.gearCount);
+  if (filters.sort !== "newest") search.set("sort", filters.sort);
+  if (filters.page > 1) search.set("page", String(filters.page));
+  const serialized = search.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+/** @deprecated Sort is applied server-side via RPC when paginating. */
 export function sortPublicVehicles(
   vehicles: PublicVehicleCardModel[],
   sort: InventorySortKey,

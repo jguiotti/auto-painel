@@ -18,6 +18,7 @@ import googleFontFamilies from "@autopainel/shared/data/google-fonts-families.js
 import { deleteAuthUserOrOrphanProfile } from "@/lib/auth/delete-auth-user-or-orphan-profile";
 import { requireAdminSession } from "@/lib/auth/require-admin";
 import { provisionDealershipHostsInBackground } from "@/lib/provision-dealership-hosts";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { digitsOnly, normalizeDomainHostname } from "@/lib/br-format";
 
 export interface ActionResult {
@@ -1287,6 +1288,16 @@ export async function updateDealershipAction(
       };
     }
     return { error: friendlyDealershipDbError(error.message) };
+  }
+
+  const previousStatus =
+    typeof existing.status === "string" ? existing.status.trim() : "";
+  if (status === "churned" && previousStatus !== "churned") {
+    const userSupabase = await createSupabaseServerClient();
+    const { runDealershipChurnClawback } = await import(
+      "@/lib/commercial/run-dealership-churn-clawback"
+    );
+    await runDealershipChurnClawback(userSupabase, id);
   }
 
   const syncUnitsResult = await syncDealershipUnits(supabase, id, unitsParsed.units);

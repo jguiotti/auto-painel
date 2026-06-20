@@ -48,11 +48,32 @@ export async function requireDashboardSession(
     redirect("/erro/concessionaria");
   }
 
-  const { data: profile, error } = await supabase
+  let { data: profile, error } = await supabase
     .from("profiles")
     .select("dealership_id, role")
     .eq("id", user.id)
     .single();
+
+  if (
+    profile &&
+    profile.role !== "super_admin" &&
+    profile.dealership_id !== cookieDealershipId
+  ) {
+    const { data: bound } = await supabase.rpc(
+      "bind_showcase_demo_panel_dealership",
+      { p_dealership_id: cookieDealershipId },
+    );
+
+    if (bound) {
+      const refreshed = await supabase
+        .from("profiles")
+        .select("dealership_id, role")
+        .eq("id", user.id)
+        .single();
+      profile = refreshed.data ?? profile;
+      error = refreshed.error ?? error;
+    }
+  }
 
   const isSuperAdmin = profile?.role === "super_admin";
   const isDealershipBoundProfile = profile?.dealership_id === cookieDealershipId;

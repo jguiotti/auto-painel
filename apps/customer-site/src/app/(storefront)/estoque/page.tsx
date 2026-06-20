@@ -1,25 +1,20 @@
-import type { Metadata } from "next";
-
-import { StorefrontInventoryPage } from "@/components/storefront/storefront-inventory-page";
-import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
-import type { VehicleFilterValues } from "@/components/storefront/vehicle-filters-panel";
+import { getDealershipPublicRecord } from "@/lib/tenant/get-dealership-public-record";
 import { buildVehicleFilterOptions } from "@/lib/inventory/build-vehicle-filter-options";
 import {
   parseInventorySearchParams,
-  sortPublicVehicles,
-  toRpcFilterArgs,
+  STOREFRONT_INVENTORY_PAGE_SIZE,
+  toRpcCountArgs,
+  toRpcPagedListArgs,
 } from "@/lib/inventory/inventory-search-params";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getDealershipPublicRecord } from "@/lib/tenant/get-dealership-public-record";
+
+import { StorefrontInventoryPage } from "@/components/storefront/storefront-inventory-page";
+import type { VehicleFilterValues } from "@/components/storefront/vehicle-filters-panel";
+import type { PublicVehicleCardModel } from "@/components/storefront/vehicle-listing-grid";
 
 interface EstoquePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
-
-export const metadata: Metadata = {
-  title: "Estoque",
-  description: "Veículos disponíveis com filtros avançados.",
-};
 
 export default async function EstoquePage({ searchParams }: EstoquePageProps) {
   const sp = await searchParams;
@@ -31,31 +26,32 @@ export default async function EstoquePage({ searchParams }: EstoquePageProps) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const listArgs = toRpcPagedListArgs(dealership.id, filters);
+  const countArgs = toRpcCountArgs(dealership.id, filters);
 
-  const { data, error } = await supabase.rpc(
-    "list_public_vehicles_filtered",
-    toRpcFilterArgs(dealership.id, filters),
-  );
+  const [{ data, error }, { data: totalCountRaw, error: countError }, { data: catalogData }] =
+    await Promise.all([
+      supabase.rpc("list_public_vehicles_filtered", listArgs),
+      supabase.rpc("count_public_vehicles_filtered", countArgs),
+      supabase.rpc("list_public_vehicles_filtered", {
+        p_dealership_id: dealership.id,
+      }),
+    ]);
 
-  if (error) {
+  if (error || countError) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-12">
         <p className="text-red-600 dark:text-red-400">
-          Não foi possível carregar o estoque: {error.message}
+          Não foi possível carregar o estoque: {error?.message ?? countError?.message}
         </p>
       </div>
     );
   }
 
-  const vehicles = sortPublicVehicles(
-    (data ?? []) as PublicVehicleCardModel[],
-    filters.sort,
-  );
-
-  const { data: catalogData } = await supabase.rpc("list_public_vehicles_filtered", {
-    p_dealership_id: dealership.id,
-  });
-
+  const vehicles = (data ?? []) as PublicVehicleCardModel[];
+  const totalCount = Number(totalCountRaw ?? vehicles.length);
+  const pageCount = Math.max(1, Math.ceil(totalCount / STOREFRONT_INVENTORY_PAGE_SIZE));
+  const safePage = Math.min(filters.page, pageCount);
   const filterOptions = buildVehicleFilterOptions(
     ((catalogData ?? []) as PublicVehicleCardModel[]),
   );
@@ -82,9 +78,13 @@ export default async function EstoquePage({ searchParams }: EstoquePageProps) {
   return (
     <StorefrontInventoryPage
       vehicles={vehicles}
-      totalCount={vehicles.length}
+      totalCount={totalCount}
+      page={safePage}
+      pageCount={pageCount}
+      pageSize={STOREFRONT_INVENTORY_PAGE_SIZE}
       filterDefaults={filterDefaults}
       filterOptions={filterOptions}
+      searchFilters={filters}
     />
   );
 }

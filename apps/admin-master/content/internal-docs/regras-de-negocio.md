@@ -157,7 +157,7 @@ Depois, no **Registro.br** (ou Cloudflare), criam-se dois registros CNAME aponta
 | Convidar ou remover usuário da loja | Ficha → Equipe **ou** menu **Usuários das lojas** |
 | Ver todos os usuários das lojas | **Usuários das lojas** (`/painel/usuarios`) |
 | Operadores do painel administrativo | **Equipe AutoPainel** (`/painel/equipe`) — `super_admin` |
-| Vendedores comerciais internos (comissão) | **Em implementação** — PRD + copy prontos; ver `PRD_PLATFORM_SALES_SQUAD.md` |
+| Vendedores comerciais internos (comissão) | **Equipe comercial** (`/painel/equipe/comercial`) · portal rep `/painel/comercial/extrato` |
 | Consultar documentação | Menu **Documentação interna** |
 | Lojas demo para testes | Slugs `guiotti`, `autoprime`, `ecodrive`, `demo` |
 
@@ -177,7 +177,18 @@ Depois, no **Registro.br** (ou Cloudflare), criam-se dois registros CNAME aponta
 | BZ-SQ-06 | Representante comercial ≠ operador `super_admin` ≠ vendedor da loja cliente |
 | BZ-SQ-07 | Representante vê **próprio extrato** e edita **próprios** dados PIX (v1) |
 
-**Onde operar (quando implementado):** menu Equipe comercial · portal `/painel/comercial/extrato` (rep).
+**Onde operar:** menu **Equipe comercial** (`/painel/equipe/comercial`) · portal rep **Meu extrato** (`/painel/comercial/extrato`). QA: `packages/shared/docs/PLATFORM_SALES_SQUAD_QA.md`.
+
+| CA | Critério de aceite (v1) | Status QA |
+| --- | --- | --- |
+| CA-SQ-01 | Cadastrar rep + PIX → lista | ✅ UI + actions |
+| CA-SQ-02 | Vínculo loja → ledger pending | 🟡 manual RPC |
+| CA-SQ-03/04 | Aprovar → lote dia 10 + CSV | ⏳ v1.1 |
+| CA-SQ-05 | Campanha bônus | ⏳ v1.1 |
+| CA-SQ-06 | Repasse carteira A→B | 🟡 manual wizard |
+| CA-SQ-07 | Rep vê Meu extrato | ✅ Playwright + RLS |
+| CA-SQ-08 | Rep A ≠ extrato Rep B | ✅ script RLS |
+| CA-SQ-09 | Churn 30d → estorno | 🟡 manual SQL |
 
 ---
 

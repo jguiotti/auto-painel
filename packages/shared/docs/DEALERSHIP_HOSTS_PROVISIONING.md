@@ -114,15 +114,17 @@ Apontar NS do domínio para `ns1.vercel-dns.com` / `ns2.vercel-dns.com` e gerir 
 
 ---
 
-## Loja Demo (Meta App Review)
+## Lojas demo (Meta App Review + vitrines showcase)
 
 | Item | Valor |
 | --- | --- |
-| Slug | `demo` |
-| Vitrine | https://demo.autopainel.com.br |
-| Painel | https://demo.loja.autopainel.com.br/login |
-| Integrações | https://demo.loja.autopainel.com.br/painel/integracoes |
-| Credenciais | `gestor.demo@autopainel.demo` / `LojaDemo123!` |
+| Slugs painel | `demo`, `demo-2`, `demo-3` |
+| Vitrines | https://demo.autopainel.com.br · https://demo-2.autopainel.com.br · https://demo-3.autopainel.com.br |
+| Painéis | https://demo.loja.autopainel.com.br/login · https://demo-2.loja.autopainel.com.br/login · https://demo-3.loja.autopainel.com.br/login |
+| Integrações (Meta) | https://demo.loja.autopainel.com.br/painel/integracoes |
+| Credenciais (todas as lojas demo acima) | `gestor.demo@autopainel.demo` / `LojaDemo123!` |
+
+O utilizador partilhado **rebinda** automaticamente ao tenant do host (`bind_showcase_demo_panel_dealership`, migração `20260620190300_showcase_demo_panel_shared_access.sql`).
 
 Domínios **já registados na Vercel** (2026-06-17). NS em Cloudflare (`leonidas` / `barbara`). Confirmar wildcards `*` e `*.loja` na Cloudflare (ver secção B acima).
 

@@ -48,15 +48,23 @@ export async function loginAction(
     };
   }
 
-  if (!isPlatformOperatorProfile(profile)) {
-    await supabase.auth.signOut();
-    return {
-      error:
-        "Esta conta não tem permissão para o painel central. Só entram usuários com perfil super_admin e sem concessionária (dealership_id nulo) em public.profiles. Donos e vendedores usam o painel da loja.",
-    };
+  if (isPlatformOperatorProfile(profile)) {
+    redirect("/painel/dashboard");
   }
 
-  redirect("/painel/dashboard");
+  const { data: salesRepId, error: repError } = await supabase.rpc(
+    "current_platform_sales_rep_id",
+  );
+
+  if (!repError && typeof salesRepId === "string" && salesRepId.length > 0) {
+    redirect("/painel/comercial/extrato");
+  }
+
+  await supabase.auth.signOut();
+  return {
+    error:
+      "Esta conta não tem permissão para o painel central. Entram operadores da plataforma (super_admin) ou representantes comerciais com login vinculado.",
+  };
 }
 
 export async function logoutAction(): Promise<void> {

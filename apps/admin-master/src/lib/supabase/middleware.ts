@@ -6,8 +6,13 @@ import { type NextRequest, NextResponse } from "next/server";
  * Role check (super_admin) runs in requireAdminSession (server layout).
  */
 export async function updateAdminSession(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  if (!requestHeaders.has("x-pathname")) {
+    requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  }
+
   let response = NextResponse.next({
-    request: { headers: request.headers },
+    request: { headers: requestHeaders },
   });
 
   const supabase = createSupabaseServerClient({
@@ -19,7 +24,7 @@ export async function updateAdminSession(request: NextRequest) {
         request.cookies.set(name, value);
       });
       response = NextResponse.next({
-        request: { headers: request.headers },
+        request: { headers: requestHeaders },
       });
       cookiesToSet.forEach(({ name, value, options }) => {
         response.cookies.set(name, value, options);

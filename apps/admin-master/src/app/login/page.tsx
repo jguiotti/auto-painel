@@ -12,8 +12,7 @@ import {
 } from "@autopainel/shared/ui";
 
 import { LOGO_HORIZONTAL_SRC } from "@/lib/brand";
-import { fetchProfileRowForUserId } from "@/lib/auth/fetch-profile-for-admin";
-import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile";
+import { resolvePostLoginRedirectPath } from "@/lib/auth/resolve-post-login-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { LoginForm } from "./login-form";
@@ -44,10 +43,9 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { profile } = await fetchProfileRowForUserId(user.id);
-
-    if (isPlatformOperatorProfile(profile)) {
-      redirect("/painel/dashboard");
+    const redirectPath = await resolvePostLoginRedirectPath(user.id);
+    if (redirectPath) {
+      redirect(redirectPath);
     }
   }
 
@@ -67,15 +65,15 @@ export default async function LoginPage({
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Entrar</CardTitle>
           <CardDescription>
-            Área restrita à equipe central. Entre com o e-mail e a senha da conta
-            cadastrada como super administradora.
+            Área restrita à equipe central. Operadores da plataforma e representantes
+            comerciais entram com e-mail e senha cadastrados.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {sp.error === "forbidden" ? (
             <p className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              Acesso negado. Apenas contas com perfil de super administradora
-              (sem concessionária vinculada) podem usar este painel.
+              Acesso negado. Use uma conta de operador da plataforma ou de representante
+              comercial vinculado.
             </p>
           ) : null}
           {sp.error === "confirmacao" ? (

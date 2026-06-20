@@ -3,7 +3,9 @@
 ## Pré-requisitos
 
 1. Variáveis na raiz (`.env.local` + `npm run sync:env`): pelo menos `NEXT_PUBLIC_SUPABASE_*`, `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=localhost`.
-2. Servidores Next em execução, por exemplo `npm run dev:all`, ou só `dealership-panel` (3002) e `customer-site` (3003) conforme os testes que queres correr.
+2. Servidores Next em execução, por exemplo `npm run dev:all`, ou só os apps necessários:
+   - **`platform-sales-squad.spec.ts`:** `admin-master` na **3001** (`npm run dev:admin-master`)
+   - Painel loja: `dealership-panel` (3002); vitrine: `customer-site` (3003)
 3. Opcional **`E2E_DEALERSHIP_SLUG`**: slug existente na BD para fluxos felizes.
    - **Painel (`dealership-panel`):** o resolver **dashboard** ignora `dealerships.status` — qualquer slug válido deve levar `/painel` → `/login`.
    - **Vitrine (`customer-site`):** o resolver **público** só aceita **`dealerships.status = active`**. Se o slug existir mas estiver `suspended`, `pending_setup`, etc., a home vai para **`/erro/concessionaria`**; nesse caso o teste da vitrine é **ignorado** (skipped), não falha. Para falhar de propósito quando a vitrine não abre: **`E2E_STRICT_STOREFRONT_ACTIVE=true`**.
@@ -27,9 +29,20 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 - **Integrações UX (Épico 2):** `e2e/specs/dealership-panel-integrations-ux.spec.ts` — gating plano (`autoprime` vs `guiotti`), hub `/painel/integracoes`, ficha Ferrari, formulário «Salvar e divulgar».
 - **Integrações OAuth:** `e2e/specs/dealership-panel-integrations-oauth.spec.ts` — hub enterprise + 503 canal indisponível OLX/WM.
 - **CRM (Operação comercial):** `e2e/specs/crm-storefront-panel.spec.ts` — `/contato`, contatos painel, loja/equipe, simulação, cross-tenant leads, gating plano.
+- **Equipe comercial (Platform Sales Squad):** `e2e/specs/platform-sales-squad.spec.ts` — auth admin/rep, portal extrato, bloqueio gestor loja. Seed: `npm run seed:platform-sales-rep-qa`. RLS: `npm run qa:platform-sales-squad-rls`. Matriz: `packages/shared/docs/PLATFORM_SALES_SQUAD_QA.md`.
 - **QR:** `e2e/specs/vehicle-qr-print.spec.ts` — lâmina QR do Ferrari demo (skip se módulo `qr_generator` off).
 
 Os testes **não** gravam dados por padrão — verificam resolução de host, middleware e fluxos de leitura.
+
+**Login E2E (admin-master):** `e2e/helpers/admin-master-login.ts` + `platform-sales-squad.spec.ts`. Credenciais demo (após `npm run seed:admin-user`):
+
+- E-mail: `operador@autopainel.demo`
+- Senha: `AdminAuto2026!`
+- URL: `http://127.0.0.1:3001/login`
+
+Reps comerciais QA (após `npm run seed:platform-sales-rep-qa`): `rep.a@autopainel.demo` / `rep.b@autopainel.demo` — senha `RepDemo123!`.
+
+Variáveis opcionais: `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_SALES_REP_*`, `E2E_STRICT_ADMIN_AUTH`, `E2E_STRICT_SALES_REP_AUTH`.
 
 **Login E2E (painel lojista):** `e2e/helpers/dealership-panel-login.ts` + specs CRM/integrações. Credenciais demo (após `npm run seed:demo-users`):
 

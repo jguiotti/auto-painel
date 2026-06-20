@@ -250,11 +250,18 @@ async function main() {
   console.log("- http://autoprime.localhost:3003");
   console.log("- http://ecodrive.localhost:3003");
   console.log("- http://demo.localhost:3003  (Meta App Review)");
-  console.log("Production (Meta App Review):");
+  console.log("Production (Meta App Review + showcase vitrines):");
   console.log("- https://demo.loja.autopainel.com.br/login");
+  console.log("- https://demo-2.loja.autopainel.com.br/login");
+  console.log("- https://demo-3.loja.autopainel.com.br/login");
   console.log("- https://demo.autopainel.com.br");
+  console.log("- https://demo-2.autopainel.com.br");
+  console.log("- https://demo-3.autopainel.com.br");
   console.log("- Integrações Meta: https://demo.loja.autopainel.com.br/painel/integracoes");
-  console.log("Meta reviewer login: gestor.demo@autopainel.demo /", DEMO_PASSWORD);
+  console.log(
+    "Showcase demo panel login (demo, demo-2, demo-3): gestor.demo@autopainel.demo /",
+    DEMO_PASSWORD,
+  );
   console.log("CRM demo: /painel/contatos on guiotti (6 leads across pipeline statuses)");
 }
 

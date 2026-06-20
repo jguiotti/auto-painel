@@ -16,6 +16,7 @@ import {
 
 import {
   buildPanelInventoryQueryString,
+  PANEL_INVENTORY_PAGE_SIZE,
   type PanelInventorySearchParams,
 } from "@/lib/inventory/panel-inventory-search-params";
 
@@ -126,8 +127,11 @@ export function VehicleInventoryToolbar({
         </div>
       </form>
       <p className="mt-3 text-xs text-muted-foreground">
-        {filteredCount} de {totalCount} veículo{totalCount === 1 ? "" : "s"} exibido
-        {filteredCount === 1 ? "" : "s"}
+        {filteredCount} veículo{filteredCount === 1 ? "" : "s"} no filtro · {totalCount} no
+        estoque total
+        {filteredCount > PANEL_INVENTORY_PAGE_SIZE
+          ? ` · ${PANEL_INVENTORY_PAGE_SIZE} por página`
+          : ""}
       </p>
     </div>
   );

@@ -24,6 +24,8 @@
     "seed:demo-users": "NODE_PATH=./packages/shared/node_modules node scripts/seed-demo-dealership-users.mjs",
     "seed:admin-user": "NODE_PATH=./packages/shared/node_modules node scripts/seed-admin-super-user.mjs",
     "seed:local-access": "npm run seed:admin-user && npm run seed:demo-users",
+    "seed:platform-sales-rep-qa": "NODE_PATH=./packages/shared/node_modules node scripts/seed-platform-sales-rep-qa.mjs",
+    "qa:platform-sales-squad-rls": "NODE_PATH=./packages/shared/node_modules node scripts/qa-platform-sales-squad-rls.mjs",
     "supabase:reset:dev": "supabase db reset && npm run seed:local-access",
     "provision:super-admin": "NODE_PATH=./packages/shared/node_modules node scripts/provision-platform-super-admin.mjs",
     "sync:dealership-from-remote": "NODE_PATH=./packages/shared/node_modules node scripts/sync-dealership-from-remote.mjs",

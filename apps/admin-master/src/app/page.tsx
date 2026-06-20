@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AdminEnvSetupRequired } from "@/components/admin-env-setup-required";
-import { fetchProfileRowForUserId } from "@/lib/auth/fetch-profile-for-admin";
-import { isPlatformOperatorProfile } from "@/lib/auth/platform-operator-profile";
+import { resolvePostLoginRedirectPath } from "@/lib/auth/resolve-post-login-redirect";
 import { getAdminEnvSetupError } from "@/lib/env/get-admin-env-setup-error";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -20,10 +19,9 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { profile } = await fetchProfileRowForUserId(user.id);
-
-    if (isPlatformOperatorProfile(profile)) {
-      redirect("/painel/dashboard");
+    const redirectPath = await resolvePostLoginRedirectPath(user.id);
+    if (redirectPath) {
+      redirect(redirectPath);
     }
   }
 

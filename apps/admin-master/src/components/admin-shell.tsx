@@ -14,6 +14,7 @@ import {
   LogOut,
   Package,
   Search,
+  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
@@ -64,8 +65,14 @@ function pageTitleFromPath(pathname: string): string {
   if (pathname.startsWith("/painel/usuarios")) {
     return "Usuários das lojas";
   }
+  if (pathname.startsWith("/painel/equipe/comercial")) {
+    return "Equipe comercial";
+  }
   if (pathname.startsWith("/painel/equipe")) {
     return "Equipe AutoPainel";
+  }
+  if (pathname.startsWith("/painel/comercial")) {
+    return "Portal comercial";
   }
   if (pathname.startsWith("/painel/financeiro")) {
     return "Financeiro";
@@ -108,6 +115,7 @@ export function AdminShell({
     { href: "/painel/modulos", label: "Módulos", icon: Package },
     { href: "/painel/usuarios", label: "Usuários das lojas", icon: Users },
     { href: "/painel/equipe", label: "Equipe AutoPainel", icon: BriefcaseBusiness },
+    { href: "/painel/equipe/comercial", label: "Equipe comercial", icon: UserRound },
     { href: "/painel/financeiro", label: "Financeiro", icon: Wallet },
     {
       href: "/painel/documentacao",

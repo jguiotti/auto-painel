@@ -1,7 +1,7 @@
 # Arquitetura — Equipe comercial AutoPainel (Fase 4)
 
-> **Status:** Contratos + migração SQL prontos. Aplicar manualmente no Supabase Dashboard ou via workflow CLI do time.  
-> **PRD:** [`PRD_PLATFORM_SALES_SQUAD.md`](./PRD_PLATFORM_SALES_SQUAD.md) · **UX:** [`UX_PLATFORM_SALES_SQUAD.md`](./UX_PLATFORM_SALES_SQUAD.md)
+> **Status:** Contratos + migração SQL prontos. Fase 5 Backend entregue (actions + data layer).  
+> **PRD:** [`PRD_PLATFORM_SALES_SQUAD.md`](./PRD_PLATFORM_SALES_SQUAD.md) · **UX:** [`UX_PLATFORM_SALES_SQUAD.md`](./UX_PLATFORM_SALES_SQUAD.md) · **Backlog:** [`PLATFORM_BACKLOG_REMAINING.md`](./PLATFORM_BACKLOG_REMAINING.md)
 
 ---
 
@@ -41,7 +41,7 @@ Isolamento: RLS com `is_platform_super_admin()` + `current_platform_sales_rep_id
 | `current_platform_sales_rep_id` | authenticated | — | `uuid` | Helper invoker |
 | `is_platform_sales_rep` | authenticated | — | `boolean` | Middleware portal |
 
-**Fase 5 (backend):** CRUD via PostgREST direto nas tabelas + RPCs acima; jobs `generate_monthly_commission_ledger`, `generate_payout_batch`, `mark_payout_batch_paid` (ainda não migrados).
+**Fase 5 (backend):** ✅ CRUD via PostgREST + RPCs; hook churn em `updateDealershipAction`; auth rep em `require-platform-painel-access.ts`. Jobs `generate_monthly_commission_ledger`, `generate_payout_batch`, `mark_payout_batch_paid` (v1.1, ainda não migrados).
 
 ---
 
@@ -86,15 +86,19 @@ Isolamento: RLS com `is_platform_super_admin()` + `current_platform_sales_rep_id
 
 ---
 
-## 7. QA matrix (preview)
+## 7. QA matrix
 
-| Cenário | Esperado |
-| --- | --- |
-| Rep A vê extrato de Rep B | 403 / zero rows RLS |
-| super_admin repassa carteira | attributions moved, audit row |
-| Churn 30d | clawback negativo no extrato |
-| Rep confirma attribution | ledger pending criado |
+Documento completo Fase 8: [`PLATFORM_SALES_SQUAD_QA.md`](./PLATFORM_SALES_SQUAD_QA.md).
+
+| Cenário | Esperado | Automação |
+| --- | --- | --- |
+| Rep A vê extrato de Rep B | 0 rows RLS | `npm run qa:platform-sales-squad-rls` |
+| super_admin repassa carteira | attributions moved, audit row | Manual §7.2 QA doc |
+| Churn 30d | clawback negativo no extrato | Manual §7.1 QA doc |
+| Rep confirma attribution | ledger pending criado | Manual CA-SQ-02 |
+| Rep bloqueado no admin | redirect extrato | Playwright |
+| Gestor loja no admin | login negado | Playwright |
 
 ---
 
-**Próximo:** Fase 5 Backend + Fase 6 Frontend (após aplicar migração no Supabase remoto).
+**Próximo:** v1.1 jobs comissão/payout + drawer vínculo leads/contratos.

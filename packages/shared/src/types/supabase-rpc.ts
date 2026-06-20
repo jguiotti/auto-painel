@@ -40,7 +40,16 @@ export interface ListPublicVehiclesFilteredArgs {
   p_min_displacement_cc?: number | null;
   p_max_displacement_cc?: number | null;
   p_gear_count?: number | null;
+  p_limit?: number | null;
+  p_offset?: number | null;
+  p_sort?: string | null;
 }
+
+/** public.count_public_vehicles_filtered — same filters as list, without pagination/sort. */
+export type CountPublicVehiclesFilteredArgs = Omit<
+  ListPublicVehiclesFilteredArgs,
+  "p_limit" | "p_offset" | "p_sort"
+>;
 
 /** Row shape for public.platform_internal_documents (admin-master internal docs). */
 export interface PlatformInternalDocumentRow {
@@ -80,6 +89,21 @@ export interface CreatePublicStorefrontLeadArgs {
 /** `public.is_dealership_panel_user_active` — BZ-EMP-003 panel access gate. */
 export interface IsDealershipPanelUserActiveArgs {
   p_user_id?: string | null;
+}
+
+/** `public.is_showcase_demo_panel_manager` — shared gestor.demo@autopainel.demo account. */
+export interface IsShowcaseDemoPanelManagerArgs {
+  p_user_id?: string | null;
+}
+
+/** `public.is_showcase_demo_store_dealership` — demo / demo-2 / demo-3 active stores. */
+export interface IsShowcaseDemoStoreDealershipArgs {
+  p_dealership_id: string;
+}
+
+/** `public.bind_showcase_demo_panel_dealership` — rebind showcase manager to host tenant. */
+export interface BindShowcaseDemoPanelDealershipArgs {
+  p_dealership_id: string;
 }
 
 /** `public.list_dealership_employees_for_panel` */

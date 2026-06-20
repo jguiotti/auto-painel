@@ -365,7 +365,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Calendário admin | `/painel/calendario-conteudo` |
 | Build fix CRM | `platform-commercial-leads-shared.ts` (sem `server-only`) vs `platform-commercial-leads.ts` |
 | Preços marketing | `marketing-plan-prices.ts` — 197 / 397 / 997 + setup **obrigatório** 497 + faixas estoque; migração `20260620160000` |
-| Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel **não** exposto publicamente; CTA `/contato`. Nova loja demo: `npm run dealership:hosts:provision -- <slug>`. Estoque showcase: migração `20260620190000_seed_showcase_demo_vehicles.sql` (20 veículos/loja, 4 fotos cada, prefixo `showcase-`); regerar catálogo: `node scripts/generate-showcase-demo-vehicles-migration.mjs`. Hero layout 2: `home-hero.tsx` centralizado verticalmente |
+| Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel em `{slug}.loja.autopainel.com.br` com login partilhado `gestor.demo@autopainel.demo` / `LojaDemo123!` (RPC `bind_showcase_demo_panel_dealership`, migração `20260620190300`). Nova loja demo: `npm run dealership:hosts:provision -- <slug>`. Estoque showcase: migração `20260620190000_seed_showcase_demo_vehicles.sql` (20 veículos/loja, 4 fotos cada, prefixo `showcase-`); regerar catálogo: `node scripts/generate-showcase-demo-vehicles-migration.mjs`. Hero layout 2: `home-hero.tsx` centralizado verticalmente |
 | Vitrine inativa | RPC `resolve_dealership_storefront_tenant`, `get_dealership_storefront_shell_by_id`; rota `customer-site` `/loja-inativa` |
 | Painel inativo | `require-dashboard-session.ts` → `/conta-inativa` (status ≠ `active`) |
 | CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` |
@@ -376,6 +376,66 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Migração P4 | `supabase/migrations/20260620170000_growth_epic_p4_manual_lead_enrichment.sql` |
 | Wizard painel | `panel-onboarding-wizard.tsx` — cookie `ap_panel_onboarding_v1`, 1× por navegador |
 | Lead manual enriquecido | `create-manual-lead-dialog.tsx` — CPF/CNPJ + endereço; RPC `create_dealership_manual_lead` com `customer_id` |
+
+---
+
+## Equipe comercial AutoPainel (Platform Sales Squad)
+
+| Fase squad | Status |
+| --- | --- |
+| 1–4 PM / UX / Arquiteto | ✅ PRD, copy, UX, migração `20260620180100_platform_sales_squad.sql` |
+| **5 Backend** | ✅ Actions, data layer, auth portal rep, hook estorno churn |
+| **6 Frontend** | ✅ Admin `/painel/equipe/comercial/*` + portal rep `/painel/comercial/*` (v1) |
+| **8 QA** | ✅ Matriz + Playwright + script RLS local — `PLATFORM_SALES_SQUAD_QA.md` (6 pass + 1 skip E2E com dev servers) |
+| 7 DevOps | 🟡 Cron comissão/lote v1.1 |
+
+**Épico v1 fechado** (2026-06-20): escopo admin + portal rep + QA automatizado. Backlog v1.1: campanhas, lotes pagamento, drawer vínculo leads/contratos — `PLATFORM_BACKLOG_REMAINING.md`.
+
+| Área | Paths / contratos |
+| --- | --- |
+| Migração | `supabase/migrations/20260620180100_platform_sales_squad.sql`, fix RLS `20260620190100_fix_platform_sales_reps_select_own_rls.sql` |
+| Tipos | `packages/shared/src/types/platform-sales-squad.ts`, `supabase-rpc.ts` |
+| Arquitetura | `packages/shared/docs/PLATFORM_SALES_SQUAD_ARCHITECTURE.md` |
+| Backlog restante | `packages/shared/docs/PLATFORM_BACKLOG_REMAINING.md` |
+| Actions admin | `platform-sales-reps.ts`, `platform-sales-attributions.ts`, `platform-sales-portfolio.ts`, `platform-sales-ledger.ts`, `platform-sales-incentives.ts` |
+| Data layer | `lib/data/platform-sales-squad.ts`, `platform-sales-squad-shared.ts` |
+| Auth painel | `require-platform-painel-access.ts` — rep só em `/painel/comercial/*`; `RepPortalShell` layout mínimo |
+| UI admin | `/painel/equipe/comercial`, `/novo`, `/[repId]`, `/[repId]/extrato`, `/[repId]/repasse` — components `platform-sales-*` |
+| UI rep | `/painel/comercial/extrato`, `/carteira`, `/dados-pagamento` |
+| Estorno churn | `lib/commercial/run-dealership-churn-clawback.ts` + `updateDealershipAction` quando status → `churned` |
+| RPCs | `transfer_sales_rep_portfolio`, `confirm_dealership_sales_attribution`, `clawback_dealership_sales_commissions`, `approve_sales_commission_ledger_entries` |
+| QA Fase 8 | `packages/shared/docs/PLATFORM_SALES_SQUAD_QA.md` · `e2e/specs/platform-sales-squad.spec.ts` · `npm run qa:platform-sales-squad-rls` · seed `npm run seed:platform-sales-rep-qa` |
+
+**Bloqueado externamente (fora deste épico):** integração Meta e iCarros — ver `PLATFORM_BACKLOG_REMAINING.md`.
+
+---
+
+## Estoque — paginação vitrine e painel (2026-06-20)
+
+| Superfície | Comportamento |
+| --- | --- |
+| **Vitrine** `/estoque` | 12 veículos/página; query `?page=`; sort server-side via RPC; barra Anterior/Próxima |
+| **Painel loja** `/painel/estoque` | 20 veículos/página (já existia); copy «Mostrando X–Y de Z» na paginação e toolbar |
+
+| Artefato | Path |
+| --- | --- |
+| Migração | `supabase/migrations/20260620190200_storefront_inventory_pagination.sql` — `list_public_vehicles_filtered` (`p_limit`, `p_offset`, `p_sort`) + `count_public_vehicles_filtered` |
+| Tipos RPC | `packages/shared/src/types/supabase-rpc.ts` |
+| Vitrine page | `apps/customer-site/src/app/(storefront)/estoque/page.tsx` |
+| Vitrine UI | `storefront-inventory-pagination.tsx`, `inventory-search-params.ts` |
+| Painel UI | `vehicle-inventory-pagination.tsx`, `panel-inventory-search-params.ts` |
+
+---
+
+## Painel demo showcase — login partilhado (2026-06-20)
+
+| Item | Detalhe |
+| --- | --- |
+| Problema | `gestor.demo@autopainel.demo` tinha `profiles.dealership_id` só em `demo`; login em `demo-2.loja…` redirecionava para `/erro/concessionaria` |
+| Solução | RPC `bind_showcase_demo_panel_dealership` + gate em `require-dashboard-session.ts` rebinda o perfil ao tenant do host (`demo`, `demo-2`, `demo-3`) |
+| Migração | `supabase/migrations/20260620190300_showcase_demo_panel_shared_access.sql` |
+| Credenciais | `gestor.demo@autopainel.demo` / `LojaDemo123!` — ver `DEALERSHIP_HOSTS_PROVISIONING.md` |
+| Deploy remoto | `npm run supabase:deploy` (ou SQL manual no Dashboard) **antes** de testar produção |
 
 ---
 
