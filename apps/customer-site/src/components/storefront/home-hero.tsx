@@ -104,7 +104,7 @@ export function HomeHero({ layoutId }: HomeHeroProps) {
   if (layoutId === 2) {
     return (
       <>
-        <section className="relative flex min-h-[92vh] flex-col justify-end overflow-hidden pb-16 pt-28">
+        <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-4 py-20 sm:min-h-[88vh]">
           <div aria-hidden className="absolute inset-0">
             <div className="absolute inset-0 [&_img]:opacity-35">{heroImage}</div>
             <div className="absolute inset-0 bg-gradient-to-b from-[var(--storefront-bg,var(--dealer-bg))] via-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_70%,transparent)] to-[var(--storefront-bg,var(--dealer-bg))]" />

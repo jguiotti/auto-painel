@@ -365,7 +365,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Calendário admin | `/painel/calendario-conteudo` |
 | Build fix CRM | `platform-commercial-leads-shared.ts` (sem `server-only`) vs `platform-commercial-leads.ts` |
 | Preços marketing | `marketing-plan-prices.ts` — 197 / 397 / 997 + setup **obrigatório** 497 + faixas estoque; migração `20260620160000` |
-| Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel **não** exposto publicamente; CTA `/contato`. Nova loja demo: `npm run dealership:hosts:provision -- <slug>` |
+| Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel **não** exposto publicamente; CTA `/contato`. Nova loja demo: `npm run dealership:hosts:provision -- <slug>`. Estoque showcase: migração `20260620190000_seed_showcase_demo_vehicles.sql` (20 veículos/loja, 4 fotos cada, prefixo `showcase-`); regerar catálogo: `node scripts/generate-showcase-demo-vehicles-migration.mjs`. Hero layout 2: `home-hero.tsx` centralizado verticalmente |
 | Vitrine inativa | RPC `resolve_dealership_storefront_tenant`, `get_dealership_storefront_shell_by_id`; rota `customer-site` `/loja-inativa` |
 | Painel inativo | `require-dashboard-session.ts` → `/conta-inativa` (status ≠ `active`) |
 | CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` |
