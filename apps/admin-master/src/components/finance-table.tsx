@@ -1,8 +1,9 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, Wallet } from "lucide-react";
 import { useState } from "react";
 
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@autopainel/shared/ui";
 
 import type { DealershipAdminRow } from "@/types/dealership-admin";
@@ -50,8 +51,14 @@ export function FinanceTable({ rows }: { rows: DealershipAdminRow[] }) {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  Nenhum registro.
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState
+                    className="m-4 border-0 bg-transparent"
+                    icon={Wallet}
+                    title="Nenhuma concessionária para faturar"
+                    description="Cadastre lojas em Concessionárias para controlar planos e assinaturas aqui."
+                    action={{ label: "Ver concessionárias", href: "/painel/concessionarias" }}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

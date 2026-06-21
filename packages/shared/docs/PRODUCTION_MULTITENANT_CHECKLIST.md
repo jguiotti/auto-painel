@@ -7,6 +7,8 @@ Operadores DevOps e PM usam esta lista antes de abrir URLs públicas por loja (`
 - [x] Domínio raiz aponta para o projeto Vercel (autopainel.com.br → `auto-painel-site`)
 - [x] Wildcard `*.autopainel.com.br` e `*.loja.autopainel.com.br` (Cloudflare NS)
 - [x] Smoke vitrine/painel demo showcase — `npm run smoke:demo-showcase` (2026-06-20)
+- [x] Smoke Onda A go-live — `npm run smoke:production-go-live` (marketing, admin, guiotti, demos)
+- [x] E2E login demo produção (opcional) — `E2E_PRODUCTION=true npm run test:e2e -- e2e/specs/production-go-live.spec.ts`
 - [ ] `custom_domain` por loja testado com host exato (sem wildcard) quando aplicável
 - [ ] TTL e propagação verificados (`dig`, `curl -I https://{slug}.dominio`) por loja cliente real
 
@@ -36,7 +38,7 @@ Após alterar domínio raiz, **revalidar** todos os redirect URLs — login queb
 ## Smoke manual (CA-TOJ-010)
 
 1. Loja demo `active`: vitrine abre em `https://{slug}.{dominio}` — **OK** demo/demo-2/demo-3 (2026-06-20)
-2. Painel: `https://{slug}.loja…/login` → login `gestor.demo@autopainel.demo` → `/painel` — **validar manualmente** pós-deploy
+2. Painel: `https://{slug}.loja…/login` → login `gestor.demo@autopainel.demo` → `/painel` — **automático** via `production-go-live.spec.ts` com `E2E_PRODUCTION=true`; validar manualmente após mudanças de Auth
 3. Loja `suspended`: painel redireciona para `/conta-inativa` ou equivalente
 4. Slug inexistente: `/erro/concessionaria` (não 404 genérico)
 5. Cookie tenant isolado: loja A não vê estoque da loja B após login

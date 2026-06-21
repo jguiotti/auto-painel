@@ -1,5 +1,5 @@
 import { DealershipsTable } from "@/components/dealerships-table";
-import { fetchDealerships } from "@/lib/data/dealerships";
+import { fetchDealershipsForAdminList } from "@/lib/data/dealerships";
 import { fetchPricingPlansForAdmin } from "@/lib/data/pricing-catalog";
 import type { DealershipAdminRow } from "@/types/dealership-admin";
 
@@ -34,7 +34,7 @@ export default async function ConcessionariasPage({
   const initialStatusFilter = parseStatusFilter(params.status?.trim());
 
   const [rows, pricingPlans] = await Promise.all([
-    fetchDealerships(),
+    fetchDealershipsForAdminList(),
     fetchPricingPlansForAdmin(),
   ]);
   const pricingPlanLabels = Object.fromEntries(

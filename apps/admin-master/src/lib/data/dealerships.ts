@@ -50,6 +50,40 @@ export function normalizeRow(raw: Record<string, unknown>): DealershipAdminRow {
   };
 }
 
+const DEALERSHIP_ADMIN_LIST_COLUMNS =
+  "id, name, slug, custom_domain, theme_settings, theme_config, status, subscription_plan, subscription_status, subscription_current_period_end, pricing_plan_id, layout_id, created_at, updated_at";
+
+export async function fetchDealershipsForAdminList(): Promise<DealershipAdminRow[]> {
+  let supabase;
+  try {
+    supabase = createSupabaseServiceRoleClient();
+  } catch {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("dealerships")
+    .select(DEALERSHIP_ADMIN_LIST_COLUMNS)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("fetchDealershipsForAdminList", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) =>
+    normalizeRow({
+      ...(row as Record<string, unknown>),
+      content_config: {},
+      enabled_features: [],
+      cnpj: null,
+      logo_url: null,
+      whatsapp_number: null,
+      contact_email: null,
+      billing_notes: null,
+    }),
+  );
+}
+
 export async function fetchDealerships(): Promise<DealershipAdminRow[]> {
   let supabase;
   try {

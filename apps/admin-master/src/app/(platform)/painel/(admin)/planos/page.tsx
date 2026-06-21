@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CreditCard, Puzzle } from "lucide-react";
 
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { Badge, Button } from "@autopainel/shared/ui";
 import {
   Card,
@@ -88,11 +90,24 @@ export default async function PlanosComerciaisPage() {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {plans.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {schema.kind !== "ok"
-                ? "Corrija a configuração da base acima para carregar os planos."
-                : "Nenhum plano encontrado. Crie o primeiro plano pelo botão acima."}
-            </p>
+            <EmptyState
+              icon={CreditCard}
+              title={
+                schema.kind !== "ok"
+                  ? "Planos indisponíveis"
+                  : "Nenhum plano comercial"
+              }
+              description={
+                schema.kind !== "ok"
+                  ? "Corrija a configuração da base acima para carregar os planos."
+                  : "Crie o primeiro plano para definir preço e módulos incluídos."
+              }
+              action={
+                schema.kind === "ok"
+                  ? { label: "Novo plano", href: "/painel/planos/nova" }
+                  : undefined
+              }
+            />
           ) : (
             <Table>
               <TableHeader>

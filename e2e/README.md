@@ -31,6 +31,7 @@ Portas diferentes das predefinidas: `E2E_DEALERSHIP_PANEL_PORT`, `E2E_CUSTOMER_S
 - **CRM (Operação comercial):** `e2e/specs/crm-storefront-panel.spec.ts` — `/contato`, contatos painel, loja/equipe, simulação, cross-tenant leads, gating plano.
 - **Equipe comercial (Platform Sales Squad):** `e2e/specs/platform-sales-squad.spec.ts` — auth admin/rep, portal extrato, bloqueio gestor loja. Seed: `npm run seed:platform-sales-rep-qa`. RLS: `npm run qa:platform-sales-squad-rls`. Matriz: `packages/shared/docs/PLATFORM_SALES_SQUAD_QA.md`.
 - **QR:** `e2e/specs/vehicle-qr-print.spec.ts` — lâmina QR do Ferrari demo (skip se módulo `qr_generator` off).
+- **Go-live produção (Épico 3):** `e2e/specs/production-go-live.spec.ts` — login demo em produção. Só corre com `E2E_PRODUCTION=true`. Smoke HTTP: `npm run smoke:production-go-live`.
 
 Os testes **não** gravam dados por padrão — verificam resolução de host, middleware e fluxos de leitura.
 

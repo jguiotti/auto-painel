@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Puzzle } from "lucide-react";
 
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { Badge, Button } from "@autopainel/shared/ui";
 import {
   Card,
@@ -71,11 +73,24 @@ export default async function ModulosPlataformaPage() {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {modules.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {schema.kind !== "ok"
-                ? "Corrija a configuração da base acima para carregar os módulos."
-                : "Nenhum módulo no catálogo. Use o botão Novo módulo ou aguarde o seed das migrações."}
-            </p>
+            <EmptyState
+              icon={Puzzle}
+              title={
+                schema.kind !== "ok"
+                  ? "Módulos indisponíveis"
+                  : "Catálogo de módulos vazio"
+              }
+              description={
+                schema.kind !== "ok"
+                  ? "Corrija a configuração da base acima para carregar os módulos."
+                  : "Cadastre funcionalidades da plataforma e inclua-as nos planos comerciais."
+              }
+              action={
+                schema.kind === "ok"
+                  ? { label: "Novo módulo", href: "/painel/modulos/nova" }
+                  : undefined
+              }
+            />
           ) : (
             <Table>
               <TableHeader>

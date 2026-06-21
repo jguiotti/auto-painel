@@ -1,6 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import { Inbox } from "lucide-react";
+
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 
 import {
   Select,
@@ -53,9 +56,11 @@ export function PlatformCommercialLeadsTable({
 
   if (rows.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nenhum lead comercial ainda. Leads do site marketing aparecem aqui automaticamente.
-      </p>
+      <EmptyState
+        icon={Inbox}
+        title="Nenhum lead comercial ainda"
+        description="Leads do site marketing e formulários aparecem aqui automaticamente."
+      />
     );
   }
 

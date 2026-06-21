@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { FileText } from "lucide-react";
+
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 
 import {
   Button,
@@ -47,9 +50,12 @@ interface PlatformContractsTableProps {
 export function PlatformContractsTable({ rows }: PlatformContractsTableProps) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nenhum contrato ainda. Crie um rascunho para revisão antes do envio à assinatura.
-      </p>
+      <EmptyState
+        icon={FileText}
+        title="Nenhum contrato ainda"
+        description="Crie um rascunho para revisão antes do envio à assinatura."
+        action={{ label: "Novo contrato", href: "/painel/contratos/novo" }}
+      />
     );
   }
 

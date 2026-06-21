@@ -297,7 +297,9 @@ Migração `20260611143000_sale_receipt_module.sql` aplicada no remoto (2026-06-
 | **E3-C2** | Checklist DNS/TLS/Auth redirects | ✅ `packages/shared/docs/PRODUCTION_MULTITENANT_CHECKLIST.md` |
 | **E3-Q1** | E2E isolamento cross-tenant | ✅ `e2e/specs/cross-tenant-isolation.spec.ts` |
 
-Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live por domínio real.
+Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live por domínio real; **1ª loja cliente** fora demos.
+
+**Fechamento base (2026-06-21):** `npm run smoke:production-go-live`; E2E prod opcional `production-go-live.spec.ts`; redirect `www` → apex no marketing-site.
 
 **Deploy Vercel (2026-06-11):** guia `packages/shared/docs/VERCEL_DEPLOY.md` — 4 projectos (`autopainel-marketing`, `autopainel-admin`, `autopainel-panel`, `autopainel-customer`); `vercel.json` por app; DNS Registro.br; painel em `{slug}.loja.autopainel.com.br` (`NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=loja.autopainel.com.br`); vitrine em `{slug}.autopainel.com.br`. Script `npm run vercel:link:all`. **OLX prod:** `platform_classifieds_oauth_providers` actualizado no remoto + Edge secrets via `classifieds:oauth:*:configure`; OAuth start devolve `auth.olx.com.br` com `CLASSIFIEDS_OAUTH_DEV_STUB=false`. Fix `scripts/lib/classifieds-token-crypto.mjs` (`createCipheriv` import).
 
@@ -310,6 +312,8 @@ Pendente operacional: aplicar checklist no Vercel/Supabase Auth antes de go-live
 | **E4-D3** | Ações rápidas no dashboard | ✅ `dashboard/page.tsx` |
 | **E4-D4** | Filtro `?status=` na listagem de concessionárias | ✅ `concessionarias/page.tsx`, `dealerships-table.tsx` |
 | **E4-D5** | Tendência leads 7d vs período anterior | ✅ `platform-metrics.ts`, dashboard |
+| **E4-P1** | EmptyState em listagens admin restantes | ✅ leads, contratos, calendário, financeiro, planos, módulos (2026-06-21) |
+| **E4-P2** | Performance listagem concessionárias | ✅ `fetchDealershipsForAdminList` — select enxuto (2026-06-21) |
 
 ### Épico 1 — UX mobile + copy (2026-06-10)
 

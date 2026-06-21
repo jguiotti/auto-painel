@@ -1,6 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import { CalendarDays } from "lucide-react";
+
+import { EmptyState } from "@autopainel/shared/components/empty-state";
 
 import {
   Select,
@@ -45,9 +48,11 @@ export function ContentCalendarTable({ rows }: ContentCalendarTableProps) {
 
   if (rows.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Calendário vazio. Adicione peças pelo formulário abaixo.
-      </p>
+      <EmptyState
+        icon={CalendarDays}
+        title="Calendário vazio"
+        description="Adicione peças pelo formulário abaixo para planejar publicações."
+      />
     );
   }
 

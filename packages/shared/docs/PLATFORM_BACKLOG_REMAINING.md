@@ -69,8 +69,8 @@
 
 | Área | O que falta | Prioridade sugerida |
 | --- | --- | --- |
-| **Épico 3 go-live** | Smoke login demo manual; validação por loja cliente real | P1 operacional |
-| **Épico 4 polish admin** | UX refinements, empty states, performance listagens | P2 |
+| **Épico 3 go-live** | ✅ Smoke HTTP + E2E login demo (`smoke:production-go-live`); pendente: 1ª loja cliente real fora demos | Operacional |
+| **Épico 4 polish admin** | ✅ EmptyState listagens + `fetchDealershipsForAdminList` (select enxuto) | Fechado (base) |
 | **Épico 5 QA** | E2E admin-master instável local (timeout 3001); matriz integrações | P1 |
 | **INT auto-publish portais** | Homologação OLX/WM já ok; falta fluxo auto-publish completo | P2 |
 | **E-mail Auth Fase 2** | Templates transacionais whitelabel painel | P2 |
