@@ -18,19 +18,8 @@ function buildVehicleTitle(vehicle: VehicleOgInput): string {
   return `${base} (${vehicle.model_year})`;
 }
 
-function resolveAbsoluteImageUrl(imageUrl: string): string {
-  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-    return imageUrl;
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  if (!supabaseUrl) {
-    return imageUrl;
-  }
-
-  return imageUrl.startsWith("/")
-    ? `${supabaseUrl}${imageUrl}`
-    : `${supabaseUrl}/${imageUrl}`;
+function buildVehicleOpenGraphImagePath(publicSlug: string): string {
+  return `/veiculo/${publicSlug}/opengraph-image`;
 }
 
 export function buildVehiclePageMetadata(
@@ -45,19 +34,26 @@ export function buildVehiclePageMetadata(
       : `${title} por ${priceLabel}. Veículo seminovo disponível na loja.`;
 
   const ogDescription = `${title} — ${priceLabel}`;
-  const firstImage = vehicle.images?.find(Boolean) ?? null;
-  const ogImages = firstImage
-    ? [
-        {
-          url: resolveAbsoluteImageUrl(firstImage),
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ]
-    : undefined;
+  const ogImagePath = buildVehicleOpenGraphImagePath(vehicle.public_slug);
+  const ogImages = [
+    {
+      url: ogImagePath,
+      width: 1200,
+      height: 630,
+      alt: title,
+      type: "image/png",
+    },
+  ];
+
+  let metadataBase: URL | undefined;
+  try {
+    metadataBase = new URL(new URL(pageUrl).origin);
+  } catch {
+    metadataBase = undefined;
+  }
 
   return {
+    metadataBase,
     title,
     description,
     alternates: {
@@ -66,15 +62,16 @@ export function buildVehiclePageMetadata(
     openGraph: {
       type: "website",
       url: pageUrl,
+      locale: "pt_BR",
       title,
       description: ogDescription,
       images: ogImages,
     },
     twitter: {
-      card: firstImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description: ogDescription,
-      images: ogImages?.map((image) => image.url),
+      images: ogImages.map((image) => image.url),
     },
   };
 }

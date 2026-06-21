@@ -41,9 +41,44 @@ export function buildCanonicalSharePageUrl(pageUrl: string): string {
   }
 }
 
-export function buildFacebookShareUrl(pageUrl: string): string {
+export function buildFacebookShareUrl(pageUrl: string, options?: { mobile?: boolean }): string {
   const canonical = buildCanonicalSharePageUrl(pageUrl);
-  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`;
+  const encoded = encodeURIComponent(canonical);
+  if (options?.mobile) {
+    return `https://m.facebook.com/sharer.php?u=${encoded}`;
+  }
+  return `https://www.facebook.com/sharer/sharer.php?u=${encoded}`;
+}
+
+/**
+ * Opens Facebook share dialog. iOS Safari blocks target=_blank on external anchors;
+ * use synchronous navigation in a click handler instead.
+ */
+export function openFacebookShare(pageUrl: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const isIos =
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  const shareUrl = buildFacebookShareUrl(pageUrl, { mobile: isIos });
+
+  if (isIos) {
+    window.open(shareUrl, "_self");
+    return;
+  }
+
+  const popup = window.open(
+    shareUrl,
+    "facebook-share-dialog",
+    "width=600,height=680,menubar=no,toolbar=no",
+  );
+
+  if (!popup) {
+    window.location.assign(shareUrl);
+  }
 }
 
 export function buildTwitterShareUrl(pageUrl: string, text: string): string {

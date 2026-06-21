@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Check, Copy } from "lucide-react";
 
 import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
   buildCanonicalSharePageUrl,
-  buildFacebookShareUrl,
   buildShareUrlWithUtm,
   buildWhatsAppShareUrl,
+  openFacebookShare,
 } from "@autopainel/shared/lib/share/build-share-url-with-utm";
 import { cn } from "@autopainel/shared/lib/utils";
 
@@ -25,12 +25,6 @@ interface VehicleShareSectionProps {
   modelYear: number;
   price: number;
   className?: string;
-}
-
-interface ShareChannelConfig {
-  id: ShareChannel;
-  label: string;
-  icon: ReactNode;
 }
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -57,6 +51,17 @@ function resolveCanonicalPageUrl(pathname: string): string {
   return buildCanonicalSharePageUrl(`${window.location.origin}${pathname}`);
 }
 
+function isIosShareDevice(): boolean {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return (
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 export function VehicleShareSection({
   vehicleSlug,
   brand,
@@ -69,6 +74,7 @@ export function VehicleShareSection({
   const pathname = usePathname();
   const [canonicalPageUrl, setCanonicalPageUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     setCanonicalPageUrl(resolveCanonicalPageUrl(pathname));
@@ -125,14 +131,6 @@ export function VehicleShareSection({
     [getResolvedCanonicalUrl, vehicleSlug],
   );
 
-  const facebookShareHref = useMemo(() => {
-    const resolvedUrl = getResolvedCanonicalUrl();
-    if (!resolvedUrl) {
-      return "";
-    }
-    return buildFacebookShareUrl(resolvedUrl);
-  }, [getResolvedCanonicalUrl]);
-
   async function copyShareLink() {
     const url = getShareUrl("copy_link");
     if (!url) {
@@ -162,8 +160,38 @@ export function VehicleShareSection({
     openShareWindow(buildWhatsAppShareUrl(`${shareText} ${url}`), "whatsapp");
   }
 
+  async function handleFacebookShare() {
+    const url = getResolvedCanonicalUrl();
+    if (!url) {
+      setShareFeedback("Aguarde o carregamento da página e tente novamente.");
+      return;
+    }
+
+    trackShare("facebook");
+    setShareFeedback(null);
+
+    if (isIosShareDevice() && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: vehicleTitle,
+          text: shareText,
+          url,
+        });
+        return;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    openFacebookShare(url);
+  }
+
   const shareButtonClassName =
     "inline-flex size-9 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_14%,transparent)] bg-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_96%,white)] text-[var(--storefront-fg,var(--dealer-fg))]/70 transition hover:border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_28%,transparent)] hover:text-[var(--primary-color,var(--dealer-primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color,var(--dealer-primary))] focus-visible:ring-offset-1";
+
+  const canShareFacebook = Boolean(getResolvedCanonicalUrl());
 
   return (
     <div className={cn("border-t border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_12%,transparent)] pt-4", className)}>
@@ -182,29 +210,16 @@ export function VehicleShareSection({
           <WhatsAppIcon className="size-4" />
         </button>
 
-        {facebookShareHref ? (
-          <a
-            href={facebookShareHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Facebook"
-            aria-label="Compartilhar no Facebook"
-            onClick={() => trackShare("facebook")}
-            className={shareButtonClassName}
-          >
-            <FacebookIcon className="size-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            title="Facebook"
-            aria-label="Compartilhar no Facebook"
-            disabled
-            className={cn(shareButtonClassName, "pointer-events-none opacity-50")}
-          >
-            <FacebookIcon className="size-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          title="Facebook"
+          aria-label="Compartilhar no Facebook"
+          disabled={!canShareFacebook}
+          onClick={() => void handleFacebookShare()}
+          className={cn(shareButtonClassName, !canShareFacebook && "pointer-events-none opacity-50")}
+        >
+          <FacebookIcon className="size-4" />
+        </button>
 
         <button
           type="button"
@@ -224,6 +239,12 @@ export function VehicleShareSection({
         >
           <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-600" aria-hidden />
           {copyFeedback}
+        </p>
+      ) : null}
+
+      {shareFeedback ? (
+        <p className="mt-2 text-xs text-[var(--storefront-fg,var(--dealer-fg))]/65" role="status">
+          {shareFeedback}
         </p>
       ) : null}
     </div>
