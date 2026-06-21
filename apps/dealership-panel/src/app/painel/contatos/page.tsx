@@ -27,6 +27,7 @@ export default async function LeadsPage() {
     { data: assigneeRows },
     { data: inventoryRows },
     { data: soldRows },
+    { data: interestRows },
   ] = await Promise.all([
       supabase
         .from("leads")
@@ -50,8 +51,7 @@ export default async function LeadsPage() {
         .from("vehicles")
         .select("id, brand, model, model_year, status")
         .eq("dealership_id", dealershipId)
-        .in("status", ["available", "sold"])
-        .order("status", { ascending: true })
+        .eq("status", "available")
         .order("brand", { ascending: true })
         .order("model", { ascending: true })
         .limit(200),
@@ -62,6 +62,10 @@ export default async function LeadsPage() {
         .eq("status", "sold")
         .order("updated_at", { ascending: false })
         .limit(100),
+      supabase
+        .from("lead_vehicle_interests")
+        .select("lead_id, vehicles(id, brand, model, model_year, status)")
+        .eq("dealership_id", dealershipId),
     ]);
 
   if (error) {
@@ -107,6 +111,43 @@ export default async function LeadsPage() {
     brand: row.brand as string,
     model: row.model as string,
   }));
+
+  const interestsByLeadId = new Map<
+    string,
+    LeadListItem["interest_vehicles"]
+  >();
+  for (const row of interestRows ?? []) {
+    const leadId = row.lead_id as string;
+    const vehicle = row.vehicles as
+      | {
+          id: string;
+          brand: string;
+          model: string;
+          model_year: number | null;
+          status: string;
+        }
+      | Array<{
+          id: string;
+          brand: string;
+          model: string;
+          model_year: number | null;
+          status: string;
+        }>
+      | null;
+    const vehicleData = Array.isArray(vehicle) ? vehicle[0] : vehicle;
+    if (!vehicleData) {
+      continue;
+    }
+    const bucket = interestsByLeadId.get(leadId) ?? [];
+    bucket.push({
+      id: vehicleData.id,
+      brand: vehicleData.brand,
+      model: vehicleData.model,
+      model_year: vehicleData.model_year,
+      status: vehicleData.status,
+    });
+    interestsByLeadId.set(leadId, bucket);
+  }
 
   const leads: LeadListItem[] = (rows ?? []).map((row) => {
     const v = row.vehicles as
@@ -166,6 +207,7 @@ export default async function LeadsPage() {
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       ),
+      interest_vehicles: interestsByLeadId.get(row.id) ?? [],
       vehicles: vehicleData
         ? {
             id: vehicleData.id,

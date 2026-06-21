@@ -51,6 +51,13 @@ export interface LeadListItem {
     document_cnpj: string | null;
     billing_address: Record<string, unknown>;
   } | null;
+  interest_vehicles?: Array<{
+    id: string;
+    brand: string;
+    model: string;
+    model_year?: number | null;
+    status: string;
+  }>;
   vehicles: {
     id: string;
     brand: string;
@@ -71,6 +78,18 @@ const typeLabel: Record<string, string> = {
   contact: "Contato",
   simulation: "Simulação",
 };
+
+function resolveLeadVehicleLabel(lead: LeadListItem): string | null {
+  if (lead.interest_vehicles && lead.interest_vehicles.length > 0) {
+    return lead.interest_vehicles
+      .map((vehicle) => `${vehicle.brand} ${vehicle.model}`)
+      .join(", ");
+  }
+  if (lead.vehicles) {
+    return `${lead.vehicles.brand} ${lead.vehicles.model}`;
+  }
+  return null;
+}
 
 export function LeadList({
   leads,
@@ -110,10 +129,7 @@ export function LeadList({
           </TableHeader>
           <TableBody>
             {leads.map((lead) => {
-              const vehicle = lead.vehicles;
-              const vehicleLabel = vehicle
-                ? `${vehicle.brand} ${vehicle.model}`
-                : null;
+              const vehicleLabel = resolveLeadVehicleLabel(lead);
               const wa = buildWhatsAppUrl(
                 lead.phone,
                 buildLeadWhatsAppMessage({
@@ -136,14 +152,24 @@ export function LeadList({
                     {lead.source ? LEAD_SOURCE_LABELS[lead.source] ?? lead.source : "—"}
                   </TableCell>
                   <TableCell>
-                    {vehicle ? (
+                    {lead.interest_vehicles && lead.interest_vehicles.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {lead.interest_vehicles.map((vehicle) => (
+                          <Link
+                            key={vehicle.id}
+                            href={`/painel/estoque/${vehicle.id}`}
+                            className="font-medium text-primary underline"
+                          >
+                            {vehicle.brand} {vehicle.model}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : lead.vehicles ? (
                       <Link
-                        href={`/veiculo/${vehicle.id}`}
+                        href={`/painel/estoque/${lead.vehicles.id}`}
                         className="font-medium text-primary underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
                       >
-                        {vehicle.brand} {vehicle.model}
+                        {lead.vehicles.brand} {lead.vehicles.model}
                       </Link>
                     ) : (
                       "—"
@@ -190,10 +216,7 @@ export function LeadList({
 
       <ul className="flex flex-col gap-3 lg:hidden">
         {leads.map((lead) => {
-          const vehicle = lead.vehicles;
-          const vehicleLabel = vehicle
-            ? `${vehicle.brand} ${vehicle.model}`
-            : null;
+          const vehicleLabel = resolveLeadVehicleLabel(lead);
           const wa = buildWhatsAppUrl(
             lead.phone,
             buildLeadWhatsAppMessage({
@@ -242,18 +265,29 @@ export function LeadList({
                   </div>
                 </div>
               </div>
-              {vehicle ? (
-                <p className="mt-3 text-sm">
-                  <span className="text-muted-foreground">Veículo: </span>
-                  <Link
-                    href={`/veiculo/${vehicle.id}`}
-                    className="font-medium text-primary underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {vehicle.brand} {vehicle.model}
-                  </Link>
-                </p>
+              {(lead.interest_vehicles && lead.interest_vehicles.length > 0) ||
+              lead.vehicles ? (
+                <div className="mt-3 space-y-1 text-sm">
+                  <p className="text-muted-foreground">Veículos de interesse:</p>
+                  {(lead.interest_vehicles ?? []).map((vehicle) => (
+                    <Link
+                      key={vehicle.id}
+                      href={`/painel/estoque/${vehicle.id}`}
+                      className="block font-medium text-primary underline"
+                    >
+                      {vehicle.brand} {vehicle.model}
+                    </Link>
+                  ))}
+                  {(!lead.interest_vehicles || lead.interest_vehicles.length === 0) &&
+                  lead.vehicles ? (
+                    <Link
+                      href={`/painel/estoque/${lead.vehicles.id}`}
+                      className="font-medium text-primary underline"
+                    >
+                      {lead.vehicles.brand} {lead.vehicles.model}
+                    </Link>
+                  ) : null}
+                </div>
               ) : null}
               {canManageAssignments ? (
                 <div className="mt-3 border-t border-border pt-3">

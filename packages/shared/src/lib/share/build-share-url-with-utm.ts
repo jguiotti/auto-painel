@@ -101,7 +101,7 @@ export function isMobileShareDevice(): boolean {
 }
 
 /**
- * Native share sheet (iOS/Android). On iOS, pass url only — most reliable with Safari + FB app installed.
+ * Native share sheet (iOS/Android). On iOS, Facebook reads embedded URL in text more reliably than url-only.
  */
 export async function sharePageViaNativeSheet(payload: {
   url: string;
@@ -112,28 +112,39 @@ export async function sharePageViaNativeSheet(payload: {
     return "unavailable";
   }
 
-  const iosPayload = { url: payload.url };
-  const defaultPayload = {
-    url: payload.url,
-    ...(payload.title ? { title: payload.title } : {}),
-    ...(payload.text ? { text: payload.text } : {}),
-  };
+  const ios = isIosShareDevice();
+  const shareText = [payload.text?.trim(), payload.url].filter(Boolean).join("\n");
 
-  const shareData = isIosShareDevice() ? iosPayload : defaultPayload;
+  const attempts: ShareData[] = ios
+    ? [
+        { text: shareText },
+        { url: payload.url },
+        { title: payload.title, text: shareText },
+      ]
+    : [
+        {
+          url: payload.url,
+          ...(payload.title ? { title: payload.title } : {}),
+          ...(payload.text ? { text: payload.text } : {}),
+        },
+      ];
 
-  if (typeof navigator.canShare === "function" && !navigator.canShare(shareData)) {
-    return "unavailable";
-  }
-
-  try {
-    await navigator.share(shareData);
-    return "shared";
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      return "aborted";
+  for (const shareData of attempts) {
+    if (typeof navigator.canShare === "function" && !navigator.canShare(shareData)) {
+      continue;
     }
-    return "unavailable";
+
+    try {
+      await navigator.share(shareData);
+      return "shared";
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return "aborted";
+      }
+    }
   }
+
+  return "unavailable";
 }
 
 export function buildTwitterShareUrl(pageUrl: string, text: string): string {

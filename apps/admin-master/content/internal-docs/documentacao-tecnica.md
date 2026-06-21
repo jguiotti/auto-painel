@@ -493,7 +493,8 @@ Matriz QA integrações: seções em `historico-tecnico.md` (Fase 8 CRM, Meta, c
 | Auth leaked passwords | Habilitar **Leaked password protection** (HaveIBeenPwned) em Dashboard → Authentication → Providers → Email | operação manual |
 
 | Share vitrine Facebook | Desktop: popup `facebook.com/sharer`; iOS/Android: `navigator.share` (só `url` no iOS — evita universal link do app FB sem composer); fallback copiar link. OG PNG 1200×630 em `/veiculo/[slug]/opengraph-image` | `vehicle-share-section.tsx`, `build-share-url-with-utm.ts`, `opengraph-image.tsx`, `build-vehicle-page-metadata.ts` |
-| CRM contatos — enriquecimento | Painel `/painel/contatos`: editar nome, telefone, e-mail, CPF/CNPJ, endereço; vincular `vehicle_id` (interesse no estoque); venda concretizada → recibo. RPC `update_dealership_lead_profile` + tabela `customers` | `lead-profile-section.tsx`, `lead-detail-sheet.tsx`, `20260621120000_lead_profile_enrichment.sql` |
+| CRM contatos — enriquecimento | Painel `/painel/contatos`: editar perfil; **múltiplos veículos de interesse** (`lead_vehicle_interests`, só `available`); venda concretizada → recibo. RPC `update_dealership_lead_profile` | `lead-profile-section.tsx`, `20260621140000_lead_vehicle_interests.sql` |
+| Contrato SaaS assinatura v2 | Modelo completo LGPD + boleto + desativação 3 dias — revisão OAB obrigatória | `packages/shared/docs/CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` |
 
 ---
 

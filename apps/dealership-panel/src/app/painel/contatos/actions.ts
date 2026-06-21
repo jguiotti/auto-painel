@@ -88,7 +88,7 @@ export async function updateLeadProfileAction(input: {
   clientEmail?: string;
   document?: string;
   billingAddress?: Record<string, string>;
-  interestVehicleId?: string | null;
+  interestVehicleIds?: string[];
 }): Promise<LeadActionResult> {
   const { supabase, profile } = await requireDashboardSession();
 
@@ -120,8 +120,8 @@ export async function updateLeadProfileAction(input: {
     p_document_cpf: documentCpf,
     p_document_cnpj: documentCnpj,
     p_billing_address: input.billingAddress ?? {},
-    p_interest_vehicle_id: input.interestVehicleId ?? null,
-    p_update_interest_vehicle: true,
+    p_interest_vehicle_ids: input.interestVehicleIds ?? [],
+    p_update_interest_vehicles: true,
   });
 
   if (error) {

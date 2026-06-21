@@ -166,6 +166,31 @@ export function VehicleShareSection({
     trackShare("facebook");
     setShareFeedback(null);
 
+    if (isIosShareDevice()) {
+      const result = await sharePageViaNativeSheet({
+        url,
+        title: vehicleTitle,
+        text: shareText,
+      });
+
+      if (result === "shared") {
+        setShareFeedback("Escolha Facebook na lista para publicar o link.");
+        return;
+      }
+
+      if (result === "aborted") {
+        return;
+      }
+
+      const copied = await copyShareLink(
+        "Link copiado. Abra o Facebook, crie uma publicação e cole o link.",
+      );
+      if (!copied) {
+        setShareFeedback("Toque em «Copiar link» e cole no Facebook manualmente.");
+      }
+      return;
+    }
+
     if (isMobileShareDevice()) {
       const result = await sharePageViaNativeSheet({
         url,
@@ -176,14 +201,6 @@ export function VehicleShareSection({
       if (result === "shared" || result === "aborted") {
         return;
       }
-
-      const copied = await copyShareLink(
-        "Link copiado. Abra o Facebook e cole na sua publicação.",
-      );
-      if (!copied) {
-        setShareFeedback("Use «Copiar link» e compartilhe no Facebook manualmente.");
-      }
-      return;
     }
 
     openFacebookShare(url);

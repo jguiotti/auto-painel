@@ -56,3 +56,11 @@ export interface LeadCustomerProfile {
   document_cnpj: string | null;
   billing_address: Record<string, unknown>;
 }
+
+export interface LeadInterestVehicle {
+  id: string;
+  brand: string;
+  model: string;
+  model_year?: number | null;
+  status: string;
+}

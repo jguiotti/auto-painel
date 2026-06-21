@@ -301,7 +301,7 @@ export interface UpsertDealershipCustomerArgs {
   p_customer_id?: string | null;
 }
 
-/** `public.update_dealership_lead_profile` — enrich lead + link interest vehicle. */
+/** `public.update_dealership_lead_profile` — enrich lead + link interest vehicles. */
 export interface UpdateDealershipLeadProfileArgs {
   p_lead_id: string;
   p_full_name: string;
@@ -310,8 +310,8 @@ export interface UpdateDealershipLeadProfileArgs {
   p_document_cpf?: string | null;
   p_document_cnpj?: string | null;
   p_billing_address?: Record<string, unknown>;
-  p_interest_vehicle_id?: string | null;
-  p_update_interest_vehicle?: boolean;
+  p_interest_vehicle_ids?: string[] | null;
+  p_update_interest_vehicles?: boolean;
 }
 
 /** `public.transfer_sales_rep_portfolio` — move confirmed attributions to another rep. */
