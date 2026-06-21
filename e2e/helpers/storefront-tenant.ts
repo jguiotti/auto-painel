@@ -17,7 +17,25 @@ export async function gotoStorefront(
   slug = resolveActiveStorefrontSlug(),
 ): Promise<string> {
   const port = resolveStorefrontPort();
-  await page.goto(`http://${slug}.localhost:${port}${path}`);
+  const url = `http://${slug}.localhost:${port}${path}`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+      return slug;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const retryable =
+        message.includes("ERR_ABORTED") ||
+        message.includes("ERR_CONNECTION_REFUSED") ||
+        message.includes("Timeout");
+      if (!retryable || attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(1_000 * (attempt + 1));
+    }
+  }
+
   return slug;
 }
 
@@ -57,17 +75,24 @@ export async function clickStorefrontContatoNav(page: Page): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 900 });
 
   const desktopLink = page.getByRole("link", { name: "Contato", exact: true });
-  if (await desktopLink.isVisible().catch(() => false)) {
+  try {
+    await desktopLink.waitFor({ state: "visible", timeout: 8_000 });
     await desktopLink.click();
     return;
+  } catch {
+    // Fall through to mobile nav.
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
   const menuButton = page.getByRole("button", { name: "Menu" });
   await expect(menuButton).toBeVisible();
   await menuButton.click();
-  await page
+
+  const mobileContato = page
     .locator("#storefront-mobile-menu")
-    .getByRole("link", { name: "Fale conosco" })
-    .click();
+    .getByRole("link", { name: "Fale conosco" });
+  await expect(mobileContato).toBeVisible();
+  await mobileContato.click();
 }

@@ -87,33 +87,36 @@ export const WORKFLOW_STEPS = [
   },
 ] as const;
 
-/** Public demo storefronts — one per layout template (layout_id 1–3). */
+/** Public demo storefronts — one per layout template (layout_id 1–3). Order matches marketing showcase grid. */
 export const DEMO_SHOWCASE_STORES = [
+  {
+    slug: "demo",
+    url: "https://demo.autopainel.com.br",
+    panelUrl: "https://demo.loja.autopainel.com.br",
+    layoutId: 3 as const,
+    name: "Layout Moderno",
+    tagline: "Cards amplos, tipografia forte e experiência mobile-first.",
+    swatches: ["#ffa501", "#f8fafc", "#a06a0e"] as const,
+    themeLabel: "Tema escuro",
+  },
   {
     slug: "demo-2",
     url: "https://demo-2.autopainel.com.br",
+    panelUrl: "https://demo-2.loja.autopainel.com.br",
     layoutId: 1 as const,
     name: "Layout Premium",
     tagline: "Hero de impacto, filtros laterais e vitrine editorial.",
-    swatches: ["#dc2626", "#18181b", "#fafafa"] as const,
+    swatches: ["#b32027", "#f8fafc", "#ca656a"] as const,
     themeLabel: "Tema escuro",
   },
   {
     slug: "demo-3",
     url: "https://demo-3.autopainel.com.br",
+    panelUrl: "https://demo-3.loja.autopainel.com.br",
     layoutId: 2 as const,
     name: "Layout Clássico",
-    tagline: "Navegação limpa, grid de veículos e foco em conversão.",
-    swatches: ["#0d9488", "#0f172a", "#e2e8f0"] as const,
-    themeLabel: "Tema escuro",
-  },
-  {
-    slug: "demo",
-    url: "https://demo.autopainel.com.br",
-    layoutId: 3 as const,
-    name: "Layout Moderno",
-    tagline: "Cards amplos, tipografia forte e experiência mobile-first.",
-    swatches: ["#818cf8", "#0f172a", "#111827"] as const,
+    tagline: "Navegação limpa, carrossel de destaques e foco em conversão.",
+    swatches: ["#67927d", "#f8fafc", "#14c671"] as const,
     themeLabel: "Tema escuro",
   },
 ] as const;
@@ -124,6 +127,7 @@ export const SHOWCASE_LAYOUT_VARIANTS = DEMO_SHOWCASE_STORES.map((store) => ({
   description: store.tagline,
   swatches: [...store.swatches],
   url: store.url,
+  panelUrl: store.panelUrl,
   slug: store.slug,
   themeLabel: store.themeLabel,
 }));

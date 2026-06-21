@@ -4,6 +4,7 @@ import {
   loginDealershipPanel,
   resolveDealershipPanelPort,
   dismissDealershipPanelOverlays,
+  gotoAuthenticatedPanelPath,
 } from "../helpers/dealership-panel-login";
 
 const demoPassword = process.env.E2E_DEALERSHIP_PASSWORD?.trim() || "LojaDemo123!";
@@ -75,25 +76,29 @@ test.describe("dealership-panel — integrações UX facilitada (Épico 2)", () 
     });
 
     test("página exibe secções Meta, carrossel e classificados", async ({ page }) => {
-      await page.goto(`http://guiotti.localhost:${port}/painel/integracoes`);
+      await gotoAuthenticatedPanelPath(page, "guiotti", "/painel/integracoes");
 
       await expect(page.getByRole("heading", { name: "Integrações", level: 1 })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Instagram e Facebook" })).toBeVisible();
-      await expect(page.locator("#aparencia-carrossel").getByText("Aparência do carrossel")).toBeVisible();
+      await expect(
+        page.locator("#aparencia-carrossel").getByText("Aparência do carrossel").first(),
+      ).toBeVisible();
       await expect(page.getByRole("heading", { name: "OLX, WebMotors, iCarros" })).toBeVisible();
-      await expect(page.getByText("OLX", { exact: true })).toBeVisible();
-      await expect(page.getByText("WebMotors", { exact: true })).toBeVisible();
-      await expect(page.getByText("iCarros", { exact: true })).toBeVisible();
+      await expect(page.locator('[data-provider="olx"]').first()).toBeVisible();
+      await expect(page.locator('[data-provider="webmotors"]').first()).toBeVisible();
+      await expect(page.locator('[data-provider="icarros"]').first()).toBeVisible();
     });
 
     test("banner de onboarding visível quando Meta não conectada", async ({ page }) => {
-      await page.goto(`http://guiotti.localhost:${port}/painel/integracoes`);
+      await gotoAuthenticatedPanelPath(page, "guiotti", "/painel/integracoes");
 
-      await expect(page.getByText("Divulgue seu estoque em poucos cliques")).toBeVisible();
+      await expect(
+        page.getByText("Divulgue seu estoque em poucos cliques").first(),
+      ).toBeVisible();
     });
 
     test("aparência do carrossel oferece três estilos visuais", async ({ page }) => {
-      await page.goto(`http://guiotti.localhost:${port}/painel/integracoes#aparencia-carrossel`);
+      await gotoAuthenticatedPanelPath(page, "guiotti", "/painel/integracoes#aparencia-carrossel");
       await expect(page.getByRole("heading", { name: "Integrações", level: 1 })).toBeVisible();
 
       const carouselSection = page.locator("#aparencia-carrossel");

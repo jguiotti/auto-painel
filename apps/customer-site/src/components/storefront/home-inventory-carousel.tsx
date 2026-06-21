@@ -80,14 +80,14 @@ export function HomeInventoryCarousel({ vehicles }: HomeInventoryCarouselProps) 
 
       <div
         ref={trackRef}
-        className="overflow-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 touch-pan-x overflow-x-scroll overscroll-x-contain px-4 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] snap-x snap-mandatory sm:mx-0 sm:overflow-x-auto sm:px-0 sm:touch-auto [&::-webkit-scrollbar]:hidden"
       >
-        <ul className="flex gap-4">
+        <ul className="flex w-max min-w-full gap-4">
           {vehicles.map((vehicle) => {
             const thumb = vehicle.images?.[0] ?? null;
 
             return (
-              <li key={vehicle.id} className="w-[min(85vw,300px)] shrink-0 sm:w-[300px]">
+              <li key={vehicle.id} className="w-[min(85vw,300px)] shrink-0 snap-start sm:w-[300px]">
                 <Link
                   href={`/veiculo/${vehicle.public_slug}`}
                   className="group relative block aspect-[3/4] overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_30%,transparent)]"

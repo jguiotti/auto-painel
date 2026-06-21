@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
@@ -13,13 +13,7 @@ import { cn } from "@autopainel/shared/lib/utils";
 
 import { formatBrl } from "@/lib/format/format-brl";
 
-type ShareChannel =
-  | "whatsapp"
-  | "facebook"
-  | "instagram"
-  | "tiktok"
-  | "copy_link"
-  | "native_share";
+type ShareChannel = "whatsapp" | "facebook" | "copy_link";
 
 interface VehicleShareSectionProps {
   vehicleSlug: string;
@@ -53,22 +47,6 @@ function FacebookIcon({ className }: { className?: string }) {
   );
 }
 
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-    </svg>
-  );
-}
-
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" />
-    </svg>
-  );
-}
-
 export function VehicleShareSection({
   vehicleSlug,
   brand,
@@ -78,13 +56,12 @@ export function VehicleShareSection({
   price,
   className,
 }: VehicleShareSectionProps) {
-  const [pageUrl] = useState(() =>
-    typeof window !== "undefined" ? (window.location.href.split("#")[0] ?? "") : "",
-  );
-  const [canNativeShare] = useState(
-    () => typeof navigator !== "undefined" && typeof navigator.share === "function",
-  );
+  const [pageUrl, setPageUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPageUrl(window.location.href.split("#")[0] ?? "");
+  }, []);
 
   const vehicleTitle = useMemo(() => {
     const base = `${brand} ${model}${version ? ` ${version}` : ""}`;
@@ -118,10 +95,11 @@ export function VehicleShareSection({
 
   const getShareUrl = useCallback(
     (medium: string) => {
-      if (!pageUrl) {
+      const resolvedUrl = pageUrl || (typeof window !== "undefined" ? window.location.href.split("#")[0] : "");
+      if (!resolvedUrl) {
         return "";
       }
-      return buildShareUrlWithUtm(pageUrl, {
+      return buildShareUrlWithUtm(resolvedUrl, {
         medium,
         content: vehicleSlug,
       });
@@ -129,43 +107,19 @@ export function VehicleShareSection({
     [pageUrl, vehicleSlug],
   );
 
-  async function copyShareLink(channel: ShareChannel) {
-    const url = getShareUrl(channel);
+  async function copyShareLink() {
+    const url = getShareUrl("copy_link");
     if (!url) {
       return;
     }
 
     try {
       await navigator.clipboard.writeText(url);
-      setCopyFeedback(
-        channel === "instagram"
-          ? "Link copiado. Cole no Instagram."
-          : channel === "tiktok"
-            ? "Link copiado. Cole no TikTok."
-            : "Link copiado.",
-      );
-      trackShare(channel);
+      setCopyFeedback("Link copiado.");
+      trackShare("copy_link");
       window.setTimeout(() => setCopyFeedback(null), 3500);
     } catch {
       setCopyFeedback("Não foi possível copiar o link.");
-    }
-  }
-
-  async function handleNativeShare() {
-    const url = getShareUrl("native_share");
-    if (!url || !navigator.share) {
-      return;
-    }
-
-    trackShare("native_share");
-    try {
-      await navigator.share({
-        title: vehicleTitle,
-        text: shareText,
-        url,
-      });
-    } catch {
-      // User dismissed share sheet.
     }
   }
 
@@ -187,14 +141,24 @@ export function VehicleShareSection({
     if (!url) {
       return;
     }
-    openShareWindow(buildFacebookShareUrl(url), "facebook");
+    const fbUrl = buildFacebookShareUrl(url);
+    trackShare("facebook");
+
+    const isMobile =
+      typeof navigator !== "undefined" &&
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      window.location.assign(fbUrl);
+      return;
+    }
+
+    openShareWindow(fbUrl, "facebook");
   }
 
   const channels: ShareChannelConfig[] = [
     { id: "whatsapp", label: "WhatsApp", icon: <WhatsAppIcon className="size-4" /> },
     { id: "facebook", label: "Facebook", icon: <FacebookIcon className="size-4" /> },
-    { id: "instagram", label: "Instagram", icon: <InstagramIcon className="size-4" /> },
-    { id: "tiktok", label: "TikTok", icon: <TikTokIcon className="size-4" /> },
     { id: "copy_link", label: "Copiar link", icon: <Copy className="size-4" aria-hidden /> },
   ];
 
@@ -206,10 +170,8 @@ export function VehicleShareSection({
       case "facebook":
         handleFacebookShare();
         break;
-      case "instagram":
-      case "tiktok":
       case "copy_link":
-        void copyShareLink(channel.id);
+        void copyShareLink();
         break;
       default:
         break;
@@ -218,21 +180,9 @@ export function VehicleShareSection({
 
   return (
     <div className={cn("border-t border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_12%,transparent)] pt-4", className)}>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-[var(--storefront-fg,var(--dealer-fg))]/60">
-          Compartilhar
-        </p>
-        {canNativeShare ? (
-          <button
-            type="button"
-            onClick={() => void handleNativeShare()}
-            className="inline-flex items-center gap-1 text-xs text-[var(--storefront-fg,var(--dealer-fg))]/55 transition hover:text-[var(--primary-color,var(--dealer-primary))]"
-          >
-            <Share2 className="size-3.5" aria-hidden />
-            Mais opções
-          </button>
-        ) : null}
-      </div>
+      <p className="text-xs font-medium text-[var(--storefront-fg,var(--dealer-fg))]/60">
+        Compartilhar
+      </p>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
         {channels.map((channel) => (

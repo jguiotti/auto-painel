@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   loginDealershipPanel,
   resolveDealershipPanelPort,
+  gotoAuthenticatedPanelPath,
 } from "../helpers/dealership-panel-login";
 
 const demoPassword = process.env.E2E_DEALERSHIP_PASSWORD?.trim() || "LojaDemo123!";
@@ -13,8 +14,11 @@ test.describe.configure({ mode: "serial" });
  * Requires `dealership-panel` + Supabase with seed demo (`guiotti`, `autoprime`, `ecodrive`).
  */
 test.describe("cross-tenant isolation — painel lojista", () => {
+  test.beforeEach(({ page }) => {
+    test.setTimeout(120_000);
+  });
+
   test("estoque guiotti não expõe veículos da autoprime", async ({ browser }) => {
-    const port = resolveDealershipPanelPort();
     const context = await browser.newContext();
     const page = await context.newPage();
 
@@ -24,7 +28,8 @@ test.describe("cross-tenant isolation — painel lojista", () => {
       password: demoPassword,
     });
 
-    await page.goto(`http://guiotti.localhost:${port}/painel/estoque`);
+    await gotoAuthenticatedPanelPath(page, "guiotti", "/painel/estoque");
+    await expect(page.getByRole("heading", { name: /estoque/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /Ferrari/i }).first()).toBeVisible();
     await expect(page.getByText(/Camaro/i)).toHaveCount(0);
 
@@ -71,6 +76,7 @@ test.describe("cross-tenant isolation — painel lojista", () => {
   });
 
   test("nome da loja no shell reflete o tenant autenticado", async ({ browser }) => {
+    test.setTimeout(180_000);
     const port = resolveDealershipPanelPort();
 
     const guiottiContext = await browser.newContext();

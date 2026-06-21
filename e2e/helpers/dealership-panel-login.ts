@@ -28,6 +28,132 @@ function panelOrigin(slug: string): string {
   return `http://${slug}.localhost:${resolveDealershipPanelPort()}`;
 }
 
+function panelLoginUrl(slug: string): string {
+  return `${panelOrigin(slug)}/login`;
+}
+
+async function gotoPanelLogin(page: Page, slug: string) {
+  const url = panelLoginUrl(slug);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const retryable =
+        message.includes("ERR_ABORTED") ||
+        message.includes("ERR_CONNECTION_REFUSED") ||
+        message.includes("Timeout");
+      if (!retryable || attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(1_000 * (attempt + 1));
+    }
+  }
+}
+
+/** Avoid native GET submit before React hydrates the login form (shows ?email=&password= in URL). */
+async function waitForPanelLoginFormReady(page: Page) {
+  await expect(page.getByRole("heading", { name: "Entrar no painel" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.locator("#email")).toBeEditable({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "Entrar" })).toBeEnabled();
+}
+
+async function waitForSupabaseAuthCookie(page: Page) {
+  await page
+    .waitForFunction(
+      () =>
+        document.cookie
+          .split(";")
+          .some(
+            (part) =>
+              part.trim().startsWith("sb-") && part.includes("auth-token"),
+          ),
+      { timeout: 15_000 },
+    )
+    .catch(() => {
+      // Hosted cookie names vary; URL redirect is the primary signal.
+    });
+}
+
+async function submitPanelLogin(
+  page: Page,
+  slug: string,
+  email: string,
+  password: string,
+  redirectPath: string,
+) {
+  const redirectRe = new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (page.url().includes("password=") || page.url().includes("email=")) {
+      await gotoPanelLogin(page, slug);
+    }
+
+    await waitForPanelLoginFormReady(page);
+    await page.locator("#email").fill(email);
+    await page.locator("#password").fill(password);
+
+    try {
+      await page.getByRole("button", { name: "Entrar" }).click();
+      await expect(page.getByRole("button", { name: "Entrando…" })).toBeVisible({
+        timeout: 5_000,
+      }).catch(() => undefined);
+      await expect(page).toHaveURL(redirectRe, { timeout: 30_000 });
+      await waitForSupabaseAuthCookie(page);
+      if (redirectRe.test(page.url())) {
+        return;
+      }
+    } catch {
+      if (attempt === 1) {
+        break;
+      }
+      await gotoPanelLogin(page, slug);
+    }
+  }
+
+  await expect(page).toHaveURL(redirectRe);
+  await waitForSupabaseAuthCookie(page);
+}
+
+/** Navigate to a protected panel route; re-authenticates if middleware redirects to login. */
+export async function gotoAuthenticatedPanelPath(
+  page: Page,
+  slug: string,
+  path: string,
+  options: Omit<DealershipPanelLoginOptions, "slug" | "redirectPath"> = {},
+) {
+  const origin = panelOrigin(slug);
+  const targetUrl = `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+
+  await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
+
+  if (page.url().includes("/login")) {
+    await loginDealershipPanel(page, {
+      slug,
+      redirectPath: path,
+      ...options,
+    });
+  }
+
+  if (!page.url().includes(path.split("?")[0] ?? path)) {
+    await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  }
+
+  if (page.url().includes("/login")) {
+    await loginDealershipPanel(page, {
+      slug,
+      redirectPath: path,
+      ...options,
+    });
+    await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, "\\/")}(\\?|#|$)`));
+  }
+
+  await dismissDealershipPanelOverlays(page);
+}
+
 /** Prevents the first-login onboarding dialog from blocking E2E clicks after clearCookies(). */
 export async function setPanelOnboardingCompleteCookie(
   context: BrowserContext,
@@ -72,14 +198,10 @@ export async function loginDealershipPanel(
   const email = options.email ?? defaults.email;
   const password = options.password ?? defaults.password;
   const redirectPath = options.redirectPath ?? "/painel";
-  const port = resolveDealershipPanelPort();
 
   await setPanelOnboardingCompleteCookie(page.context(), slug);
-  await page.goto(`http://${slug}.localhost:${port}/login`);
-  await page.locator("#email").fill(email);
-  await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`));
+  await gotoPanelLogin(page, slug);
+  await submitPanelLogin(page, slug, email, password, redirectPath);
   await dismissDealershipPanelOverlays(page);
 }
 
@@ -96,17 +218,12 @@ export async function loginDealershipPanelOrSkip(
   const email = options.email ?? defaults.email;
   const password = options.password ?? defaults.password;
   const redirectPath = options.redirectPath ?? "/painel";
-  const port = resolveDealershipPanelPort();
 
   await setPanelOnboardingCompleteCookie(page.context(), slug);
-  await page.goto(`http://${slug}.localhost:${port}/login`);
-  await page.locator("#email").fill(email);
-  await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Entrar" }).click();
+  await gotoPanelLogin(page, slug);
 
-  const redirectRe = new RegExp(`${redirectPath.replace(/\//g, "\\/")}(\\?|$)`);
   try {
-    await expect(page).toHaveURL(redirectRe, { timeout: 20_000 });
+    await submitPanelLogin(page, slug, email, password, redirectPath);
     await dismissDealershipPanelOverlays(page);
   } catch {
     const strict =

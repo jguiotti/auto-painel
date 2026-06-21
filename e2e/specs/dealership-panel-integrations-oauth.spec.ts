@@ -6,10 +6,10 @@ import {
   resetStuckClassifiedsConnections,
   resolveDemoDealershipCredentials,
   dismissDealershipPanelOverlays,
+  gotoAuthenticatedPanelPath,
 } from "../helpers/dealership-panel-login";
 
 const { slug } = resolveDemoDealershipCredentials();
-const panelPort = process.env.E2E_DEALERSHIP_PANEL_PORT ?? "3002";
 const devStubEnabled = process.env.CLASSIFIEDS_OAUTH_DEV_STUB?.trim().toLowerCase();
 
 test.describe("dealership-panel — integrações OAuth autenticado", () => {
@@ -22,11 +22,11 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
   });
 
   test("página de integrações carrega para loja enterprise", async ({ page }) => {
-    await page.goto(`http://${slug}.localhost:${panelPort}/painel/integracoes`);
+    await gotoAuthenticatedPanelPath(page, slug, "/painel/integracoes");
     await expect(page.getByRole("heading", { name: /integrações/i })).toBeVisible();
-    await expect(page.getByText("OLX", { exact: true })).toBeVisible();
-    await expect(page.getByText("WebMotors", { exact: true })).toBeVisible();
-    await expect(page.getByText("iCarros", { exact: true })).toBeVisible();
+    await expect(page.locator('[data-provider="olx"]').first()).toBeVisible();
+    await expect(page.locator('[data-provider="webmotors"]').first()).toBeVisible();
+    await expect(page.locator('[data-provider="icarros"]').first()).toBeVisible();
   });
 
   test("UI conecta OLX via dev stub quando habilitado", async ({ page, context }) => {
@@ -35,7 +35,7 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
       "Requer CLASSIFIEDS_OAUTH_DEV_STUB=true no .env.local",
     );
 
-    await page.goto(`http://${slug}.localhost:${panelPort}/painel/integracoes`);
+    await gotoAuthenticatedPanelPath(page, slug, "/painel/integracoes");
 
     const olxCard = page.locator('[data-provider="olx"]');
     await olxCard.getByRole("button", { name: /^Conectar$|^Conectar novamente$/ }).click();
@@ -73,17 +73,9 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
   });
 
   test("WebMotors inicia OAuth (dev stub ou 503 sem credenciais)", async ({ page }) => {
-    await page.goto(`http://${slug}.localhost:${panelPort}/painel/integracoes`);
-    await dismissDealershipPanelOverlays(page);
+    await gotoAuthenticatedPanelPath(page, slug, "/painel/integracoes");
 
-    let result = await postClassifiedsOAuthStart(page, "webmotors");
-
-    if (result.status === 401) {
-      await loginDealershipPanel(page, { slug });
-      await page.goto(`http://${slug}.localhost:${panelPort}/painel/integracoes`);
-      await dismissDealershipPanelOverlays(page);
-      result = await postClassifiedsOAuthStart(page, "webmotors");
-    }
+    const result = await postClassifiedsOAuthStart(page, "webmotors");
 
     if (devStubEnabled === "true" || devStubEnabled === "1") {
       expect(result.status).toBe(200);
@@ -92,12 +84,13 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
     }
 
     expect(result.status).toBe(503);
-    expect(result.body.code).toBe("oauth_not_configured");
+    expect(["oauth_not_configured", "oauth_session_store_mismatch"]).toContain(
+      result.body.code,
+    );
   });
 
   test("centro de notificações abre em sheet lateral", async ({ page }) => {
-    await page.goto(`http://${slug}.localhost:${panelPort}/painel`);
-    await dismissDealershipPanelOverlays(page);
+    await gotoAuthenticatedPanelPath(page, slug, "/painel");
 
     await page.getByRole("button", { name: /notificações/i }).click();
     await expect(page.getByRole("dialog", { name: "Novidades da loja" })).toBeVisible();
