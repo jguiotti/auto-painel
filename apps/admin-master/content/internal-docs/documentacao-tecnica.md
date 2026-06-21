@@ -354,7 +354,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | **P1** | Preços públicos; vitrine `/loja-inativa`; CRM `/painel/leads-comerciais`; painel `/conta-inativa` | Entregue (base) |
 | **P2** | Contratos; auto-provision pós-create; Guiotti/Demo protegidas | Entregue |
 | **P3** | Dashboard admin + GA4 + calendário conteúdo | Entregue (base) |
-| **P4** | Wizard painel; lead enriquecido; marketing guerrilla | Entregue (wizard + lead; guerrilla pendente) |
+| **P4** | Wizard painel; lead enriquecido + multi-interesse estoque; marketing guerrilla | ✅ wizard + CRM; guerrilla pendente (produto) |
 
 | Área | Paths / contratos |
 | --- | --- |
@@ -387,7 +387,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | **5 Backend** | ✅ Actions, data layer, auth portal rep, hook estorno churn |
 | **6 Frontend** | ✅ Admin `/painel/equipe/comercial/*` + portal rep `/painel/comercial/*` (v1) |
 | **8 QA** | ✅ Matriz + Playwright + script RLS local — `PLATFORM_SALES_SQUAD_QA.md` (6 pass + 1 skip E2E com dev servers) |
-| 7 DevOps | 🟡 Cron comissão/lote v1.1 |
+| 7 DevOps | ✅ Cron comissão/lote v1.1 |
 
 **Épico v1 fechado** (2026-06-20): escopo admin + portal rep + QA automatizado. Backlog v1.1: campanhas, lotes pagamento, drawer vínculo leads/contratos — `PLATFORM_BACKLOG_REMAINING.md`.
 
@@ -498,27 +498,40 @@ Matriz QA integrações: seções em `historico-tecnico.md` (Fase 8 CRM, Meta, c
 
 ---
 
-## Épicos 3 e 4 — fechamento base (2026-06-21)
+## Épicos 3 e 4 — fechamento (2026-06-21)
+
+**Status:** ✅ **Fechados (base técnica)** — ver `packages/shared/docs/EPICS_CLOSURE_JUN2026.md`
+
+**Verificação:** `npm run verify:epics-closure` · `npm run verify:epics-closure -- --e2e`
 
 ### Épico 3 — produção multitenant (go-live)
 
 | Entrega | Artefato |
 | --- | --- |
-| Smoke Onda A | `npm run smoke:production-go-live` — `scripts/smoke-production-go-live.mjs` |
-| E2E login demo prod (opcional) | `E2E_PRODUCTION=true npm run test:e2e -- e2e/specs/production-go-live.spec.ts` |
-| Redirect www → apex | `apps/marketing-site/next.config.ts` |
-| Checklist operacional | `packages/shared/docs/PRODUCTION_MULTITENANT_CHECKLIST.md`, `PRODUCTION_GO_LIVE_WAVE_A.md` |
+| Smoke Onda A | `npm run smoke:production-go-live` — **11/11 OK** (2026-06-21) |
+| E2E login demo prod | `E2E_PRODUCTION=true` — **1/1 OK** (2026-06-21) |
+| Redirect www → apex | `apps/marketing-site/next.config.ts` (DNS www Cloudflare pendente) |
+| Checklist operacional | `PRODUCTION_MULTITENANT_CHECKLIST.md`, `PRODUCTION_GO_LIVE_WAVE_A.md` |
 
-Pendente **operacional** (fora do código): primeira loja cliente real + `custom_domain` dedicado; Auth Redirect URLs no Dashboard após novos domínios.
+**Pendente operacional:** 1ª loja cliente real + contrato v2 assinado + boleto; Auth Redirect URLs após novos domínios.
 
 ### Épico 4 — operação admin (polish)
 
 | Entrega | Artefato |
 | --- | --- |
-| EmptyState em listagens | `platform-commercial-leads-table`, `platform-contracts-ui`, `content-calendar-table`, `finance-table`, `planos/page`, `modulos/page` |
-| Performance listagens lojas | `fetchDealershipsForAdminList()` — select enxuto em `dealerships.ts`; usado em concessionárias + financeiro |
+| EmptyState em listagens | entregue jun/2026 |
+| Performance listagens lojas | `fetchDealershipsForAdminList()` |
 
-KPIs, command palette e filtros dashboard já entregues em jun/2026 (`historico-tecnico.md` E4-D1–D5).
+### Épico 5 — QA onda produção
+
+Smoke + E2E produção OK. Regressão E2E local completa opcional com `dev:all` + seed.
+
+### Contrato assinatura loja (jurídico)
+
+| Entrega | Path |
+| --- | --- |
+| Modelo v2 (OAB) | `packages/shared/docs/CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` |
+| Template admin DB | migração `20260621150000_platform_contract_template_v2.sql` → `/painel/contratos` versão 2 |
 
 ---
 

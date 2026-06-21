@@ -28,6 +28,7 @@
     "qa:platform-sales-squad-rls": "NODE_PATH=./packages/shared/node_modules node scripts/qa-platform-sales-squad-rls.mjs",
     "smoke:demo-showcase": "node scripts/smoke-demo-showcase-production.mjs",
     "smoke:production-go-live": "node scripts/smoke-production-go-live.mjs",
+    "verify:epics-closure": "node scripts/verify-epics-closure.mjs",
     "platform-sales:cron:monthly": "NODE_PATH=./packages/shared/node_modules node scripts/platform-sales-cron.mjs monthly",
     "platform-sales:cron:payout": "NODE_PATH=./packages/shared/node_modules node scripts/platform-sales-cron.mjs payout",
     "supabase:reset:dev": "supabase db reset && npm run seed:local-access",

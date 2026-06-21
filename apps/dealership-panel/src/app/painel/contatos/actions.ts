@@ -143,7 +143,7 @@ export async function updateLeadPipelineAction(
     lossReasonNote?: string | null;
   },
 ): Promise<LeadActionResult> {
-  const { supabase, profile } = await requireDashboardSession();
+  const { supabase, profile, dealershipId } = await requireDashboardSession();
 
   if (!canManageLeadCrm(profile.role)) {
     return { error: "Sem permissão para atualizar este contato." };
@@ -204,6 +204,14 @@ export async function updateLeadPipelineAction(
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (input.convertedVehicleId) {
+    await supabase
+      .from("lead_vehicle_interests")
+      .delete()
+      .eq("dealership_id", dealershipId)
+      .eq("vehicle_id", input.convertedVehicleId);
   }
 
   revalidatePath("/painel/contatos");

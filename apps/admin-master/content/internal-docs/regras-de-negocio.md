@@ -293,7 +293,7 @@ Detalhe técnico: `documentacao-tecnica.md`.
 
 ---
 
-## Épico crescimento & operação (jun/2026)
+## Épico crescimento & operação (jun/2026) — **fechado (base)**
 
 ### Decisões PM
 
@@ -327,6 +327,7 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | **Painel `/conta-inativa`** | «Conta inativa» — pagamento pendente ou configuração; painel e vitrine indisponíveis até regularização |
 | **Admin `/painel/leads-comerciais`** | Pipeline: Novo → Qualificação → Demo agendada → Demo realizada → Proposta → Negociação → Ganho / Onboarding / Perdido |
 | **Contato marketing** | WhatsApp **+55 13 99743-5851**; e-mail **contato@autopainel.com.br** |
-| **Marketing WhatsApp (float + contato)** | Popup único com formulário de lead; **não** abre `wa.me` — equipe retorna pelo número informado |
+| **BZ-GR-008** | CRM loja: contato pode ter **vários veículos de interesse** (estoque disponível); após venda, veículo vincula ao comprador e sai da lista dos demais. |
+| **BZ-GR-009** | Contrato SaaS loja v2: boleto Sicoob; suspensão após **3 dias** de atraso; modelo em `CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` (revisão OAB). |
 
-*Última atualização: junho/2026 (épico crescimento em andamento)*
+*Última atualização: junho/2026 — épico crescimento **P0–P4 fechado** (exc. guerrilla marketing); épicos 3/4/5 base fechados — ver `EPICS_CLOSURE_JUN2026.md`*
