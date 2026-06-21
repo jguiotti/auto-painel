@@ -41,3 +41,18 @@ export interface SoldVehicleOption {
   brand: string;
   model: string;
 }
+
+export interface InventoryVehicleOption {
+  id: string;
+  brand: string;
+  model: string;
+  status: string;
+  model_year?: number | null;
+}
+
+export interface LeadCustomerProfile {
+  customer_id: string | null;
+  document_cpf: string | null;
+  document_cnpj: string | null;
+  billing_address: Record<string, unknown>;
+}

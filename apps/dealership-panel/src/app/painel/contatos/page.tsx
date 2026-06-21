@@ -1,7 +1,11 @@
 import { LeadInbox } from "@/components/leads/LeadInbox";
 import type { LeadListItem } from "@/components/leads/LeadList";
 import type { LeadAssigneeOption } from "@/components/leads/lead-assignee-select";
-import type { LeadNoteItem, SoldVehicleOption } from "@autopainel/shared/types/lead-crm";
+import type {
+  InventoryVehicleOption,
+  LeadNoteItem,
+  SoldVehicleOption,
+} from "@autopainel/shared/types/lead-crm";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 
@@ -21,12 +25,13 @@ export default async function LeadsPage() {
     { data: rows, error },
     { data: notesRows, error: notesError },
     { data: assigneeRows },
+    { data: inventoryRows },
     { data: soldRows },
   ] = await Promise.all([
       supabase
         .from("leads")
         .select(
-          "id, client_name, phone, client_email, message, type, source, status, created_at, next_follow_up_at, converted_vehicle_id, assigned_user_id, loss_reason_code, loss_reason_note, vehicles!leads_vehicle_id_fkey(id, brand, model, public_slug)",
+          "id, client_name, phone, client_email, message, type, source, status, created_at, next_follow_up_at, vehicle_id, converted_vehicle_id, assigned_user_id, loss_reason_code, loss_reason_note, customer_id, customers(id, document_cpf, document_cnpj, billing_address), vehicles!leads_vehicle_id_fkey(id, brand, model, public_slug)",
         )
         .eq("dealership_id", dealershipId)
         .order("created_at", { ascending: false }),
@@ -41,6 +46,15 @@ export default async function LeadsPage() {
         .eq("dealership_id", dealershipId)
         .in("role", ["owner", "manager", "seller"])
         .order("role", { ascending: true }),
+      supabase
+        .from("vehicles")
+        .select("id, brand, model, model_year, status")
+        .eq("dealership_id", dealershipId)
+        .in("status", ["available", "sold"])
+        .order("status", { ascending: true })
+        .order("brand", { ascending: true })
+        .order("model", { ascending: true })
+        .limit(200),
       supabase
         .from("vehicles")
         .select("id, brand, model")
@@ -78,6 +92,16 @@ export default async function LeadsPage() {
     role: r.role as string,
   }));
 
+  const inventoryVehicles: InventoryVehicleOption[] = (inventoryRows ?? []).map(
+    (row) => ({
+      id: row.id as string,
+      brand: row.brand as string,
+      model: row.model as string,
+      status: row.status as string,
+      model_year: (row.model_year as number | null) ?? null,
+    }),
+  );
+
   const soldVehicles: SoldVehicleOption[] = (soldRows ?? []).map((row) => ({
     id: row.id as string,
     brand: row.brand as string,
@@ -91,6 +115,21 @@ export default async function LeadsPage() {
       | null;
     const vehicleData = Array.isArray(v) ? v[0] : v;
     const notes = notesByLeadId.get(row.id) ?? [];
+    const customerRow = row.customers as
+      | {
+          id: string;
+          document_cpf: string | null;
+          document_cnpj: string | null;
+          billing_address: Record<string, unknown>;
+        }
+      | Array<{
+          id: string;
+          document_cpf: string | null;
+          document_cnpj: string | null;
+          billing_address: Record<string, unknown>;
+        }>
+      | null;
+    const customer = Array.isArray(customerRow) ? customerRow[0] : customerRow;
 
     return {
       id: row.id,
@@ -103,10 +142,26 @@ export default async function LeadsPage() {
       status: (row.status as string | null) ?? "new",
       created_at: row.created_at,
       next_follow_up_at: (row.next_follow_up_at as string | null) ?? null,
+      vehicle_id: (row.vehicle_id as string | null) ?? null,
       converted_vehicle_id: (row.converted_vehicle_id as string | null) ?? null,
       assigned_user_id: (row.assigned_user_id as string | null) ?? null,
       loss_reason_code: (row.loss_reason_code as string | null) ?? null,
       loss_reason_note: (row.loss_reason_note as string | null) ?? null,
+      customer: customer
+        ? {
+            customer_id: customer.id,
+            document_cpf: customer.document_cpf,
+            document_cnpj: customer.document_cnpj,
+            billing_address: customer.billing_address ?? {},
+          }
+        : row.customer_id
+          ? {
+              customer_id: row.customer_id as string,
+              document_cpf: null,
+              document_cnpj: null,
+              billing_address: {},
+            }
+          : null,
       notes: notes.sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -129,8 +184,8 @@ export default async function LeadsPage() {
           Contatos
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Interessados vindos da vitrine ou cadastrados pela equipe. Acompanhe o
-          funil até a venda.
+          Interessados vindos da vitrine ou cadastrados pela equipe. Enriqueça o
+          cadastro, vincule ao estoque e acompanhe até a venda e o recibo.
         </p>
         {canManageAssignments ? (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -145,6 +200,7 @@ export default async function LeadsPage() {
         canManageAssignments={canManageAssignments}
         canCreateManual={canCreateManual}
         assignees={assignees}
+        inventoryVehicles={inventoryVehicles}
         soldVehicles={soldVehicles}
       />
     </div>

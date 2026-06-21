@@ -12,6 +12,7 @@ import {
   LEAD_PIPELINE_STATUSES,
   LEAD_PIPELINE_STATUS_LABELS,
   LEAD_SOURCE_LABELS,
+  type InventoryVehicleOption,
   type LeadNoteItem,
   type LeadPipelineStatus,
   type SoldVehicleOption,
@@ -41,6 +42,7 @@ import {
 } from "@/app/painel/contatos/actions";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
 import { LeadClaimButton } from "@/components/leads/lead-claim-button";
+import { LeadProfileSection } from "@/components/leads/lead-profile-section";
 import { formatDatePt } from "@/lib/format/format-date-pt";
 import {
   buildLeadWhatsAppMessage,
@@ -53,6 +55,7 @@ interface LeadDetailSheetProps {
   lead: LeadListItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  inventoryVehicles: InventoryVehicleOption[];
   soldVehicles: SoldVehicleOption[];
   viewerRole: string;
   canManageAssignments: boolean;
@@ -62,6 +65,7 @@ export function LeadDetailSheet({
   lead,
   open,
   onOpenChange,
+  inventoryVehicles,
   soldVehicles,
   viewerRole,
   canManageAssignments,
@@ -166,14 +170,18 @@ export function LeadDetailSheet({
             </div>
           ) : null}
 
+          <LeadProfileSection
+            lead={lead}
+            inventoryVehicles={inventoryVehicles}
+            disabled={pending}
+          />
+
           {lead.vehicles ? (
             <p className="text-sm">
-              <span className="text-muted-foreground">Veículo de interesse: </span>
+              <span className="text-muted-foreground">Ficha no estoque: </span>
               <Link
-                href={`/veiculo/${lead.vehicles.id}`}
+                href={`/painel/estoque/${lead.vehicles.id}`}
                 className="font-medium text-primary underline"
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 {lead.vehicles.brand} {lead.vehicles.model}
               </Link>
@@ -284,7 +292,7 @@ export function LeadDetailSheet({
 
           <div className="space-y-2">
             <Label htmlFor={`lead-won-vehicle-${lead.id}`}>
-              Venda vinculada (veículo vendido)
+              Venda concretizada (veículo vendido)
             </Label>
             <Select
               value={convertedValue}
@@ -307,10 +315,15 @@ export function LeadDetailSheet({
                 ))}
               </SelectContent>
             </Select>
+            {soldVehicles.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Marque um veículo como vendido no estoque para vincular aqui e emitir o recibo.
+              </p>
+            ) : null}
             {lead.converted_vehicle_id ? (
               <Button variant="link" className="h-auto p-0 text-sm" asChild>
-                <Link href={`/painel/estoque/${lead.converted_vehicle_id}`}>
-                  Abrir ficha do veículo / recibo
+                <Link href={`/painel/estoque/${lead.converted_vehicle_id}/recibo`}>
+                  Abrir recibo de venda
                 </Link>
               </Button>
             ) : null}

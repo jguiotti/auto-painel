@@ -39,11 +39,18 @@ export interface LeadListItem {
   message?: string | null;
   created_at: string;
   next_follow_up_at?: string | null;
+  vehicle_id?: string | null;
   converted_vehicle_id?: string | null;
   assigned_user_id: string | null;
   loss_reason_code?: string | null;
   loss_reason_note?: string | null;
   notes?: LeadNoteItem[];
+  customer?: {
+    customer_id: string | null;
+    document_cpf: string | null;
+    document_cnpj: string | null;
+    billing_address: Record<string, unknown>;
+  } | null;
   vehicles: {
     id: string;
     brand: string;

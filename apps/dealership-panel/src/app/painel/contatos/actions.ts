@@ -81,6 +81,58 @@ export async function claimLeadAction(leadId: string): Promise<LeadActionResult>
   return { success: true };
 }
 
+export async function updateLeadProfileAction(input: {
+  leadId: string;
+  clientName: string;
+  phone: string;
+  clientEmail?: string;
+  document?: string;
+  billingAddress?: Record<string, string>;
+  interestVehicleId?: string | null;
+}): Promise<LeadActionResult> {
+  const { supabase, profile } = await requireDashboardSession();
+
+  if (!canManageLeadCrm(profile.role)) {
+    return { error: "Sem permissão para editar este contato." };
+  }
+
+  let documentCpf: string | null = null;
+  let documentCnpj: string | null = null;
+
+  const documentRaw = input.document?.trim() ?? "";
+  if (documentRaw) {
+    const validation = validateBuyerDocument(documentRaw);
+    if (!validation.isValid || !validation.kind) {
+      return { error: "Informe um CPF ou CNPJ válido." };
+    }
+    if (validation.kind === "cpf") {
+      documentCpf = validation.normalized;
+    } else {
+      documentCnpj = validation.normalized;
+    }
+  }
+
+  const { error } = await supabase.rpc("update_dealership_lead_profile", {
+    p_lead_id: input.leadId,
+    p_full_name: input.clientName.trim(),
+    p_phone: input.phone.trim(),
+    p_email: input.clientEmail?.trim() || null,
+    p_document_cpf: documentCpf,
+    p_document_cnpj: documentCnpj,
+    p_billing_address: input.billingAddress ?? {},
+    p_interest_vehicle_id: input.interestVehicleId ?? null,
+    p_update_interest_vehicle: true,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/painel/contatos");
+  revalidatePath("/painel");
+  return { success: true };
+}
+
 export async function updateLeadPipelineAction(
   leadId: string,
   input: {

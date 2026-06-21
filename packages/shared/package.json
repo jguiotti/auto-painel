@@ -48,6 +48,11 @@
       "import": "./src/lib/dealership/parse-hq-address-from-form.ts",
       "default": "./src/lib/dealership/parse-hq-address-from-form.ts"
     },
+    "./lib/customer/format-billing-address": {
+      "types": "./src/lib/customer/format-billing-address.ts",
+      "import": "./src/lib/customer/format-billing-address.ts",
+      "default": "./src/lib/customer/format-billing-address.ts"
+    },
     "./lib/dealership/storefront-home-copy": {
       "types": "./src/lib/dealership/storefront-home-copy.ts",
       "import": "./src/lib/dealership/storefront-home-copy.ts",

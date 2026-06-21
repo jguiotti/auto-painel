@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { BrazilianAddressFields } from "@autopainel/shared/components/brazilian-address-fields";
+import { billingAddressForStorage } from "@autopainel/shared/lib/customer/format-billing-address";
 import { parseHqAddressFromForm } from "@autopainel/shared/lib/dealership/parse-hq-address-from-form";
+import type { InventoryVehicleOption } from "@autopainel/shared/types/lead-crm";
 import {
   Button,
   Dialog,
@@ -17,6 +19,11 @@ import {
   DialogTrigger,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@autopainel/shared/ui";
 
@@ -24,9 +31,13 @@ import { createManualLeadAction } from "@/app/painel/contatos/actions";
 
 interface CreateManualLeadDialogProps {
   canCreate: boolean;
+  inventoryVehicles: InventoryVehicleOption[];
 }
 
-export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProps) {
+export function CreateManualLeadDialog({
+  canCreate,
+  inventoryVehicles,
+}: CreateManualLeadDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -36,6 +47,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
   const [clientEmail, setClientEmail] = useState("");
   const [documentValue, setDocumentValue] = useState("");
   const [message, setMessage] = useState("");
+  const [vehicleId, setVehicleId] = useState("__none__");
 
   if (!canCreate) {
     return null;
@@ -47,6 +59,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
     setClientEmail("");
     setDocumentValue("");
     setMessage("");
+    setVehicleId("__none__");
     setError(null);
   }
 
@@ -55,7 +68,9 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const billingAddress = parseHqAddressFromForm(formData, "billing");
+    const billingAddress = billingAddressForStorage(
+      parseHqAddressFromForm(formData, "billing"),
+    );
 
     startTransition(async () => {
       const res = await createManualLeadAction({
@@ -65,6 +80,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
         message: message || undefined,
         document: documentValue || undefined,
         billingAddress,
+        vehicleId: vehicleId === "__none__" ? null : vehicleId,
       });
       if (res.error) {
         setError(res.error);
@@ -102,7 +118,7 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
           </DialogHeader>
           <div className="grid max-h-[min(70vh,32rem)] gap-4 overflow-y-auto py-4 pr-1">
             <div className="space-y-2">
-              <Label htmlFor="manual-lead-name">Nome</Label>
+              <Label htmlFor="manual-lead-name">Nome completo</Label>
               <Input
                 id="manual-lead-name"
                 value={clientName}
@@ -141,6 +157,25 @@ export function CreateManualLeadDialog({ canCreate }: CreateManualLeadDialogProp
                 inputMode="numeric"
                 placeholder="000.000.000-00"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manual-lead-vehicle">Veículo de interesse (opcional)</Label>
+              <Select value={vehicleId} onValueChange={setVehicleId}>
+                <SelectTrigger id="manual-lead-vehicle">
+                  <SelectValue placeholder="Selecione do estoque" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Nenhum —</SelectItem>
+                  {inventoryVehicles
+                    .filter((vehicle) => vehicle.status === "available")
+                    .map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.brand} {vehicle.model}
+                        {vehicle.model_year ? ` (${vehicle.model_year})` : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
             <BrazilianAddressFields prefix="billing" legend="Endereço (opcional)" />
             <div className="space-y-2">

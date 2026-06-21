@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LEAD_PIPELINE_STATUSES,
   LEAD_PIPELINE_STATUS_LABELS,
+  type InventoryVehicleOption,
   type SoldVehicleOption,
 } from "@autopainel/shared/types/lead-crm";
 import { EmptyState } from "@autopainel/shared/components/empty-state";
@@ -22,6 +23,7 @@ interface LeadInboxProps {
   canManageAssignments: boolean;
   canCreateManual: boolean;
   assignees: LeadAssigneeOption[];
+  inventoryVehicles: InventoryVehicleOption[];
   soldVehicles: SoldVehicleOption[];
 }
 
@@ -31,6 +33,7 @@ export function LeadInbox({
   canManageAssignments,
   canCreateManual,
   assignees,
+  inventoryVehicles,
   soldVehicles,
 }: LeadInboxProps) {
   const [query, setQuery] = useState("");
@@ -75,7 +78,10 @@ export function LeadInbox({
     return (
       <div className="space-y-4">
         <div className="flex justify-end">
-          <CreateManualLeadDialog canCreate={canCreateManual} />
+          <CreateManualLeadDialog
+            canCreate={canCreateManual}
+            inventoryVehicles={inventoryVehicles}
+          />
         </div>
         <EmptyState
           icon={Inbox}
@@ -92,7 +98,10 @@ export function LeadInbox({
         <p className="text-sm text-muted-foreground">
           Pipeline comercial: acompanhe status, follow-up e conversão.
         </p>
-        <CreateManualLeadDialog canCreate={canCreateManual} />
+        <CreateManualLeadDialog
+          canCreate={canCreateManual}
+          inventoryVehicles={inventoryVehicles}
+        />
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
@@ -163,6 +172,7 @@ export function LeadInbox({
           }
         }}
         soldVehicles={soldVehicles}
+        inventoryVehicles={inventoryVehicles}
         viewerRole={viewerRole}
         canManageAssignments={canManageAssignments}
       />
