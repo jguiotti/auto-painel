@@ -9,6 +9,10 @@ export interface AutopainelGtmDataLayerContext {
   ap_page_hostname: string | null;
   ap_dealership_slug: string | null;
   ap_dealership_id: string | null;
+  /** granted | denied — vitrine/marketing follow cookie banner; painel/admin default granted */
+  ap_analytics_consent: "granted" | "denied";
+  /** Hotjar recording tags (same site ID, filter by tag in dashboard) */
+  ap_hotjar_tags: string[];
 }
 
 export interface AutopainelGtmRuntime {

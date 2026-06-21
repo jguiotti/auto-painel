@@ -1,4 +1,5 @@
 import { extractDealershipSlugFromHost } from "./extract-dealership-slug-from-host";
+import { buildHotjarRecordingTags } from "./build-hotjar-recording-tags";
 import { resolveGtmContainerId } from "./gtm-container-id";
 import type {
   AutopainelAppSurface,
@@ -11,6 +12,7 @@ interface ResolveAutopainelGtmRuntimeParams {
   hostHeader: string | null;
   platformRootDomain?: string | null;
   dealershipIdCookie?: string | null;
+  analyticsConsentGranted?: boolean;
 }
 
 export function resolveAutopainelGtmRuntime(
@@ -32,13 +34,22 @@ export function resolveAutopainelGtmRuntime(
     platformRoot,
   );
 
+  const analyticsConsentGranted = params.analyticsConsentGranted ?? true;
+
+  const dataLayer = {
+    ap_app_surface: params.appSurface,
+    ap_page_hostname: hostWithoutPort || null,
+    ap_dealership_slug: dealershipSlug,
+    ap_dealership_id: params.dealershipIdCookie?.trim() || null,
+    ap_analytics_consent: analyticsConsentGranted ? ("granted" as const) : ("denied" as const),
+    ap_hotjar_tags: buildHotjarRecordingTags({
+      ap_app_surface: params.appSurface,
+      ap_dealership_slug: dealershipSlug,
+    }),
+  };
+
   return {
     containerId,
-    dataLayer: {
-      ap_app_surface: params.appSurface,
-      ap_page_hostname: hostWithoutPort || null,
-      ap_dealership_slug: dealershipSlug,
-      ap_dealership_id: params.dealershipIdCookie?.trim() || null,
-    },
+    dataLayer,
   };
 }

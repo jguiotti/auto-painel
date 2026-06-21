@@ -51,8 +51,9 @@ export function buildFacebookShareUrl(pageUrl: string, options?: { mobile?: bool
 }
 
 /**
- * Opens Facebook share dialog. iOS Safari blocks target=_blank on external anchors;
- * use synchronous navigation in a click handler instead.
+ * Opens Facebook share dialog in desktop browsers.
+ * Do not use on iOS: facebook.com sharer URLs open the native app via universal links
+ * without passing the share URL to the composer.
  */
 export function openFacebookShare(pageUrl: string): void {
   if (typeof window === "undefined") {
@@ -63,12 +64,11 @@ export function openFacebookShare(pageUrl: string): void {
     /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  const shareUrl = buildFacebookShareUrl(pageUrl, { mobile: isIos });
-
   if (isIos) {
-    window.open(shareUrl, "_self");
     return;
   }
+
+  const shareUrl = buildFacebookShareUrl(pageUrl);
 
   const popup = window.open(
     shareUrl,
@@ -78,6 +78,61 @@ export function openFacebookShare(pageUrl: string): void {
 
   if (!popup) {
     window.location.assign(shareUrl);
+  }
+}
+
+export function isIosShareDevice(): boolean {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return (
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+export function isMobileShareDevice(): boolean {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isIosShareDevice();
+}
+
+/**
+ * Native share sheet (iOS/Android). On iOS, pass url only — most reliable with Safari + FB app installed.
+ */
+export async function sharePageViaNativeSheet(payload: {
+  url: string;
+  title?: string;
+  text?: string;
+}): Promise<"shared" | "aborted" | "unavailable"> {
+  if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
+    return "unavailable";
+  }
+
+  const iosPayload = { url: payload.url };
+  const defaultPayload = {
+    url: payload.url,
+    ...(payload.title ? { title: payload.title } : {}),
+    ...(payload.text ? { text: payload.text } : {}),
+  };
+
+  const shareData = isIosShareDevice() ? iosPayload : defaultPayload;
+
+  if (typeof navigator.canShare === "function" && !navigator.canShare(shareData)) {
+    return "unavailable";
+  }
+
+  try {
+    await navigator.share(shareData);
+    return "shared";
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return "aborted";
+    }
+    return "unavailable";
   }
 }
 

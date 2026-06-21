@@ -34,12 +34,14 @@ Cada `apps/*/src/app/layout.tsx` inclui:
 
 Antes de `gtm.js`, o snippet envia:
 
-| Campo | Exemplo | Uso no GTM |
+| Campo | Exemplo | Uso no GTM / Hotjar |
 | --- | --- | --- |
 | `ap_app_surface` | `customer_storefront` | Filtrar marketing vs admin vs painel vs vitrine |
 | `ap_page_hostname` | `guiotti.autopainel.com.br` | Hostname completo |
 | `ap_dealership_slug` | `guiotti` | Segmentar por loja (automático em `{slug}.*`) |
 | `ap_dealership_id` | UUID | Quando o cookie `ap-dealership-id` já existe |
+| `ap_analytics_consent` | `granted` / `denied` | Acionador Hotjar/GA4 na vitrine e marketing |
+| `ap_hotjar_tags` | `["customer_storefront","Vitrine","loja:guiotti"]` | Filtros de gravação Hotjar |
 
 Valores de `ap_app_surface`:
 
@@ -52,9 +54,9 @@ Valores de `ap_app_surface`:
 
 ## Configurar GA4 / Hotjar no GTM
 
-1. **Google Analytics 4:** Tag GA4 Configuration → trigger «All Pages» + condição `ap_app_surface` equals `customer_storefront` (ou criar tags separadas por superfície).
-2. **Hotjar:** tag Hotjar → mesmo padrão; use `Page Hostname` ou variável DL `ap_page_hostname` para relatórios por loja.
-3. **Variáveis DL:** em GTM → Variables → New → Data Layer Variable → name `ap_dealership_slug`, etc.
+1. **Google Analytics 4:** Tag GA4 Configuration → trigger «All Pages» + parâmetros DL `ap_app_surface`, `ap_dealership_slug`.
+2. **Hotjar (uma tag, 4 apps):** ver guia completo [`HOTJAR.md`](./HOTJAR.md) — tags automáticas `ap_hotjar_tags`, filtros por superfície/loja.
+3. **Variáveis DL:** em GTM → Variables → New → Data Layer Variable → name `ap_dealership_slug`, `ap_app_surface`, `ap_analytics_consent`, etc.
 
 ## Checklist produção
 

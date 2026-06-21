@@ -34,10 +34,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <AutopainelGoogleTagManagerHead appSurface="dealership_panel" />
+        <AutopainelGoogleTagManagerHead appSurface="dealership_panel" platformRootDomain={process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN} />
       </head>
       <body className="min-h-full flex flex-col">
-        <AutopainelGoogleTagManagerBody appSurface="dealership_panel" />
+        <AutopainelGoogleTagManagerBody appSurface="dealership_panel" platformRootDomain={process.env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN} />
         {children}
       </body>
     </html>

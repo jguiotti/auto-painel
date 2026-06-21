@@ -492,7 +492,7 @@ Matriz QA integrações: seções em `historico-tecnico.md` (Fase 8 CRM, Meta, c
 | RPCs vitrine/marketing públicas | **Mantidas** `anon` + `SECURITY DEFINER` (`get_public_vehicle_by_slug`, `list_public_vehicles_filtered`, `create_public_storefront_lead`, …) — vitrine depende delas; advisor pode continuar alertando até migração futura INVOKER+RLS | documentado como exceção aceita |
 | Auth leaked passwords | Habilitar **Leaked password protection** (HaveIBeenPwned) em Dashboard → Authentication → Providers → Email | operação manual |
 
-| Share vitrine Facebook | iOS: Web Share nativo + fallback FB; OG PNG 1200×630 em `/veiculo/[slug]/opengraph-image` | `vehicle-share-section.tsx`, `opengraph-image.tsx`, `build-vehicle-page-metadata.ts` |
+| Share vitrine Facebook | Desktop: popup `facebook.com/sharer`; iOS/Android: `navigator.share` (só `url` no iOS — evita universal link do app FB sem composer); fallback copiar link. OG PNG 1200×630 em `/veiculo/[slug]/opengraph-image` | `vehicle-share-section.tsx`, `build-share-url-with-utm.ts`, `opengraph-image.tsx`, `build-vehicle-page-metadata.ts` |
 
 ---
 

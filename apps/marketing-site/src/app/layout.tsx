@@ -67,17 +67,19 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <head>
-        {analyticsAllowed ? (
-          <AutopainelGoogleTagManagerHead appSurface="marketing" />
-        ) : null}
+        <AutopainelGoogleTagManagerHead
+          appSurface="marketing"
+          analyticsConsentGranted={analyticsAllowed}
+        />
       </head>
       <body
         className={`${fontOswald.variable} ${fontMardoto.variable} min-h-screen bg-background font-sans antialiased`}
       >
         <MarketingJsonLd />
-        {analyticsAllowed ? (
-          <AutopainelGoogleTagManagerBody appSurface="marketing" />
-        ) : null}
+        <AutopainelGoogleTagManagerBody
+          appSurface="marketing"
+          analyticsConsentGranted={analyticsAllowed}
+        />
         <MarketingWhatsAppProvider>
           <SiteHeader />
           <main>{children}</main>

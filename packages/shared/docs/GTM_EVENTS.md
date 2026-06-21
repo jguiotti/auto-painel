@@ -10,7 +10,7 @@ Base de instalação: [`GTM.md`](./GTM.md). **Passo a passo simples (GTM + GA4):
 
 | Camada | Quem define | Onde vive |
 | --- | --- | --- |
-| **Contexto de página** | Servidor (layout) | `ap_app_surface`, `ap_page_hostname`, `ap_dealership_slug`, `ap_dealership_id` |
+| **Contexto de página** | Servidor (layout) | `ap_app_surface`, `ap_page_hostname`, `ap_dealership_slug`, `ap_dealership_id`, `ap_analytics_consent`, `ap_hotjar_tags` |
 | **Eventos de produto** | Cliente (ações) | `ap_event`, `ap_event_category`, `ap_event_label` |
 | **Trigger GTM** | Marketing/DevOps | Tag GA4 Event em `ap_custom_event` |
 | **Dimensões GA4** | Admin GA4 | Registrar DL vars como custom dimensions |
@@ -101,6 +101,8 @@ Criar **Data Layer Variables** para:
 - `ap_page_hostname`
 - `ap_dealership_slug`
 - `ap_dealership_id`
+- `ap_analytics_consent`
+- `ap_hotjar_tags`
 - `ap_event`
 - `ap_event_category`
 - `ap_event_label`

@@ -9,7 +9,10 @@ import {
   buildCanonicalSharePageUrl,
   buildShareUrlWithUtm,
   buildWhatsAppShareUrl,
+  isIosShareDevice,
+  isMobileShareDevice,
   openFacebookShare,
+  sharePageViaNativeSheet,
 } from "@autopainel/shared/lib/share/build-share-url-with-utm";
 import { cn } from "@autopainel/shared/lib/utils";
 
@@ -51,17 +54,6 @@ function resolveCanonicalPageUrl(pathname: string): string {
   return buildCanonicalSharePageUrl(`${window.location.origin}${pathname}`);
 }
 
-function isIosShareDevice(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-
-  return (
-    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
 export function VehicleShareSection({
   vehicleSlug,
   brand,
@@ -75,6 +67,8 @@ export function VehicleShareSection({
   const [canonicalPageUrl, setCanonicalPageUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+
+  const isIosDevice = isIosShareDevice();
 
   useEffect(() => {
     setCanonicalPageUrl(resolveCanonicalPageUrl(pathname));
@@ -131,19 +125,21 @@ export function VehicleShareSection({
     [getResolvedCanonicalUrl, vehicleSlug],
   );
 
-  async function copyShareLink() {
+  async function copyShareLink(message?: string) {
     const url = getShareUrl("copy_link");
     if (!url) {
-      return;
+      return false;
     }
 
     try {
       await navigator.clipboard.writeText(url);
-      setCopyFeedback("Link copiado.");
+      setCopyFeedback(message ?? "Link copiado.");
       trackShare("copy_link");
-      window.setTimeout(() => setCopyFeedback(null), 3500);
+      window.setTimeout(() => setCopyFeedback(null), 4500);
+      return true;
     } catch {
       setCopyFeedback("Não foi possível copiar o link.");
+      return false;
     }
   }
 
@@ -170,19 +166,24 @@ export function VehicleShareSection({
     trackShare("facebook");
     setShareFeedback(null);
 
-    if (isIosShareDevice() && typeof navigator.share === "function") {
-      try {
-        await navigator.share({
-          title: vehicleTitle,
-          text: shareText,
-          url,
-        });
+    if (isMobileShareDevice()) {
+      const result = await sharePageViaNativeSheet({
+        url,
+        title: vehicleTitle,
+        text: shareText,
+      });
+
+      if (result === "shared" || result === "aborted") {
         return;
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          return;
-        }
       }
+
+      const copied = await copyShareLink(
+        "Link copiado. Abra o Facebook e cole na sua publicação.",
+      );
+      if (!copied) {
+        setShareFeedback("Use «Copiar link» e compartilhe no Facebook manualmente.");
+      }
+      return;
     }
 
     openFacebookShare(url);
@@ -192,6 +193,9 @@ export function VehicleShareSection({
     "inline-flex size-9 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_14%,transparent)] bg-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_96%,white)] text-[var(--storefront-fg,var(--dealer-fg))]/70 transition hover:border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_28%,transparent)] hover:text-[var(--primary-color,var(--dealer-primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color,var(--dealer-primary))] focus-visible:ring-offset-1";
 
   const canShareFacebook = Boolean(getResolvedCanonicalUrl());
+  const facebookButtonLabel = isIosDevice
+    ? "Compartilhar veículo (escolha Facebook na lista)"
+    : "Compartilhar no Facebook";
 
   return (
     <div className={cn("border-t border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_12%,transparent)] pt-4", className)}>
@@ -212,8 +216,8 @@ export function VehicleShareSection({
 
         <button
           type="button"
-          title="Facebook"
-          aria-label="Compartilhar no Facebook"
+          title={facebookButtonLabel}
+          aria-label={facebookButtonLabel}
           disabled={!canShareFacebook}
           onClick={() => void handleFacebookShare()}
           className={cn(shareButtonClassName, !canShareFacebook && "pointer-events-none opacity-50")}

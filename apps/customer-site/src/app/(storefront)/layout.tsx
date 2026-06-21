@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import {
-  AutopainelGoogleTagManagerBody,
-  AutopainelGoogleTagManagerHead,
-} from "@autopainel/shared/components/analytics/autopainel-google-tag-manager";
 import { resolveDealershipFaviconUrl } from "@autopainel/shared/lib/theme/branding";
 
 import { StorefrontShell } from "@/components/storefront/storefront-shell";
-import { COOKIE_CONSENT_COOKIE, hasAnalyticsConsent } from "@/lib/cookie-consent";
 import { getDealershipPublicRecord } from "@/lib/tenant/get-dealership-public-record";
 
 export const dynamic = "force-dynamic";
@@ -46,19 +40,5 @@ export default async function StorefrontLayout({
     redirect("/erro/concessionaria");
   }
 
-  const cookieStore = await cookies();
-  const consentValue = cookieStore.get(COOKIE_CONSENT_COOKIE)?.value ?? null;
-  const analyticsAllowed = hasAnalyticsConsent(consentValue);
-
-  return (
-    <>
-      {analyticsAllowed ? (
-        <AutopainelGoogleTagManagerHead appSurface="customer_storefront" />
-      ) : null}
-      {analyticsAllowed ? (
-        <AutopainelGoogleTagManagerBody appSurface="customer_storefront" />
-      ) : null}
-      <StorefrontShell dealership={dealership}>{children}</StorefrontShell>
-    </>
-  );
+  return <StorefrontShell dealership={dealership}>{children}</StorefrontShell>;
 }
