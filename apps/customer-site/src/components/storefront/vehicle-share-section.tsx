@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Check, Copy } from "lucide-react";
 
 import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
 import {
+  buildCanonicalSharePageUrl,
   buildFacebookShareUrl,
   buildShareUrlWithUtm,
   buildWhatsAppShareUrl,
@@ -47,6 +49,14 @@ function FacebookIcon({ className }: { className?: string }) {
   );
 }
 
+function resolveCanonicalPageUrl(pathname: string): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return buildCanonicalSharePageUrl(`${window.location.origin}${pathname}`);
+}
+
 export function VehicleShareSection({
   vehicleSlug,
   brand,
@@ -56,12 +66,13 @@ export function VehicleShareSection({
   price,
   className,
 }: VehicleShareSectionProps) {
-  const [pageUrl, setPageUrl] = useState("");
+  const pathname = usePathname();
+  const [canonicalPageUrl, setCanonicalPageUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   useEffect(() => {
-    setPageUrl(window.location.href.split("#")[0] ?? "");
-  }, []);
+    setCanonicalPageUrl(resolveCanonicalPageUrl(pathname));
+  }, [pathname]);
 
   const vehicleTitle = useMemo(() => {
     const base = `${brand} ${model}${version ? ` ${version}` : ""}`;
@@ -93,9 +104,16 @@ export function VehicleShareSection({
     [vehicleSlug],
   );
 
+  const getResolvedCanonicalUrl = useCallback(() => {
+    if (canonicalPageUrl) {
+      return canonicalPageUrl;
+    }
+    return resolveCanonicalPageUrl(pathname);
+  }, [canonicalPageUrl, pathname]);
+
   const getShareUrl = useCallback(
     (medium: string) => {
-      const resolvedUrl = pageUrl || (typeof window !== "undefined" ? window.location.href.split("#")[0] : "");
+      const resolvedUrl = getResolvedCanonicalUrl();
       if (!resolvedUrl) {
         return "";
       }
@@ -104,8 +122,16 @@ export function VehicleShareSection({
         content: vehicleSlug,
       });
     },
-    [pageUrl, vehicleSlug],
+    [getResolvedCanonicalUrl, vehicleSlug],
   );
+
+  const facebookShareHref = useMemo(() => {
+    const resolvedUrl = getResolvedCanonicalUrl();
+    if (!resolvedUrl) {
+      return "";
+    }
+    return buildFacebookShareUrl(resolvedUrl);
+  }, [getResolvedCanonicalUrl]);
 
   async function copyShareLink() {
     const url = getShareUrl("copy_link");
@@ -136,47 +162,8 @@ export function VehicleShareSection({
     openShareWindow(buildWhatsAppShareUrl(`${shareText} ${url}`), "whatsapp");
   }
 
-  function handleFacebookShare() {
-    const url = getShareUrl("facebook");
-    if (!url) {
-      return;
-    }
-    const fbUrl = buildFacebookShareUrl(url);
-    trackShare("facebook");
-
-    const isMobile =
-      typeof navigator !== "undefined" &&
-      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      window.location.assign(fbUrl);
-      return;
-    }
-
-    openShareWindow(fbUrl, "facebook");
-  }
-
-  const channels: ShareChannelConfig[] = [
-    { id: "whatsapp", label: "WhatsApp", icon: <WhatsAppIcon className="size-4" /> },
-    { id: "facebook", label: "Facebook", icon: <FacebookIcon className="size-4" /> },
-    { id: "copy_link", label: "Copiar link", icon: <Copy className="size-4" aria-hidden /> },
-  ];
-
-  function handleChannelClick(channel: ShareChannelConfig) {
-    switch (channel.id) {
-      case "whatsapp":
-        handleWhatsAppShare();
-        break;
-      case "facebook":
-        handleFacebookShare();
-        break;
-      case "copy_link":
-        void copyShareLink();
-        break;
-      default:
-        break;
-    }
-  }
+  const shareButtonClassName =
+    "inline-flex size-9 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_14%,transparent)] bg-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_96%,white)] text-[var(--storefront-fg,var(--dealer-fg))]/70 transition hover:border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_28%,transparent)] hover:text-[var(--primary-color,var(--dealer-primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color,var(--dealer-primary))] focus-visible:ring-offset-1";
 
   return (
     <div className={cn("border-t border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_12%,transparent)] pt-4", className)}>
@@ -185,18 +172,49 @@ export function VehicleShareSection({
       </p>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {channels.map((channel) => (
-          <button
-            key={channel.id}
-            type="button"
-            title={channel.label}
-            aria-label={`Compartilhar no ${channel.label}`}
-            onClick={() => handleChannelClick(channel)}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_14%,transparent)] bg-[color-mix(in_srgb,var(--storefront-bg,var(--dealer-bg))_96%,white)] text-[var(--storefront-fg,var(--dealer-fg))]/70 transition hover:border-[color-mix(in_srgb,var(--primary-color,var(--dealer-primary))_28%,transparent)] hover:text-[var(--primary-color,var(--dealer-primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color,var(--dealer-primary))] focus-visible:ring-offset-1"
+        <button
+          type="button"
+          title="WhatsApp"
+          aria-label="Compartilhar no WhatsApp"
+          onClick={handleWhatsAppShare}
+          className={shareButtonClassName}
+        >
+          <WhatsAppIcon className="size-4" />
+        </button>
+
+        {facebookShareHref ? (
+          <a
+            href={facebookShareHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Facebook"
+            aria-label="Compartilhar no Facebook"
+            onClick={() => trackShare("facebook")}
+            className={shareButtonClassName}
           >
-            {channel.icon}
+            <FacebookIcon className="size-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            title="Facebook"
+            aria-label="Compartilhar no Facebook"
+            disabled
+            className={cn(shareButtonClassName, "pointer-events-none opacity-50")}
+          >
+            <FacebookIcon className="size-4" />
           </button>
-        ))}
+        )}
+
+        <button
+          type="button"
+          title="Copiar link"
+          aria-label="Copiar link"
+          onClick={() => void copyShareLink()}
+          className={shareButtonClassName}
+        >
+          <Copy className="size-4" aria-hidden />
+        </button>
       </div>
 
       {copyFeedback ? (

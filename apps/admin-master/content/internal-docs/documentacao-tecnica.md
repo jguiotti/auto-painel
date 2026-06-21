@@ -481,6 +481,21 @@ Matriz QA integrações: seções em `historico-tecnico.md` (Fase 8 CRM, Meta, c
 
 ---
 
+## Security Advisor — hardening Supabase (2026-06-21)
+
+| Item | Ação | Migração / operação |
+| --- | --- | --- |
+| Bucket `social-carousel-artifacts` | Removida policy `social_carousel_artifacts_public_read` (listagem de objetos); leitura continua por URL pública direta | `20260621103000_security_advisor_hardening_v2.sql` |
+| RPCs sales / painel / health | `REVOKE EXECUTE FROM anon` em funções internas (`approve_sales_commission_ledger_entries`, `generate_*`, `mark_payout_batch_paid`, `list_dealership_employees_for_panel`, etc.) | mesma migração |
+| Trigger `enforce_internal_dealership_protection` | Revogado EXECUTE REST (`anon`/`authenticated`) — só dispara via trigger em `dealerships` | mesma migração |
+| `record_platform_health_ping` | Apenas `service_role` (edge `platform-health-ping` + cron) | mesma migração |
+| RPCs vitrine/marketing públicas | **Mantidas** `anon` + `SECURITY DEFINER` (`get_public_vehicle_by_slug`, `list_public_vehicles_filtered`, `create_public_storefront_lead`, …) — vitrine depende delas; advisor pode continuar alertando até migração futura INVOKER+RLS | documentado como exceção aceita |
+| Auth leaked passwords | Habilitar **Leaked password protection** (HaveIBeenPwned) em Dashboard → Authentication → Providers → Email | operação manual |
+
+| Share vitrine Facebook | URL canônica sem UTM + `<a target="_blank">` nativo | `vehicle-share-section.tsx`, `build-share-url-with-utm.ts` |
+
+---
+
 ## Documentação complementar
 
 | Arquivo | Conteúdo |

@@ -26,8 +26,24 @@ export function buildWhatsAppShareUrl(text: string): string {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
+/**
+ * Canonical page URL for social crawlers (no query/hash).
+ * Facebook sharer rejects or mishandles long UTM query strings.
+ */
+export function buildCanonicalSharePageUrl(pageUrl: string): string {
+  try {
+    const url = new URL(pageUrl);
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return pageUrl.split("#")[0]?.split("?")[0] ?? pageUrl;
+  }
+}
+
 export function buildFacebookShareUrl(pageUrl: string): string {
-  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+  const canonical = buildCanonicalSharePageUrl(pageUrl);
+  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`;
 }
 
 export function buildTwitterShareUrl(pageUrl: string, text: string): string {
