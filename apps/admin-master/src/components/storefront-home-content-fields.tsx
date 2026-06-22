@@ -12,7 +12,7 @@ import {
 } from "@autopainel/shared/lib/dealership/storefront-home-copy";
 import type { StorefrontLayoutTemplateId } from "@autopainel/shared/types";
 import { Input, Label, Textarea } from "@autopainel/shared/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { DealershipBrandUpload } from "./dealership-brand-upload";
 
@@ -54,7 +54,11 @@ function mergeSidecardItems(current: string[] | undefined): string[] {
   return base.map((_, index) => current[index] ?? "");
 }
 
-export function StorefrontHomeContentFields({
+function serializeStorefrontHomeConfigKey(config: StorefrontHomeConfig | null): string {
+  return JSON.stringify(config?.by_layout ?? null);
+}
+
+function StorefrontHomeContentFieldsInner({
   layoutId,
   initialConfig,
   dealershipName,
@@ -64,10 +68,6 @@ export function StorefrontHomeContentFields({
   const [byLayout, setByLayout] = useState<
     Partial<Record<StorefrontHomeLayoutKey, StorefrontHomeLayoutCopy>>
   >(initialConfig?.by_layout ?? {});
-
-  useEffect(() => {
-    setByLayout(initialConfig?.by_layout ?? {});
-  }, [initialConfig]);
 
   const layoutDefaults = useMemo(
     () =>
@@ -352,6 +352,15 @@ export function StorefrontHomeContentFields({
         </div>
       ) : null}
     </div>
+  );
+}
+
+export function StorefrontHomeContentFields(props: StorefrontHomeContentFieldsProps) {
+  return (
+    <StorefrontHomeContentFieldsInner
+      key={serializeStorefrontHomeConfigKey(props.initialConfig)}
+      {...props}
+    />
   );
 }
 

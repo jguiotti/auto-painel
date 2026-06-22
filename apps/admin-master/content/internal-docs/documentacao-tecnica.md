@@ -346,6 +346,7 @@ Fase 3 (pendente): LOJ-04 exclusão perfil, e-mail de novo lead whitelabel.
 | --- | --- |
 | Edge e-mail lead | `supabase/functions/notify-dealership-new-lead`, cron `.github/workflows/lead-notification-dispatch.yml`, `scripts/dispatch-lead-notification-worker.mjs` |
 | Convite equipe (painel) | `packages/shared/src/lib/auth/invite-dealership-collaborator.ts`, `apps/dealership-panel/src/app/painel/equipe/actions.ts` |
+| Equipe — editar colaborador | `EmployeeEditDialog` + `FormDialogShell` (shared); foto via `FileUploadField` → upload `dealership-branding/employees/` (`upload-employee-photo.ts`) |
 | Logo dual | `theme_config.logo_light_url` (marca clara) / `logo_dark_url` (marca escura), admin `dealership-form.tsx`, `resolveDealershipLogoForLightBackground` / `ForDarkBackground` |
 
 Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.

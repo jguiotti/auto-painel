@@ -100,6 +100,7 @@ export {
 export { ScrollArea, ScrollBar } from "./scroll-area";
 export { Stepper, type StepperProps, type StepperStep } from "./stepper";
 export { FileUploadField, type FileUploadFieldProps } from "./file-upload-field";
+export { FormDialogShell, type FormDialogShellProps } from "./form-dialog-shell";
 export { StorefrontLayoutPreview, type StorefrontLayoutPreviewProps } from "./storefront-layout-preview";
 export {
   StorefrontLayoutPicker,

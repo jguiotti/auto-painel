@@ -18,6 +18,8 @@ export interface FileUploadFieldProps {
   className?: string;
   inputClassName?: string;
   previewClassName?: string;
+  /** Applied to the preview image (e.g. rounded avatar). */
+  previewImageClassName?: string;
 }
 
 export function FileUploadField({
@@ -31,6 +33,7 @@ export function FileUploadField({
   className,
   inputClassName,
   previewClassName,
+  previewImageClassName,
 }: FileUploadFieldProps) {
   const inputId = useId();
   const [preview, setPreview] = useState<string | null>(null);
@@ -102,7 +105,10 @@ export function FileUploadField({
           <img
             src={displaySrc}
             alt=""
-            className="mx-auto max-h-28 max-w-full object-contain"
+            className={cn(
+              "mx-auto max-h-28 max-w-full object-contain",
+              previewImageClassName,
+            )}
           />
         </div>
       ) : null}

@@ -41,7 +41,6 @@ export default async function VehicleOpenGraphImage({ params }: VehicleOpenGraph
             backgroundColor: "#0f172a",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={heroImage}
             alt=""

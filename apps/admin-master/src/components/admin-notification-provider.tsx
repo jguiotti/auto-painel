@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -107,23 +106,31 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
   const { itemsWithRead, unreadCount, markAllRead, handleItemActivate } =
     useNotificationReadState(READ_SCOPE, items);
 
-  const refreshNotifications = useCallback(async () => {
-    const supabase = createSupabaseBrowserClient();
-    const nextItems = await fetchPlatformNotifications(supabase);
-    setItems(nextItems);
-  }, []);
-
   useEffect(() => {
-    void refreshNotifications();
+    let cancelled = false;
+
+    async function loadNotifications() {
+      const supabase = createSupabaseBrowserClient();
+      const nextItems = await fetchPlatformNotifications(supabase);
+      if (!cancelled) {
+        setItems(nextItems);
+      }
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
 
     const intervalId = window.setInterval(() => {
-      void refreshNotifications();
+      void loadNotifications();
     }, REFRESH_INTERVAL_MS);
 
     return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
       window.clearInterval(intervalId);
     };
-  }, [refreshNotifications]);
+  }, []);
 
   const contextValue = useMemo(
     () => ({

@@ -7,6 +7,7 @@ import { inviteDealershipCollaborator } from "@autopainel/shared/lib/auth/invite
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
+import { uploadEmployeePhoto } from "@/lib/team/upload-employee-photo";
 
 export interface TeamActionResult {
   error?: string;
@@ -48,13 +49,34 @@ export async function upsertEmployeeProfileAction(
 
   const address = parseHqAddressFromForm(formData, "emp");
 
+  let photoUrl = String(formData.get("photo_url") ?? "").trim() || null;
+  const photoFile = formData.get("photo_file");
+  if (photoFile instanceof File && photoFile.size > 0) {
+    let admin;
+    try {
+      admin = createSupabaseServiceRoleClient();
+    } catch {
+      return { error: "Não foi possível enviar a foto. Tente novamente em instantes." };
+    }
+
+    const uploaded = await uploadEmployeePhoto(admin, {
+      dealershipId,
+      userId,
+      file: photoFile,
+    });
+    if ("error" in uploaded) {
+      return { error: uploaded.error };
+    }
+    photoUrl = uploaded.url;
+  }
+
   const { error } = await supabase.rpc("upsert_dealership_employee_profile", {
     p_user_id: userId,
     p_full_name: fullName,
     p_phone: String(formData.get("phone") ?? "").trim() || null,
     p_cpf: String(formData.get("cpf") ?? "").trim() || null,
     p_rg: String(formData.get("rg") ?? "").trim() || null,
-    p_photo_url: String(formData.get("photo_url") ?? "").trim() || null,
+    p_photo_url: photoUrl,
     p_address: address,
     p_base_salary: Number.isFinite(baseSalary) ? baseSalary : null,
     p_commission_percent: Number.isFinite(commissionPercent)

@@ -71,9 +71,15 @@ export function PanelOnboardingWizard() {
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
-    if (!hasOnboardingCookie()) {
-      setOpen(true);
-    }
+    const timeoutId = window.setTimeout(() => {
+      if (!hasOnboardingCookie()) {
+        setOpen(true);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   function finishWizard() {

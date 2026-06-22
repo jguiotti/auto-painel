@@ -1,7 +1,7 @@
 "use client";
 
 import { Inbox } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   LEAD_PIPELINE_STATUSES,
@@ -39,17 +39,14 @@ export function LeadInbox({
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "contact" | "simulation">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [detailLead, setDetailLead] = useState<LeadListItem | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!detailLead) {
-      return;
+  const detailLead = useMemo(() => {
+    if (!selectedLeadId) {
+      return null;
     }
-    const updated = leads.find((lead) => lead.id === detailLead.id);
-    if (updated) {
-      setDetailLead(updated);
-    }
-  }, [leads, detailLead?.id]);
+    return leads.find((lead) => lead.id === selectedLeadId) ?? null;
+  }, [leads, selectedLeadId]);
 
   const filteredLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -160,15 +157,15 @@ export function LeadInbox({
         viewerRole={viewerRole}
         canManageAssignments={canManageAssignments}
         assignees={assignees}
-        onOpenDetail={setDetailLead}
+        onOpenDetail={(lead) => setSelectedLeadId(lead.id)}
       />
 
       <LeadDetailSheet
         lead={detailLead}
-        open={detailLead !== null}
+        open={selectedLeadId !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setDetailLead(null);
+            setSelectedLeadId(null);
           }
         }}
         soldVehicles={soldVehicles}

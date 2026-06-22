@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import {
   LEAD_LOSS_REASON_CODES,
@@ -61,7 +61,82 @@ interface LeadDetailSheetProps {
   canManageAssignments: boolean;
 }
 
-export function LeadDetailSheet({
+function leadDetailSyncKey(lead: LeadListItem): string {
+  return [
+    lead.id,
+    lead.status,
+    lead.loss_reason_code ?? "",
+    lead.loss_reason_note ?? "",
+    lead.client_name,
+    lead.phone,
+  ].join(":");
+}
+
+function LeadLossReasonEditor({
+  lead,
+  pending,
+  onSave,
+}: {
+  lead: LeadListItem;
+  pending: boolean;
+  onSave: (params: { lossReasonCode: string; lossReasonNote: string }) => void;
+}) {
+  const [lossReasonCode, setLossReasonCode] = useState(lead.loss_reason_code ?? "");
+  const [lossReasonNote, setLossReasonNote] = useState(lead.loss_reason_note ?? "");
+
+  if (lead.status !== "lost" && !lossReasonCode) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+      <div className="space-y-2">
+        <Label htmlFor={`lead-loss-reason-${lead.id}`}>Motivo da perda</Label>
+        <Select
+          value={lossReasonCode || "__none__"}
+          onValueChange={(value) => setLossReasonCode(value === "__none__" ? "" : value)}
+          disabled={pending}
+        >
+          <SelectTrigger id={`lead-loss-reason-${lead.id}`}>
+            <SelectValue placeholder="Selecione o motivo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">— Selecione —</SelectItem>
+            {LEAD_LOSS_REASON_CODES.map((code) => (
+              <SelectItem key={code} value={code}>
+                {LEAD_LOSS_REASON_LABELS[code]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {lossReasonCode === "other" ? (
+        <div className="space-y-2">
+          <Label htmlFor={`lead-loss-note-${lead.id}`}>Detalhe do motivo</Label>
+          <Textarea
+            id={`lead-loss-note-${lead.id}`}
+            value={lossReasonNote}
+            onChange={(event) => setLossReasonNote(event.target.value)}
+            placeholder="Descreva o motivo da perda…"
+            rows={2}
+            disabled={pending}
+          />
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={pending || !lossReasonCode}
+        onClick={() => onSave({ lossReasonCode, lossReasonNote })}
+      >
+        Salvar motivo da perda
+      </Button>
+    </div>
+  );
+}
+
+function LeadDetailSheetBody({
   lead,
   open,
   onOpenChange,
@@ -69,29 +144,11 @@ export function LeadDetailSheet({
   soldVehicles,
   viewerRole,
   canManageAssignments,
-}: LeadDetailSheetProps) {
+}: Omit<LeadDetailSheetProps, "lead"> & { lead: LeadListItem }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [noteBody, setNoteBody] = useState("");
-  const [lossReasonCode, setLossReasonCode] = useState<string>(
-    lead?.loss_reason_code ?? "",
-  );
-  const [lossReasonNote, setLossReasonNote] = useState<string>(
-    lead?.loss_reason_note ?? "",
-  );
-
-  useEffect(() => {
-    if (!lead) {
-      return;
-    }
-    setLossReasonCode(lead.loss_reason_code ?? "");
-    setLossReasonNote(lead.loss_reason_note ?? "");
-  }, [lead?.id, lead?.loss_reason_code, lead?.loss_reason_note]);
-
-  if (!lead) {
-    return null;
-  }
 
   const vehicleLabel = lead.vehicles
     ? `${lead.vehicles.brand} ${lead.vehicles.model}`
@@ -110,11 +167,14 @@ export function LeadDetailSheet({
     setError(null);
     startTransition(async () => {
       const payload = { ...patch };
-      if (payload.status === "lost" || lead!.status === "lost") {
-        payload.lossReasonCode = lossReasonCode || null;
-        payload.lossReasonNote = lossReasonNote || null;
+      if (
+        (payload.status === "lost" || lead.status === "lost") &&
+        payload.lossReasonCode === undefined
+      ) {
+        payload.lossReasonCode = lead.loss_reason_code ?? null;
+        payload.lossReasonNote = lead.loss_reason_note ?? null;
       }
-      const res = await updateLeadPipelineAction(lead!.id, payload);
+      const res = await updateLeadPipelineAction(lead.id, payload);
       if (res.error) {
         setError(res.error);
         return;
@@ -197,8 +257,8 @@ export function LeadDetailSheet({
                 if (next === "lost") {
                   runUpdate({
                     status: next,
-                    lossReasonCode: lossReasonCode || lead.loss_reason_code,
-                    lossReasonNote: lossReasonNote || lead.loss_reason_note,
+                    lossReasonCode: lead.loss_reason_code,
+                    lossReasonNote: lead.loss_reason_note,
                   });
                   return;
                 }
@@ -219,60 +279,18 @@ export function LeadDetailSheet({
             </Select>
           </div>
 
-          {lead.status === "lost" || lossReasonCode ? (
-            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
-              <div className="space-y-2">
-                <Label htmlFor={`lead-loss-reason-${lead.id}`}>Motivo da perda</Label>
-                <Select
-                  value={lossReasonCode || "__none__"}
-                  onValueChange={(value) =>
-                    setLossReasonCode(value === "__none__" ? "" : value)
-                  }
-                  disabled={pending}
-                >
-                  <SelectTrigger id={`lead-loss-reason-${lead.id}`}>
-                    <SelectValue placeholder="Selecione o motivo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">— Selecione —</SelectItem>
-                    {LEAD_LOSS_REASON_CODES.map((code) => (
-                      <SelectItem key={code} value={code}>
-                        {LEAD_LOSS_REASON_LABELS[code]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {lossReasonCode === "other" ? (
-                <div className="space-y-2">
-                  <Label htmlFor={`lead-loss-note-${lead.id}`}>Detalhe do motivo</Label>
-                  <Textarea
-                    id={`lead-loss-note-${lead.id}`}
-                    value={lossReasonNote}
-                    onChange={(event) => setLossReasonNote(event.target.value)}
-                    placeholder="Descreva o motivo da perda…"
-                    rows={2}
-                    disabled={pending}
-                  />
-                </div>
-              ) : null}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={pending || !lossReasonCode}
-                onClick={() =>
-                  runUpdate({
-                    status: "lost",
-                    lossReasonCode,
-                    lossReasonNote,
-                  })
-                }
-              >
-                Salvar motivo da perda
-              </Button>
-            </div>
-          ) : null}
+          <LeadLossReasonEditor
+            key={`${lead.id}:${lead.loss_reason_code ?? ""}:${lead.loss_reason_note ?? ""}`}
+            lead={lead}
+            pending={pending}
+            onSave={({ lossReasonCode, lossReasonNote }) =>
+              runUpdate({
+                status: "lost",
+                lossReasonCode,
+                lossReasonNote,
+              })
+            }
+          />
 
           <div className="space-y-2">
             <Label htmlFor={`lead-follow-up-${lead.id}`}>Próximo follow-up</Label>
@@ -418,5 +436,36 @@ export function LeadDetailSheet({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+export function LeadDetailSheet({
+  lead,
+  open,
+  onOpenChange,
+  inventoryVehicles,
+  soldVehicles,
+  viewerRole,
+  canManageAssignments,
+}: LeadDetailSheetProps) {
+  if (!lead) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-lg" />
+      </Sheet>
+    );
+  }
+
+  return (
+    <LeadDetailSheetBody
+      key={leadDetailSyncKey(lead)}
+      lead={lead}
+      open={open}
+      onOpenChange={onOpenChange}
+      inventoryVehicles={inventoryVehicles}
+      soldVehicles={soldVehicles}
+      viewerRole={viewerRole}
+      canManageAssignments={canManageAssignments}
+    />
   );
 }

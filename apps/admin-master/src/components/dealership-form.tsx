@@ -25,7 +25,7 @@ import { cn } from "@autopainel/shared/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import type { CommercialLeadDealershipPrefill } from "@/lib/data/platform-commercial-leads-shared";
 import { BrazilianAddressFields as BrazilianAddressFieldsForm } from "@/components/brazilian-address-fields";
@@ -386,13 +386,8 @@ export function DealershipForm({
     defaults.layout_id,
   );
   const [activeTab, setActiveTab] = useState<DealershipEditTab>("geral");
-  const [selectedPlanId, setSelectedPlanId] = useState(defaults.pricing_plan_id);
-
-  useEffect(() => {
-    if (defaults.pricing_plan_id) {
-      setSelectedPlanId(defaults.pricing_plan_id);
-    }
-  }, [defaults.pricing_plan_id]);
+  const [selectedPlanIdOverride, setSelectedPlanIdOverride] = useState<string | null>(null);
+  const selectedPlanId = selectedPlanIdOverride ?? defaults.pricing_plan_id ?? "";
 
   const planNameById = useMemo(() => {
     const map: Record<string, string> = {};
@@ -616,7 +611,7 @@ export function DealershipForm({
                   className="flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   defaultValue={defaults.pricing_plan_id}
                   disabled={pending}
-                  onChange={(event) => setSelectedPlanId(event.target.value)}
+                  onChange={(event) => setSelectedPlanIdOverride(event.target.value)}
                 >
                   <option value="" disabled>
                     Selecione um plano
@@ -882,7 +877,7 @@ export function DealershipForm({
                 className="flex h-10 w-full max-w-xl rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 defaultValue={defaults.pricing_plan_id}
                 disabled={pending}
-                onChange={(event) => setSelectedPlanId(event.target.value)}
+                onChange={(event) => setSelectedPlanIdOverride(event.target.value)}
               >
                 <option value="" disabled>
                   Selecione um plano

@@ -64,15 +64,10 @@ export function VehicleShareSection({
   className,
 }: VehicleShareSectionProps) {
   const pathname = usePathname();
-  const [canonicalPageUrl, setCanonicalPageUrl] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   const isIosDevice = isIosShareDevice();
-
-  useEffect(() => {
-    setCanonicalPageUrl(resolveCanonicalPageUrl(pathname));
-  }, [pathname]);
 
   const vehicleTitle = useMemo(() => {
     const base = `${brand} ${model}${version ? ` ${version}` : ""}`;
@@ -105,11 +100,8 @@ export function VehicleShareSection({
   );
 
   const getResolvedCanonicalUrl = useCallback(() => {
-    if (canonicalPageUrl) {
-      return canonicalPageUrl;
-    }
     return resolveCanonicalPageUrl(pathname);
-  }, [canonicalPageUrl, pathname]);
+  }, [pathname]);
 
   const getShareUrl = useCallback(
     (medium: string) => {

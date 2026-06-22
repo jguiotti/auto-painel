@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 interface DealershipBrandImageProps {
   src?: string | null;
@@ -25,24 +25,18 @@ function dedupeUrls(urls: Array<string | null | undefined>): string[] {
   return out;
 }
 
-export function DealershipBrandImage({
-  src,
-  fallbackSrc,
-  candidateUrls,
+function DealershipBrandImageInner({
+  candidates,
   alt,
   className,
   fallback = null,
-}: DealershipBrandImageProps) {
-  const candidates = useMemo(
-    () => dedupeUrls([...(candidateUrls ?? []), src, fallbackSrc]),
-    [candidateUrls, src, fallbackSrc],
-  );
+}: {
+  candidates: string[];
+  alt: string;
+  className?: string;
+  fallback?: ReactNode;
+}) {
   const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [candidates]);
-
   const currentSrc = index >= 0 ? (candidates[index] ?? null) : null;
 
   function handleError() {
@@ -64,6 +58,30 @@ export function DealershipBrandImage({
       alt={alt}
       className={className}
       onError={handleError}
+    />
+  );
+}
+
+export function DealershipBrandImage({
+  src,
+  fallbackSrc,
+  candidateUrls,
+  alt,
+  className,
+  fallback = null,
+}: DealershipBrandImageProps) {
+  const candidates = useMemo(
+    () => dedupeUrls([...(candidateUrls ?? []), src, fallbackSrc]),
+    [candidateUrls, src, fallbackSrc],
+  );
+
+  return (
+    <DealershipBrandImageInner
+      key={candidates.join("|")}
+      candidates={candidates}
+      alt={alt}
+      className={className}
+      fallback={fallback}
     />
   );
 }

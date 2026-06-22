@@ -113,15 +113,18 @@ export function SocialMetaIntegrationCard({
   const [disconnecting, setDisconnecting] = useState(false);
   const [inlineFeedback, setInlineFeedback] = useState<string | null>(null);
   const [pagePickerOpen, setPagePickerOpen] = useState(false);
+  const [pagePickerDismissedScope, setPagePickerDismissedScope] = useState<string | null>(
+    null,
+  );
+  const pagePickerScope =
+    status === "page_selection_required" ? "page_selection_required" : "idle";
+  const pagePickerDismissed = pagePickerDismissedScope === pagePickerScope;
   const popupRef = useRef<Window | null>(null);
   const popupWatchRef = useRef<number | null>(null);
   const oauthMessageReceivedRef = useRef(false);
 
-  useEffect(() => {
-    if (status === "page_selection_required") {
-      setPagePickerOpen(true);
-    }
-  }, [status]);
+  const shouldAutoOpenPagePicker =
+    status === "page_selection_required" && !pagePickerDismissed;
 
   useEffect(() => {
     const allowedOrigins = new Set<string>([window.location.origin]);
@@ -446,10 +449,19 @@ export function SocialMetaIntegrationCard({
       </Card>
 
       <MetaPagePickerDialog
-        open={pagePickerOpen && status === "page_selection_required"}
-        onOpenChange={setPagePickerOpen}
+        open={
+          status === "page_selection_required" &&
+          (pagePickerOpen || shouldAutoOpenPagePicker)
+        }
+        onOpenChange={(next) => {
+          setPagePickerOpen(next);
+          if (!next) {
+            setPagePickerDismissedScope(pagePickerScope);
+          }
+        }}
         onCompleted={() => {
           setPagePickerOpen(false);
+          setPagePickerDismissedScope(null);
           setInlineFeedback("Conta conectada com sucesso.");
           router.refresh();
         }}

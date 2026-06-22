@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { BrazilianAddressFields } from "@autopainel/shared/components/brazilian-address-fields";
 import {
@@ -38,7 +38,23 @@ function resolveInitialInterestIds(lead: LeadListItem): string[] {
   return [];
 }
 
-export function LeadProfileSection({
+export function LeadProfileSection(props: LeadProfileSectionProps) {
+  return (
+    <LeadProfileSectionInner
+      key={[
+        props.lead.id,
+        props.lead.client_name,
+        props.lead.phone,
+        props.lead.client_email ?? "",
+        props.lead.vehicle_id ?? "",
+        props.lead.converted_vehicle_id ?? "",
+      ].join(":")}
+      {...props}
+    />
+  );
+}
+
+function LeadProfileSectionInner({
   lead,
   inventoryVehicles,
   disabled,
@@ -70,24 +86,6 @@ export function LeadProfileSection({
     }
     return inventoryVehicles.find((vehicle) => vehicle.id === lead.converted_vehicle_id);
   }, [inventoryVehicles, lead.converted_vehicle_id]);
-
-  useEffect(() => {
-    setClientName(lead.client_name);
-    setPhone(lead.phone);
-    setClientEmail(lead.client_email ?? "");
-    setDocumentValue(formatDocumentValue(lead));
-    setSelectedVehicleIds(resolveInitialInterestIds(lead));
-    setError(null);
-    setSaved(false);
-  }, [
-    lead.id,
-    lead.client_name,
-    lead.phone,
-    lead.client_email,
-    lead.customer,
-    lead.vehicle_id,
-    lead.interest_vehicles,
-  ]);
 
   function toggleVehicle(vehicleId: string, checked: boolean) {
     setSelectedVehicleIds((current) => {
