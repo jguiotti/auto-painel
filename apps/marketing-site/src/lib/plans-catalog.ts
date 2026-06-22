@@ -97,19 +97,19 @@ export const PRICING_PLANS = [
   {
     id: "starter",
     name: "Essencial",
-    tagline: "Presença digital essencial — ideal para até 40 veículos",
+    tagline: "Presença digital essencial — ideal para até 10 veículos",
     priceLabel: "R$ 197/mês",
   },
   {
     id: "business",
     name: "Profissional",
-    tagline: "Recibo de compra/venda e operação média — de 41 a 80 veículos",
+    tagline: "Recibo de compra/venda e operação média — de 11 a 30 veículos",
     priceLabel: "R$ 397/mês",
   },
   {
     id: "enterprise",
     name: "Completo",
-    tagline: "Integrações e escala digital — acima de 80 veículos",
+    tagline: "Integrações e escala digital — acima de 30 veículos",
     priceLabel: "R$ 997/mês",
   },
 ] as const;

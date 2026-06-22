@@ -48,7 +48,7 @@ export const MARKETING_FAQ_ITEMS: MarketingFaqItem[] = [
   {
     question: "Como o estoque influencia o plano?",
     answer:
-      "Usamos o número de veículos ativos como referência: Essencial até 40, Profissional de 41 a 80 e Completo acima de 80. Na demonstração confirmamos a faixa ideal — se o pátio crescer, o plano pode ser ajustado.",
+      "Usamos o número de veículos ativos como referência: Essencial até 10, Profissional de 11 a 30 e Completo acima de 30. Na demonstração confirmamos a faixa ideal — se o pátio crescer, o plano pode ser ajustado.",
   },
   {
     question: "Preciso de agência para manter o site?",

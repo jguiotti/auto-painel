@@ -329,7 +329,7 @@
 | Termo | Definição (uso na UI) |
 | --- | --- |
 | **Trial** | Período gratuito de 30 dias no plano Essencial |
-| **Essencial** | Plano de entrada — até ~40 veículos ativos (faixa confirmada comercialmente) |
+| **Essencial** | Plano de entrada — até ~10 veículos ativos (faixa confirmada comercialmente) |
 | **Adesão** | Envio do formulário público de onboarding (não confundir com «assinatura paga») |
 | **Intake** | Registro interno da adesão (`dealership_onboarding_intakes`) — mostrar ao operador como «Protocolo» ou «ID da adesão» |
 | **Subdomínio / slug** | Primeira parte da URL — `minhaloja.autopainel.com.br` |

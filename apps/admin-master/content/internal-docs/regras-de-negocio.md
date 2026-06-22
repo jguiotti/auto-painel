@@ -301,7 +301,7 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | --- | --- |
 | Loja inativa | Bloqueia **painel e vitrine** até pagamento confirmado |
 | Preços públicos | R$ 197 / 397 / 997 (Essencial / Profissional / Completo); setup único **R$ 497** |
-| Faixas de estoque | Essencial até 40 · Profissional 41–80 · Completo 81+ veículos ativos |
+| Faixas de estoque | Essencial até 10 · Profissional 11–30 · Completo 31+ veículos ativos |
 | CRM B2B | Módulo **`/painel/leads-comerciais`** |
 | Auto-provision | Sim — Cloudflare + Vercel após criar loja no admin |
 | Guiotti + Demo | Sempre ativas; `billing_exempt`; não inativar/excluir |

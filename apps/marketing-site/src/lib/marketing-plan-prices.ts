@@ -13,9 +13,9 @@ export const MARKETING_PUBLIC_SETUP_FEE_BRL = 497;
  * Final plan is confirmed at proposal time based on the dealership's stock volume.
  */
 export const MARKETING_PLAN_STOCK_BANDS: Record<string, string> = {
-  starter: "Até 40 veículos",
-  business: "41 a 80 veículos",
-  enterprise: "Acima de 80 veículos",
+  starter: "Até 10 veículos",
+  business: "11 a 30 veículos",
+  enterprise: "Acima de 30 veículos",
 };
 
 export const MARKETING_PUBLIC_PLAN_NAMES: Record<string, string> = {
