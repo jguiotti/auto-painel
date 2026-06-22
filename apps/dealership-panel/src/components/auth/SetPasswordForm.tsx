@@ -1,30 +1,73 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-
 import { Button, Label, PasswordInput } from "@autopainel/shared/ui";
 
-export function SetPasswordForm() {
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+export type SetPasswordMotivo = "primeiro-acesso" | "recuperacao";
+
+interface SetPasswordFormProps {
+  motivo?: SetPasswordMotivo;
+  afterSavePath?: string;
+}
+
+export function SetPasswordForm({
+  motivo = "recuperacao",
+  afterSavePath = "/painel",
+}: SetPasswordFormProps) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [sessionState, setSessionState] = useState<"loading" | "ready" | "missing">(
+    "loading",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
     const supabase = createSupabaseBrowserClient();
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace("/login?aviso=definir-senha");
+
+    void (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (cancelled) {
         return;
       }
-      setIsReady(true);
-    });
-  }, [router]);
+      if (userData.user) {
+        setSessionState("ready");
+        return;
+      }
+
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!cancelled && session?.user) {
+          setSessionState("ready");
+        }
+      });
+      unsubscribe = () => listener.subscription.unsubscribe();
+
+      window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+        void supabase.auth.getUser().then(({ data }) => {
+          if (cancelled) {
+            return;
+          }
+          setSessionState(data.user ? "ready" : "missing");
+        });
+      }, 400);
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,19 +92,43 @@ export function SetPasswordForm() {
       return;
     }
 
-    router.replace("/painel");
+    router.replace(afterSavePath);
     router.refresh();
     setIsSubmitting(false);
   }
 
-  if (!isReady) {
-    return <div className="text-sm text-muted-foreground">Carregando…</div>;
+  if (sessionState === "loading") {
+    return <div className="text-sm text-muted-foreground">Validando seu convite…</div>;
   }
+
+  if (sessionState === "missing") {
+    return (
+      <div className="space-y-4">
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {motivo === "primeiro-acesso"
+            ? "Este link de convite expirou ou já foi usado. Solicite um novo convite à loja ou use recuperação de senha com o mesmo e-mail."
+            : "Este link expirou ou já foi usado. Solicite um novo e-mail em recuperação de senha."}
+        </p>
+        <Button variant="outline" className="w-full" asChild>
+          <Link href="/recuperar-senha">Solicitar novo link</Link>
+        </Button>
+        <Button variant="link" className="h-auto w-full p-0 text-sm" asChild>
+          <Link href="/login">Ir para o login</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const primaryLabel = motivo === "primeiro-acesso" ? "Criar senha" : "Nova senha";
+  const confirmLabel =
+    motivo === "primeiro-acesso" ? "Confirmar senha" : "Confirmar nova senha";
+  const submitLabel =
+    motivo === "primeiro-acesso" ? "Criar senha e entrar" : "Salvar e entrar";
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="np1">Nova senha</Label>
+        <Label htmlFor="np1">{primaryLabel}</Label>
         <PasswordInput
           id="np1"
           name="password"
@@ -74,7 +141,7 @@ export function SetPasswordForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="np2">Confirmar senha</Label>
+        <Label htmlFor="np2">{confirmLabel}</Label>
         <PasswordInput
           id="np2"
           name="password2"
@@ -95,7 +162,7 @@ export function SetPasswordForm() {
         </p>
       ) : null}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando…" : "Salvar e entrar"}
+        {isSubmitting ? "Salvando…" : submitLabel}
       </Button>
     </form>
   );

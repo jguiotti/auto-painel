@@ -80,6 +80,7 @@ async function trySendDealershipWelcomeEmail(
     role: "owner" | "manager" | "seller";
     dealershipId: string;
     dealershipSlug: string;
+    isExistingAuthUser: boolean;
   },
 ): Promise<boolean> {
   const result = await sendDealershipWelcomeEmail(supabase, {
@@ -88,6 +89,7 @@ async function trySendDealershipWelcomeEmail(
     role: params.role,
     dealershipId: params.dealershipId,
     dealershipSlug: params.dealershipSlug,
+    isExistingAuthUser: params.isExistingAuthUser,
   });
   return result.ok;
 }
@@ -225,6 +227,7 @@ export async function inviteDealershipCollaboratorAction(
     role: roleRaw,
     dealershipId,
     dealershipSlug,
+    isExistingAuthUser: linkedExistingUser,
   });
 
   REVALIDATE.forEach((p) => revalidatePath(p));

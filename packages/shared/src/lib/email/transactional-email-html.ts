@@ -124,7 +124,7 @@ export function buildDealershipWelcomeEmailHtml(params: {
   const bodyHtml = `
     <p style="margin:0 0 16px;">Olá, ${name}!</p>
     <p style="margin:0 0 16px;">Você foi convidado(a) para acessar o painel da <strong>${store}</strong> como <strong>${roleLabel}</strong>.</p>
-    ${buildCtaButton("Ativar meu acesso", params.actionLink, params.primaryColor)}
+    ${buildCtaButton("Criar minha senha", params.actionLink, params.primaryColor)}
     <p style="margin:0 0 12px;">No painel você pode gerenciar estoque, leads e integrações conforme seu perfil de acesso.</p>
     <p style="margin:0 0 8px;font-size:13px;color:#71717a;">Painel: ${escapeHtml(params.panelUrl)}</p>
     <p style="margin:0;font-size:13px;color:#71717a;">Este link expira em 1 hora. Se você não esperava este convite, ignore este e-mail.</p>

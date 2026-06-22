@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { resolveDealershipPanelAuthRedirectOrigin } from "../auth/resolve-auth-redirect-origins";
+import { generateAuthEmailActionLink } from "../auth/generate-auth-action-link";
 import { loadDealershipEmailBrand } from "./dealership-email-brand";
-import { generateAuthRecoveryActionLink } from "./generate-auth-action-link";
 import { sendDealershipTransactionalEmail } from "./send-dealership-transactional-email";
 
 export interface SendDealershipWelcomeEmailParams {
@@ -11,6 +11,8 @@ export interface SendDealershipWelcomeEmailParams {
   role: "owner" | "manager" | "seller";
   dealershipId: string;
   dealershipSlug: string;
+  /** When true, sends recovery link instead of invite (user already had Auth account). */
+  isExistingAuthUser?: boolean;
 }
 
 /**
@@ -26,9 +28,12 @@ export async function sendDealershipWelcomeEmail(
   }
 
   const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent("/definir-senha")}`;
-  const linkResult = await generateAuthRecoveryActionLink(supabase, {
+  const linkType = params.isExistingAuthUser ? "recovery" : "invite";
+  const linkResult = await generateAuthEmailActionLink(supabase, {
     email: params.email,
     redirectTo,
+    linkType,
+    motivo: params.isExistingAuthUser ? "recuperacao" : "primeiro-acesso",
   });
 
   if (!linkResult.ok) {
@@ -72,9 +77,11 @@ export async function sendDealershipPasswordRecoveryEmail(
   },
 ): Promise<{ ok: true } | { ok: false; message: string; skipped?: boolean }> {
   const redirectTo = `${params.redirectOrigin.replace(/\/$/, "")}/auth/confirm?next=${encodeURIComponent("/definir-senha")}`;
-  const linkResult = await generateAuthRecoveryActionLink(supabase, {
+  const linkResult = await generateAuthEmailActionLink(supabase, {
     email: params.email,
     redirectTo,
+    linkType: "recovery",
+    motivo: "recuperacao",
   });
 
   if (!linkResult.ok) {

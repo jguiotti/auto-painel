@@ -10,7 +10,10 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
-import { AdminSetPasswordForm } from "@/components/auth/admin-set-password-form";
+import {
+  AdminSetPasswordForm,
+  type AdminSetPasswordMotivo,
+} from "@/components/auth/admin-set-password-form";
 import { LOGO_HORIZONTAL_SRC } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -18,7 +21,20 @@ export const metadata: Metadata = {
   description: "Defina sua senha de acesso ao Admin AutoPainel.",
 };
 
-export default function AdminSetPasswordPage() {
+interface AdminSetPasswordPageProps {
+  searchParams: Promise<{ motivo?: string }>;
+}
+
+function resolveMotivo(raw: string | undefined): AdminSetPasswordMotivo {
+  return raw === "primeiro-acesso" ? "primeiro-acesso" : "recuperacao";
+}
+
+export default async function AdminSetPasswordPage({
+  searchParams,
+}: AdminSetPasswordPageProps) {
+  const sp = await searchParams;
+  const motivo = resolveMotivo(sp.motivo);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 px-4 py-10">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
@@ -30,13 +46,17 @@ export default function AdminSetPasswordPage() {
       </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Definir nova senha</CardTitle>
+          <CardTitle className="text-2xl">
+            {motivo === "primeiro-acesso" ? "Crie sua senha de acesso" : "Definir nova senha"}
+          </CardTitle>
           <CardDescription>
-            Escolha uma senha forte para acessar o painel central da AutoPainel.
+            {motivo === "primeiro-acesso"
+              ? "Este é o seu primeiro acesso ao Admin AutoPainel. Escolha uma senha forte para entrar."
+              : "Escolha uma senha forte para acessar o painel central da AutoPainel."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AdminSetPasswordForm />
+          <AdminSetPasswordForm motivo={motivo} />
           <p className="mt-6 text-center">
             <Button variant="link" className="h-auto p-0 text-sm" asChild>
               <Link href="/login">Ir para o login</Link>

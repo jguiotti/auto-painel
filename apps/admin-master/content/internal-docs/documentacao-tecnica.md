@@ -310,7 +310,7 @@ Setup Resend + Supabase SMTP/templates/redirect URLs: [`EMAIL_RESEND_SETUP.md`](
 | **ADM-02** | Recuperar senha admin | AutoPainel (logo color) | `apps/admin-master/src/actions/auth-recovery.ts` |
 | **TRIAL-01** | Onboarding trial marketing | AutoPainel | `apps/marketing-site/src/lib/email/send-trial-onboarding-email.ts` |
 
-Link Auth: `generateAuthRecoveryActionLink` (`auth.admin.generateLink` type `recovery`) — **não** dispara SMTP Supabase.
+Link Auth: `generateAuthEmailActionLink` → URL direta `/auth/confirm?token_hash=…&type=invite|recovery` + `verifyOtp`/`exchangeCodeForSession` em `handleAuthConfirmRequest` — **não** usa `action_link` Supabase (evita cair no login sem sessão).
 
 | Superfície | Rotas | Env obrigatório |
 | --- | --- | --- |

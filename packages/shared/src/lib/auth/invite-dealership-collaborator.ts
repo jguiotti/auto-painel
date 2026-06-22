@@ -166,6 +166,7 @@ export async function inviteDealershipCollaborator(
     role,
     dealershipId: input.dealershipId,
     dealershipSlug: input.dealershipSlug,
+    isExistingAuthUser: linkedExistingUser,
   });
 
   return {

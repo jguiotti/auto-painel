@@ -318,6 +318,16 @@
       "import": "./src/lib/auth/invite-dealership-collaborator.ts",
       "default": "./src/lib/auth/invite-dealership-collaborator.ts"
     },
+    "./lib/auth/handle-auth-confirm-request": {
+      "types": "./src/lib/auth/handle-auth-confirm-request.ts",
+      "import": "./src/lib/auth/handle-auth-confirm-request.ts",
+      "default": "./src/lib/auth/handle-auth-confirm-request.ts"
+    },
+    "./lib/auth/generate-auth-action-link": {
+      "types": "./src/lib/auth/generate-auth-action-link.ts",
+      "import": "./src/lib/auth/generate-auth-action-link.ts",
+      "default": "./src/lib/auth/generate-auth-action-link.ts"
+    },
     "./lib/email/send-dealership-auth-email": {
       "types": "./src/lib/email/send-dealership-auth-email.ts",
       "import": "./src/lib/email/send-dealership-auth-email.ts",

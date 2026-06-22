@@ -87,7 +87,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           <Link href="/recuperar-senha">Esqueci minha senha</Link>
         </Button>
         <p className="text-muted-foreground">
-          Primeiro acesso? Peça um link por e-mail para definir sua senha.
+          Primeiro acesso? Abra o link «Criar minha senha» do e-mail de convite. Se expirou,
+          use recuperação de senha abaixo.
         </p>
       </div>
     </form>
