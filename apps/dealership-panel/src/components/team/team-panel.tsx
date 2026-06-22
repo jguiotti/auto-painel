@@ -25,6 +25,7 @@ import {
 
 import { EmployeeEditDialog } from "@/components/team/employee-edit-dialog";
 import { TeamInviteDialog } from "@/components/team/team-invite-dialog";
+import { TeamMemberDeleteDialog } from "@/components/team/team-member-delete-dialog";
 import { formatBrl } from "@/lib/format/format-brl";
 
 interface TeamPanelProps {
@@ -32,6 +33,8 @@ interface TeamPanelProps {
   ranking: DealershipSalesRankingRow[];
   rankingDays: number;
   canInvite: boolean;
+  canRemoveMembers: boolean;
+  currentUserId: string;
 }
 
 export function TeamPanel({
@@ -39,8 +42,12 @@ export function TeamPanel({
   ranking,
   rankingDays,
   canInvite,
+  canRemoveMembers,
+  currentUserId,
 }: TeamPanelProps) {
   const [editEmployee, setEditEmployee] =
+    useState<DealershipEmployeePanelRow | null>(null);
+  const [deleteEmployee, setDeleteEmployee] =
     useState<DealershipEmployeePanelRow | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -122,14 +129,28 @@ export function TeamPanel({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditEmployee(employee)}
-                    >
-                      Editar
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditEmployee(employee)}
+                      >
+                        Editar
+                      </Button>
+                      {canRemoveMembers &&
+                      employee.role !== "owner" &&
+                      employee.user_id !== currentUserId ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeleteEmployee(employee)}
+                        >
+                          Remover
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -149,6 +170,16 @@ export function TeamPanel({
       />
 
       <TeamInviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+
+      <TeamMemberDeleteDialog
+        employee={deleteEmployee}
+        open={deleteEmployee !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteEmployee(null);
+          }
+        }}
+      />
     </div>
   );
 }

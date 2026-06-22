@@ -310,7 +310,9 @@ Setup Resend + Supabase SMTP/templates/redirect URLs: [`EMAIL_RESEND_SETUP.md`](
 | **ADM-02** | Recuperar senha admin | AutoPainel (logo color) | `apps/admin-master/src/actions/auth-recovery.ts` |
 | **TRIAL-01** | Onboarding trial marketing | AutoPainel | `apps/marketing-site/src/lib/email/send-trial-onboarding-email.ts` |
 
-Link Auth: `generateAuthEmailActionLink` → URL direta `/auth/confirm?token_hash=…&type=invite|recovery` + `verifyOtp`/`exchangeCodeForSession` em `handleAuthConfirmRequest` — **não** usa `action_link` Supabase (evita cair no login sem sessão).
+| **LOJ-04** | Remoção colaborador (titular) | Loja | `send-dealership-member-deactivated-email.ts` → RPC `remove_dealership_team_member` |
+
+Link Auth: `generateAuthEmailActionLink` → URL direta `/auth/confirm?token_hash=…&type=recovery` + `verifyOtp`/`exchangeCodeForSession` em `handleAuthConfirmRequest`. `redirectTo` **sem query string** (compatível com allowlist Supabase). LOJ-01 usa **recovery** (conta criada via `admin.createUser`, não `inviteUserByEmail`).
 
 | Superfície | Rotas | Env obrigatório |
 | --- | --- | --- |
@@ -324,7 +326,9 @@ Templates SMTP fallback: `supabase/templates/invite.html`, `recovery.html`. Loca
 
 Logo AutoPainel em e-mails: `apps/marketing-site/public/logo-autopainel-horizontal-color.png` (mesmo asset do admin-master).
 
-Fase 3 (pendente): LOJ-04 exclusão perfil, e-mail de novo lead whitelabel.
+Fase 3 (pendente): e-mail de novo lead whitelabel.
+
+**LOJ-04 + equipe (2026-06-24):** titular remove colaborador em `/painel/equipe` → `removeTeamMemberAction` → RPC `remove_dealership_team_member` + `sendDealershipMemberDeactivatedEmail` + `auth.admin.signOut(global)`. Migração `20260624100000_remove_dealership_team_member.sql`.
 
 **Épico Fase 1 (e-mail + DNS multitenant) — encerrado 2026-06-17:** Resend + Supabase SMTP produção, wildcards Cloudflare, provisionamento Vercel por slug, rotas Auth admin/painel, convite colaborador com e-mail.
 

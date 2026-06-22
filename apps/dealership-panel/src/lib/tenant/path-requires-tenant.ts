@@ -11,6 +11,9 @@ export function pathRequiresDealershipResolution(pathname: string): boolean {
   if (pathname.startsWith("/conta-inativa")) {
     return false;
   }
+  if (pathname.startsWith("/conta-desativada")) {
+    return false;
+  }
   if (pathname.startsWith("/_next")) {
     return false;
   }

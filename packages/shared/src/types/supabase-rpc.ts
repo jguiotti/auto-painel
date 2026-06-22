@@ -156,6 +156,17 @@ export interface GetDealershipSalesRankingArgs {
   p_days?: number;
 }
 
+/** `public.remove_dealership_team_member` — owner removes manager/seller from dealership. */
+export interface RemoveDealershipTeamMemberArgs {
+  p_user_id: string;
+}
+
+export interface RemoveDealershipTeamMemberResult {
+  removed_user_id: string;
+  removed_email: string | null;
+  removed_full_name: string;
+}
+
 /** `public.create_dealership_manual_lead` — panel manual CRM lead. */
 export interface CreateDealershipManualLeadArgs {
   p_client_name: string;

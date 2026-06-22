@@ -2,6 +2,49 @@ import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 
 export type AuthEmailLinkType = "invite" | "recovery";
 
+/** Supabase redirect URL allowlist matches path only — no query string. */
+export function buildAuthEmailRedirectTo(origin: string): string {
+  return `${origin.replace(/\/$/, "")}/auth/confirm`;
+}
+
+function parseSupabaseVerifyLink(actionLink: string): {
+  hashedToken: string | null;
+  verificationType: string | null;
+  redirectTo: string | null;
+} {
+  try {
+    const url = new URL(actionLink.trim());
+    return {
+      hashedToken:
+        url.searchParams.get("token_hash") ??
+        url.searchParams.get("token") ??
+        null,
+      verificationType: url.searchParams.get("type"),
+      redirectTo: url.searchParams.get("redirect_to"),
+    };
+  } catch {
+    return { hashedToken: null, verificationType: null, redirectTo: null };
+  }
+}
+
+function normalizeEmailOtpType(raw: string | null): EmailOtpType | null {
+  const type = raw?.trim().toLowerCase();
+  if (!type) {
+    return null;
+  }
+  if (
+    type === "invite" ||
+    type === "recovery" ||
+    type === "signup" ||
+    type === "magiclink" ||
+    type === "email" ||
+    type === "email_change"
+  ) {
+    return type as EmailOtpType;
+  }
+  return null;
+}
+
 export function sanitizeAuthNextPath(raw: string | null, fallback: string): string {
   if (raw && raw.startsWith("/") && !raw.startsWith("//")) {
     return raw;
@@ -50,7 +93,22 @@ export function buildAuthConfirmUrlFromGenerateLinkResponse(params: {
     return confirmUrl.toString();
   }
 
-  return params.fallbackActionLink?.trim() ?? null;
+  const fallback = params.fallbackActionLink?.trim();
+  if (fallback) {
+    const parsed = parseSupabaseVerifyLink(fallback);
+    if (parsed.hashedToken && parsed.verificationType) {
+      const redirectBase = parsed.redirectTo?.trim() || params.redirectTo.trim();
+      return buildAuthConfirmUrlFromGenerateLinkResponse({
+        redirectTo: redirectBase,
+        hashedToken: parsed.hashedToken,
+        verificationType: parsed.verificationType,
+        motivo: params.motivo,
+      });
+    }
+    return fallback;
+  }
+
+  return null;
 }
 
 export async function establishSessionFromAuthCallback(
@@ -70,8 +128,13 @@ export async function establishSessionFromAuthCallback(
   }
 
   if (params.tokenHash && params.otpType) {
+    const otpType = normalizeEmailOtpType(params.otpType);
+    if (!otpType) {
+      return { ok: false, message: "Tipo de link de acesso inválido." };
+    }
+
     const { error } = await supabase.auth.verifyOtp({
-      type: params.otpType as EmailOtpType,
+      type: otpType,
       token_hash: params.tokenHash,
     });
     if (error) {

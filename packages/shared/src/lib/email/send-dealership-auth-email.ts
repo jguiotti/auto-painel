@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildAuthEmailRedirectTo } from "../auth/auth-email-callback";
 import { resolveDealershipPanelAuthRedirectOrigin } from "../auth/resolve-auth-redirect-origins";
 import { generateAuthEmailActionLink } from "../auth/generate-auth-action-link";
 import { loadDealershipEmailBrand } from "./dealership-email-brand";
@@ -27,13 +28,13 @@ export async function sendDealershipWelcomeEmail(
     return { ok: false, message: "Host do painel da loja não configurado." };
   }
 
-  const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent("/definir-senha")}`;
-  const linkType = params.isExistingAuthUser ? "recovery" : "invite";
+  const redirectTo = buildAuthEmailRedirectTo(origin);
+  // Colaboradores são criados via admin.createUser (conta já confirmada) — recovery funciona; invite falha no verifyOtp.
   const linkResult = await generateAuthEmailActionLink(supabase, {
     email: params.email,
     redirectTo,
-    linkType,
-    motivo: params.isExistingAuthUser ? "recuperacao" : "primeiro-acesso",
+    linkType: "recovery",
+    motivo: "primeiro-acesso",
   });
 
   if (!linkResult.ok) {
@@ -76,7 +77,7 @@ export async function sendDealershipPasswordRecoveryEmail(
     redirectOrigin: string;
   },
 ): Promise<{ ok: true } | { ok: false; message: string; skipped?: boolean }> {
-  const redirectTo = `${params.redirectOrigin.replace(/\/$/, "")}/auth/confirm?next=${encodeURIComponent("/definir-senha")}`;
+  const redirectTo = buildAuthEmailRedirectTo(params.redirectOrigin);
   const linkResult = await generateAuthEmailActionLink(supabase, {
     email: params.email,
     redirectTo,

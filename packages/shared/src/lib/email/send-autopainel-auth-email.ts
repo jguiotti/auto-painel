@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildAuthEmailRedirectTo } from "../auth/auth-email-callback";
 import { resolveAdminAuthRedirectOrigin } from "../auth/resolve-auth-redirect-origins";
 import { generateAuthEmailActionLink } from "../auth/generate-auth-action-link";
 import { sendAutopainelTransactionalEmail } from "./send-autopainel-transactional-email";
@@ -12,7 +13,7 @@ export async function sendAutopainelPasswordRecoveryEmail(
   params: { email: string },
 ): Promise<{ ok: true } | { ok: false; message: string; skipped?: boolean }> {
   const origin = resolveAdminAuthRedirectOrigin();
-  const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent("/definir-senha")}`;
+  const redirectTo = buildAuthEmailRedirectTo(origin);
   const linkResult = await generateAuthEmailActionLink(supabase, {
     email: params.email,
     redirectTo,

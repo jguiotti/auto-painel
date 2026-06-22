@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { parseHqAddressFromForm } from "@autopainel/shared/lib/dealership/parse-hq-address-from-form";
 import { inviteDealershipCollaborator } from "@autopainel/shared/lib/auth/invite-dealership-collaborator";
+import { sendDealershipMemberDeactivatedEmail } from "@autopainel/shared/lib/email/send-dealership-member-deactivated-email";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
@@ -157,4 +158,59 @@ export async function inviteTeamMemberAction(formData: FormData): Promise<TeamAc
       error: "Não foi possível concluir o convite. Tente novamente em instantes.",
     };
   }
+}
+
+export async function removeTeamMemberAction(userId: string): Promise<TeamActionResult> {
+  const { supabase, profile, dealershipId, user } = await requireDashboardSession(
+    "/painel/equipe",
+  );
+
+  if (profile.role !== "owner" && profile.role !== "super_admin") {
+    return { error: "Apenas o titular da loja pode remover colaboradores." };
+  }
+
+  if (userId === user.id) {
+    return { error: "Você não pode remover a própria conta." };
+  }
+
+  const { data: rows, error } = await supabase.rpc("remove_dealership_team_member", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const removed = Array.isArray(rows) ? rows[0] : null;
+  const removedEmail =
+    removed && typeof removed === "object" && "removed_email" in removed
+      ? String(removed.removed_email ?? "")
+      : "";
+  const removedName =
+    removed && typeof removed === "object" && "removed_full_name" in removed
+      ? String(removed.removed_full_name ?? "")
+      : "";
+
+  let admin;
+  try {
+    admin = createSupabaseServiceRoleClient();
+  } catch {
+    admin = null;
+  }
+
+  if (admin) {
+    await admin.auth.admin.signOut(userId, "global");
+
+    if (removedEmail.includes("@")) {
+      await sendDealershipMemberDeactivatedEmail(admin, {
+        email: removedEmail,
+        recipientName: removedName,
+        dealershipId,
+      });
+    }
+  }
+
+  revalidatePath("/painel/equipe");
+  revalidatePath("/painel");
+  return { success: true };
 }

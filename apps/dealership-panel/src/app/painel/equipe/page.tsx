@@ -11,7 +11,7 @@ import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-sessi
 const RANKING_DAYS = 30;
 
 export default async function TeamPage() {
-  const { supabase, profile, dealershipId } = await requireDashboardSession(
+  const { supabase, profile, dealershipId, user } = await requireDashboardSession(
     "/painel/equipe",
   );
 
@@ -58,6 +58,8 @@ export default async function TeamPage() {
         ranking={ranking}
         rankingDays={RANKING_DAYS}
         canInvite={profile.role === "owner" || profile.role === "super_admin"}
+        canRemoveMembers={profile.role === "owner" || profile.role === "super_admin"}
+        currentUserId={user.id}
       />
     </div>
   );

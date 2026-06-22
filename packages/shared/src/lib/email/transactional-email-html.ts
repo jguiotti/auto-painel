@@ -161,3 +161,27 @@ export function buildDealershipRecoveryEmailHtml(params: {
     primaryColor: params.primaryColor,
   });
 }
+
+export function buildDealershipMemberDeactivatedEmailHtml(params: {
+  recipientName: string;
+  dealershipName: string;
+  logoUrl: string | null;
+  primaryColor: string;
+}): string {
+  const name = escapeHtml(params.recipientName.trim() || "Olá");
+  const store = escapeHtml(params.dealershipName);
+  const bodyHtml = `
+    <p style="margin:0 0 16px;">Olá, ${name}!</p>
+    <p style="margin:0 0 16px;">Informamos que seu acesso ao painel da <strong>${store}</strong> foi <strong>desativado</strong> pelo titular da loja.</p>
+    <p style="margin:0 0 16px;">Você não poderá mais entrar no painel desta concessionária. Se acredita que isso é um erro, entre em contato diretamente com a loja.</p>
+    <p style="margin:0;font-size:13px;color:#71717a;">Este e-mail é apenas informativo — não é necessário responder.</p>
+  `;
+
+  return buildTransactionalEmailLayout({
+    logoUrl: params.logoUrl,
+    logoAlt: params.dealershipName,
+    bodyHtml,
+    footerHtml: `— ${store}<br />Plataforma <a href="https://autopainel.com.br" style="color:#71717a;">AutoPainel</a>`,
+    primaryColor: params.primaryColor,
+  });
+}

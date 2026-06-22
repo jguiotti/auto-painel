@@ -116,7 +116,7 @@ Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 
 | **LOJ-01 Boas-vindas / convite** | Colaborador criado (admin ou painel `/painel/equipe`) | ✅ `sendDealershipWelcomeEmail` → Resend **LOJ-01** (logo + cor da loja) | — |
 | **LOJ-02 Recuperar senha** | `/recuperar-senha` no painel | ✅ `requestDealershipPasswordRecoveryAction` → Resend **LOJ-02** (marca da loja) | — |
 | **LOJ-03 Senha alterada** | Após `/definir-senha` ou troca logado | Default Supabase | Template whitelabel |
-| **LOJ-04 Conta desactivada** | `is_active=false` (CRM Fase D) | ❌ Não implementado | E-mail opcional fase 2 |
+| **LOJ-04 Conta desativada** | Titular remove colaborador em `/painel/equipe` | ✅ `sendDealershipMemberDeactivatedEmail` → Resend **LOJ-04** | — |
 
 ### 4.2 Variáveis de personalização (por tenant)
 
@@ -233,7 +233,7 @@ Do PRD `tenant_operator_journey` — **não é Auth automático**, enviado pela 
 
 ### `/ux`
 
-- Estados de login, recuperar senha, definir senha — e-mail é **continuação** da jornada; CTA do e-mail deve abrir `/auth/confirm?next=/definir-senha` no host correcto.
+- Estados de login, recuperar senha, definir senha — e-mail é **continuação** da jornada; CTA do e-mail abre `/auth/confirm` no host correcto (allowlist Supabase **sem** query string); após confirm, redirect para `/definir-senha?motivo=primeiro-acesso`.
 
 ### `/marketing` (`.cursor/commands/marketing.md`)
 

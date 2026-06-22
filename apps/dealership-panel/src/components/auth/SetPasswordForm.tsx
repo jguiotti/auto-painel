@@ -60,7 +60,7 @@ export function SetPasswordForm({
           }
           setSessionState(data.user ? "ready" : "missing");
         });
-      }, 400);
+      }, 1200);
     })();
 
     return () => {

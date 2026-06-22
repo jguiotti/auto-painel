@@ -333,6 +333,11 @@
       "import": "./src/lib/email/send-dealership-auth-email.ts",
       "default": "./src/lib/email/send-dealership-auth-email.ts"
     },
+    "./lib/email/send-dealership-member-deactivated-email": {
+      "types": "./src/lib/email/send-dealership-member-deactivated-email.ts",
+      "import": "./src/lib/email/send-dealership-member-deactivated-email.ts",
+      "default": "./src/lib/email/send-dealership-member-deactivated-email.ts"
+    },
     "./lib/email/send-autopainel-auth-email": {
       "types": "./src/lib/email/send-autopainel-auth-email.ts",
       "import": "./src/lib/email/send-autopainel-auth-email.ts",
