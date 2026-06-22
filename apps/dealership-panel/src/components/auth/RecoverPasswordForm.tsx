@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button, Input, Label } from "@autopainel/shared/ui";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { requestDealershipPasswordRecoveryAction } from "@/app/(auth)/actions";
 
 export function RecoverPasswordForm() {
   const [email, setEmail] = useState("");
@@ -18,18 +18,11 @@ export function RecoverPasswordForm() {
     setMessage(null);
     setIsSubmitting(true);
 
-    const supabase = createSupabaseBrowserClient();
-    const origin =
-      typeof window !== "undefined" ? window.location.origin.trim() : "";
-    const next = encodeURIComponent("/definir-senha");
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      {
-        redirectTo: `${origin}/auth/confirm?next=${next}`,
-      },
-    );
+    const formData = new FormData();
+    formData.set("email", email.trim().toLowerCase());
+    const result = await requestDealershipPasswordRecoveryAction(formData);
 
-    if (error) {
+    if (result.error) {
       setErrorMessage(
         "Não foi possível enviar o link. Verifique o e-mail ou tente novamente em instantes.",
       );

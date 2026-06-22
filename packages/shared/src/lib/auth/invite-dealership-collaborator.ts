@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { sendPasswordSetupEmail } from "./send-password-setup-email";
-import { resolveDealershipPanelAuthRedirectOrigin } from "./resolve-auth-redirect-origins";
+import { sendDealershipWelcomeEmail } from "./send-password-setup-email";
 
 export interface InviteDealershipCollaboratorInput {
   email: string;
@@ -161,14 +160,17 @@ export async function inviteDealershipCollaborator(
     };
   }
 
-  const origin = resolveDealershipPanelAuthRedirectOrigin(input.dealershipSlug);
-  const passwordResetEmailSent = origin
-    ? (await sendPasswordSetupEmail({ email, redirectOrigin: origin })).ok
-    : false;
+  const welcomeResult = await sendDealershipWelcomeEmail(supabase, {
+    email,
+    recipientName: fullName,
+    role,
+    dealershipId: input.dealershipId,
+    dealershipSlug: input.dealershipSlug,
+  });
 
   return {
     success: true,
     linkedExistingUser,
-    passwordResetEmailSent,
+    passwordResetEmailSent: welcomeResult.ok,
   };
 }

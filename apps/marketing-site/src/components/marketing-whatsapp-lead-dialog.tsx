@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   Button,
@@ -24,18 +24,19 @@ export function MarketingWhatsAppLeadDialog({
 }: MarketingWhatsAppLeadDialogProps) {
   const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
       setSubmitted(false);
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  }
 
   function handleLeadSuccess() {
     setSubmitted(true);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md border-white/10 bg-zinc-900 text-zinc-100">
         {submitted ? (
           <>
@@ -50,7 +51,7 @@ export function MarketingWhatsAppLeadDialog({
               type="button"
               className="w-full"
               variant="secondary"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
             >
               Fechar
             </Button>

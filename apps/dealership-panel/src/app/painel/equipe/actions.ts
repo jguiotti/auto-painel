@@ -77,47 +77,62 @@ export async function upsertEmployeeProfileAction(
 }
 
 export async function inviteTeamMemberAction(formData: FormData): Promise<TeamActionResult> {
-  const { profile, dealershipId } = await requireDashboardSession("/painel/equipe");
+  try {
+    const { profile, dealershipId } = await requireDashboardSession("/painel/equipe");
 
-  if (!canManageTeamAsOwner(profile.role)) {
-    return { error: "Apenas o titular da loja pode convidar colaboradores." };
+    if (!canManageTeamAsOwner(profile.role)) {
+      return { error: "Apenas o titular da loja pode convidar colaboradores." };
+    }
+
+    const email = String(formData.get("email") ?? "").trim();
+    const fullName = String(formData.get("full_name") ?? "").trim();
+    const roleRaw = String(formData.get("role") ?? "seller").trim();
+
+    if (roleRaw !== "seller" && roleRaw !== "manager") {
+      return { error: "Papel inválido para convite pelo painel da loja." };
+    }
+
+    let admin;
+    try {
+      admin = createSupabaseServiceRoleClient();
+    } catch {
+      return {
+        error:
+          "Convite indisponível no momento. Fale com o suporte AutoPainel ou peça ao admin da plataforma para adicionar a pessoa.",
+      };
+    }
+
+    const { data: dealership, error: dealershipError } = await admin
+      .from("dealerships")
+      .select("slug")
+      .eq("id", dealershipId)
+      .maybeSingle();
+
+    if (dealershipError || !dealership?.slug) {
+      return { error: "Não foi possível carregar os dados da loja." };
+    }
+
+    const result = await inviteDealershipCollaborator(admin, {
+      email,
+      fullName,
+      role: roleRaw,
+      dealershipId,
+      dealershipSlug: String(dealership.slug),
+    });
+
+    if (result.error) {
+      return { error: result.error };
+    }
+
+    revalidatePath("/painel/equipe");
+    revalidatePath("/painel");
+    return {
+      success: true,
+      passwordResetEmailSent: result.passwordResetEmailSent,
+    };
+  } catch {
+    return {
+      error: "Não foi possível concluir o convite. Tente novamente em instantes.",
+    };
   }
-
-  const email = String(formData.get("email") ?? "").trim();
-  const fullName = String(formData.get("full_name") ?? "").trim();
-  const roleRaw = String(formData.get("role") ?? "seller").trim();
-
-  if (roleRaw !== "seller" && roleRaw !== "manager") {
-    return { error: "Papel inválido para convite pelo painel da loja." };
-  }
-
-  const admin = createSupabaseServiceRoleClient();
-  const { data: dealership, error: dealershipError } = await admin
-    .from("dealerships")
-    .select("slug")
-    .eq("id", dealershipId)
-    .maybeSingle();
-
-  if (dealershipError || !dealership?.slug) {
-    return { error: "Não foi possível carregar os dados da loja." };
-  }
-
-  const result = await inviteDealershipCollaborator(admin, {
-    email,
-    fullName,
-    role: roleRaw,
-    dealershipId,
-    dealershipSlug: String(dealership.slug),
-  });
-
-  if (result.error) {
-    return { error: result.error };
-  }
-
-  revalidatePath("/painel/equipe");
-  revalidatePath("/painel");
-  return {
-    success: true,
-    passwordResetEmailSent: result.passwordResetEmailSent,
-  };
 }

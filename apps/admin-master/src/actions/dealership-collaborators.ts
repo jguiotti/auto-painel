@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { sendPasswordSetupEmail } from "@autopainel/shared/lib/auth/send-password-setup-email";
-import { resolveDealershipPanelAuthRedirectOrigin } from "@autopainel/shared/lib/auth/resolve-auth-redirect-origins";
+import { sendDealershipWelcomeEmail } from "@autopainel/shared/lib/auth/send-password-setup-email";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { deleteAuthUserOrOrphanProfile } from "@/lib/auth/delete-auth-user-or-orphan-profile";
@@ -73,18 +72,23 @@ async function findAuthUserIdByEmail(
   }
 }
 
-/**
- * Sends password setup / recovery email pointing at the dealership panel host for this slug.
- */
-async function trySendDealershipPasswordSetupEmail(
-  email: string,
-  dealershipSlug: string,
+async function trySendDealershipWelcomeEmail(
+  supabase: ReturnType<typeof createSupabaseServiceRoleClient>,
+  params: {
+    email: string;
+    fullName: string;
+    role: "owner" | "manager" | "seller";
+    dealershipId: string;
+    dealershipSlug: string;
+  },
 ): Promise<boolean> {
-  const origin = resolveDealershipPanelAuthRedirectOrigin(dealershipSlug);
-  if (!origin) {
-    return false;
-  }
-  const result = await sendPasswordSetupEmail({ email, redirectOrigin: origin });
+  const result = await sendDealershipWelcomeEmail(supabase, {
+    email: params.email,
+    recipientName: params.fullName,
+    role: params.role,
+    dealershipId: params.dealershipId,
+    dealershipSlug: params.dealershipSlug,
+  });
   return result.ok;
 }
 
@@ -215,10 +219,13 @@ export async function inviteDealershipCollaboratorAction(
     };
   }
 
-  const password_reset_email_sent = await trySendDealershipPasswordSetupEmail(
+  const password_reset_email_sent = await trySendDealershipWelcomeEmail(supabase, {
     email,
+    fullName: full_name,
+    role: roleRaw,
+    dealershipId,
     dealershipSlug,
-  );
+  });
 
   REVALIDATE.forEach((p) => revalidatePath(p));
   revalidatePath(`/painel/concessionarias/${dealershipId}/editar`);

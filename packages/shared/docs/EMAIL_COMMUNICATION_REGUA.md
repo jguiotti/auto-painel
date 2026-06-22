@@ -1,8 +1,8 @@
 # Régua de comunicação por e-mail — AutoPainel
 
-Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 1 entregue** (2026-06-17) — admin ADM-01/02 + convite colaborador com link por slug; **Fase 2 pendente** — whitelabel painel (Auth Hook).
+Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 2 entregue** (2026-06-10) — e-mails Auth do painel (LOJ-01/02) e admin (ADM-02) via **Resend** + `auth.admin.generateLink` (sem template Supabase SMTP). Fallback SMTP Supabase permanece para casos sem `RESEND_API_KEY`.
 
-**Relacionado:** `tenant_operator_journey` (PRD histórico), `regras-de-negocio.md` § Comunicação por e-mail.
+**Relacionado:** `tenant_operator_journey` (PRD histórico), `regras-de-negocio.md` § Comunicação por e-mail, `EMAIL_RESEND_SETUP.md`.
 
 ---
 
@@ -10,9 +10,21 @@ Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 
 
 | Canal | O quê | Hoje | Meta |
 | --- | --- | --- | --- |
-| **E-mail transacional Auth** | Convite, boas-vindas, recuperar senha | Templates genéricos Supabase; convite loja **não** envia e-mail automático para usuário novo | Marca AutoPainel (admin) ou marca da loja (painel) |
+| **E-mail transacional Auth** | Convite, boas-vindas, recuperar senha | **Resend** + HTML whitelabel (loja ou AutoPainel); link via `generateLink` | Mantém régua abaixo; LOJ-04 e lead por e-mail em fases futuras |
 | **Notificações in-app** | Leads, cobrança atrasada | Sininho no painel/admin | Mantém in-app; e-mail opcional em fases futuras |
 | **E-mail operacional manual** | URLs da loja pós-DNS | Operations envia manualmente | Modelo abaixo (§5) |
+
+### Matriz rápida (marca × evento)
+
+| ID | Evento | Disparado de | Marca visual | Assunto (resumo) |
+| --- | --- | --- | --- | --- |
+| **LOJ-01** | Boas-vindas / convite colaborador | Admin ou painel `/painel/equipe` | **Loja** (logo + cor) | `{Loja} — seu acesso ao painel da loja` |
+| **LOJ-02** | Recuperar senha | Painel `/recuperar-senha` | **Loja** | `{Loja} — redefinir senha do painel` |
+| **LOJ-04** | Exclusão / desativação perfil | Painel (futuro) | **Loja** | Pendente |
+| **ADM-01** | Boas-vindas operador | Script provision (futuro UI) | **AutoPainel** (logo color) | `Bem-vindo(a) ao Admin AutoPainel` |
+| **ADM-02** | Recuperar senha | Admin `/recuperar-senha` | **AutoPainel** | `Redefinir senha — Admin AutoPainel` |
+| **TRIAL-01** | Onboarding trial | Marketing `/adesao-trial` | **AutoPainel** | Trial adesão |
+| **LEAD-01** | Novo lead (futuro) | Edge worker / painel | **Loja** | Pendente (hoje só in-app) |
 
 ---
 
@@ -45,7 +57,7 @@ Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 
 | Evento | Quando | Mecanismo actual | Mecanismo alvo |
 | --- | --- | --- | --- |
 | **ADM-01 Boas-vindas / convite** | Novo `super_admin` criado (`provision:super-admin` ou UI futura) | ❌ Sem e-mail; senha no terminal | `inviteUserByEmail` ou `resetPasswordForEmail` + template `invite` |
-| **ADM-02 Recuperar senha** | Operador solicita em `/recuperar-senha` (a criar) ou Supabase | ❌ Página inexistente no admin | `resetPasswordForEmail` → template `recovery` |
+| **ADM-02 Recuperar senha** | Operador solicita em `/recuperar-senha` | ✅ `requestAdminPasswordRecoveryAction` → Resend **ADM-02** (logo color admin) | — |
 | **ADM-03 Senha alterada** | Após `/painel/conta/senha` | Template Supabase default (se activo) | Template `password_changed` |
 | **ADM-04 Confirmar e-mail** | Mudança de e-mail (futuro) | Supabase default | Template `email_change` |
 
@@ -101,8 +113,8 @@ Documento squad (PM + UX Writer) para e-mails transacionais. **Status:** **Fase 
 
 | Evento | Quando | Mecanismo actual | Mecanismo alvo |
 | --- | --- | --- | --- |
-| **LOJ-01 Boas-vindas / convite** | Colaborador criado em `inviteDealershipCollaboratorAction` | ✅ Sempre envia `resetPasswordForEmail` com host `{slug}.loja…` (marca AutoPainel no template Supabase) | Auth Hook whitelabel (Fase 2) |
-| **LOJ-02 Recuperar senha** | `/recuperar-senha` no painel | ✅ `resetPasswordForEmail` — template **marca AutoPainel** (não whitelabel) | Template whitelabel por loja (Fase 2) |
+| **LOJ-01 Boas-vindas / convite** | Colaborador criado (admin ou painel `/painel/equipe`) | ✅ `sendDealershipWelcomeEmail` → Resend **LOJ-01** (logo + cor da loja) | — |
+| **LOJ-02 Recuperar senha** | `/recuperar-senha` no painel | ✅ `requestDealershipPasswordRecoveryAction` → Resend **LOJ-02** (marca da loja) | — |
 | **LOJ-03 Senha alterada** | Após `/definir-senha` ou troca logado | Default Supabase | Template whitelabel |
 | **LOJ-04 Conta desactivada** | `is_active=false` (CRM Fase D) | ❌ Não implementado | E-mail opcional fase 2 |
 

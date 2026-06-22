@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button, Input, Label } from "@autopainel/shared/ui";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { requestAdminPasswordRecoveryAction } from "@/actions/auth-recovery";
 
 export function AdminRecoverPasswordForm() {
   const [email, setEmail] = useState("");
@@ -18,19 +18,12 @@ export function AdminRecoverPasswordForm() {
     setMessage(null);
     setIsSubmitting(true);
 
-    const supabase = createSupabaseBrowserClient();
-    const origin =
-      typeof window !== "undefined" ? window.location.origin.trim() : "";
-    const next = encodeURIComponent("/definir-senha");
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      {
-        redirectTo: `${origin}/auth/confirm?next=${next}`,
-      },
-    );
+    const formData = new FormData();
+    formData.set("email", email.trim().toLowerCase());
+    const result = await requestAdminPasswordRecoveryAction(formData);
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (result.error) {
+      setErrorMessage(result.error);
       setIsSubmitting(false);
       return;
     }

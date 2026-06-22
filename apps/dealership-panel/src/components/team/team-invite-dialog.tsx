@@ -39,7 +39,8 @@ export function TeamInviteDialog({ open, onOpenChange }: TeamInviteDialogProps) 
     event.preventDefault();
     setError(null);
     setSuccess(null);
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     startTransition(async () => {
       const result = await inviteTeamMemberAction(formData);
@@ -52,8 +53,8 @@ export function TeamInviteDialog({ open, onOpenChange }: TeamInviteDialogProps) 
           ? "Convite enviado. A pessoa receberá um e-mail para definir a senha."
           : "Colaborador adicionado. Peça para usar «Esqueci minha senha» no login se necessário.",
       );
+      form.reset();
       router.refresh();
-      event.currentTarget.reset();
     });
   }
 

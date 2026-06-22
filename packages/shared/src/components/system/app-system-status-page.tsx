@@ -57,7 +57,14 @@ const KIND_DEFAULTS: Record<
 
 const TONE_STYLES: Record<
   AppSystemStatusTone,
-  { shell: string; card: string; muted: string; code: string }
+  {
+    shell: string;
+    card: string;
+    muted: string;
+    code: string;
+    primaryButton?: string;
+    outlineButton?: string;
+  }
 > = {
   admin: {
     shell: "bg-muted/40 text-foreground",
@@ -78,30 +85,45 @@ const TONE_STYLES: Record<
     code: "text-zinc-600",
   },
   panel: {
-    shell: "bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50",
-    card: "border-zinc-200 bg-white text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50",
-    muted: "text-zinc-600 dark:text-zinc-400",
-    code: "text-zinc-400 dark:text-zinc-600",
+    shell: "bg-zinc-50 text-zinc-900 [color-scheme:light]",
+    card: "border-zinc-200 bg-white text-zinc-900 shadow-sm",
+    muted: "text-zinc-600",
+    code: "text-zinc-400",
+    primaryButton:
+      "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-900 dark:text-white",
+    outlineButton:
+      "border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-300 dark:bg-white dark:text-zinc-900",
   },
 };
 
 function StatusActionButton({
   action,
   variant,
+  tone,
 }: {
   action: AppSystemStatusAction;
   variant: "default" | "outline";
+  tone: AppSystemStatusTone;
 }) {
+  const styles = TONE_STYLES[tone];
+  const extraClassName =
+    variant === "default" ? styles.primaryButton : styles.outlineButton;
+
   if (action.href) {
     return (
-      <Button variant={variant} asChild>
+      <Button variant={variant} className={extraClassName} asChild>
         <Link href={action.href}>{action.label}</Link>
       </Button>
     );
   }
 
   return (
-    <Button type="button" variant={variant} onClick={action.onClick}>
+    <Button
+      type="button"
+      variant={variant}
+      className={extraClassName}
+      onClick={action.onClick}
+    >
       {action.label}
     </Button>
   );
@@ -134,8 +156,16 @@ export function AppSystemStatusPage({
         <p className={cn("text-5xl font-semibold tracking-tight", styles.code)} aria-hidden>
           {codeLabel ?? defaults.code}
         </p>
-        <div className="mx-auto mt-4 flex size-12 items-center justify-center rounded-full bg-muted/60">
-          <Icon className="size-6 text-muted-foreground" aria-hidden />
+        <div
+          className={cn(
+            "mx-auto mt-4 flex size-12 items-center justify-center rounded-full",
+            tone === "panel" ? "bg-zinc-100" : "bg-muted/60",
+          )}
+        >
+          <Icon
+            className={cn("size-6", tone === "panel" ? "text-zinc-500" : "text-muted-foreground")}
+            aria-hidden
+          />
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">{title ?? defaults.title}</h1>
         <p className={cn("mt-3 text-sm leading-relaxed", styles.muted)}>
@@ -144,10 +174,10 @@ export function AppSystemStatusPage({
         {children}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           {primaryAction ? (
-            <StatusActionButton action={primaryAction} variant="default" />
+            <StatusActionButton action={primaryAction} variant="default" tone={tone} />
           ) : null}
           {secondaryAction ? (
-            <StatusActionButton action={secondaryAction} variant="outline" />
+            <StatusActionButton action={secondaryAction} variant="outline" tone={tone} />
           ) : null}
         </div>
       </div>

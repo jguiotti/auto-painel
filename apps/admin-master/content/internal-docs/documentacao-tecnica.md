@@ -297,26 +297,34 @@ Se pageviews aparecem mas eventos custom não: falta acionador `ap_custom_event`
 
 ---
 
-## E-mail transacional (Auth) — Fase 1
+## E-mail transacional (Auth) — Fase 2 (Resend whitelabel)
 
 Régua PM + copy UX Writer: [`EMAIL_COMMUNICATION_REGUA.md`](../../../packages/shared/docs/EMAIL_COMMUNICATION_REGUA.md).
 
 Setup Resend + Supabase SMTP/templates/redirect URLs: [`EMAIL_RESEND_SETUP.md`](../../../packages/shared/docs/EMAIL_RESEND_SETUP.md).
 
-| Superfície | Rotas | Env |
+| ID | Evento | Marca | Código |
+| --- | --- | --- | --- |
+| **LOJ-01** | Convite colaborador (boas-vindas) | Loja (`theme_config`, logo) | `packages/shared/src/lib/email/send-dealership-auth-email.ts` → `sendDealershipWelcomeEmail` |
+| **LOJ-02** | Recuperar senha painel | Loja | `apps/dealership-panel/src/app/(auth)/actions.ts` |
+| **ADM-02** | Recuperar senha admin | AutoPainel (logo color) | `apps/admin-master/src/actions/auth-recovery.ts` |
+| **TRIAL-01** | Onboarding trial marketing | AutoPainel | `apps/marketing-site/src/lib/email/send-trial-onboarding-email.ts` |
+
+Link Auth: `generateAuthRecoveryActionLink` (`auth.admin.generateLink` type `recovery`) — **não** dispara SMTP Supabase.
+
+| Superfície | Rotas | Env obrigatório |
 | --- | --- | --- |
-| Admin | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `NEXT_PUBLIC_ADMIN_AUTH_REDIRECT_ORIGIN` |
-| Painel loja | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `NEXT_PUBLIC_DEALERSHIP_PANEL_URL_TEMPLATE` (por slug) |
+| Admin | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `RESEND_API_KEY`, `NEXT_PUBLIC_ADMIN_AUTH_REDIRECT_ORIGIN` |
+| Painel loja | `/recuperar-senha`, `/definir-senha`, `/auth/confirm` | `RESEND_API_KEY`, `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` |
+| Marketing | `/adesao-trial` | `RESEND_API_KEY` |
 
-Convite colaborador: `apps/admin-master/src/actions/dealership-collaborators.ts` → `sendPasswordSetupEmail` + `resolveDealershipPanelAuthRedirectOrigin(slug)`.
+Convite colaborador: `dealership-collaborators.ts` + `invite-dealership-collaborator.ts` → `sendDealershipWelcomeEmail`.
 
-Templates HTML: `supabase/templates/invite.html`, `recovery.html`. Local: `supabase/config.toml`.
+Templates SMTP fallback: `supabase/templates/invite.html`, `recovery.html`. Local: `supabase/config.toml`.
 
-Provision super-admin com e-mail: `scripts/provision-platform-super-admin.mjs`.
+Logo AutoPainel em e-mails: `apps/marketing-site/public/logo-autopainel-horizontal-color.png` (mesmo asset do admin-master).
 
-Wildcards DNS: `npm run dealership:hosts:provision -- --wildcards-only --cloudflare` — ver `DEALERSHIP_HOSTS_PROVISIONING.md`.
-
-Fase 2 (pendente): Auth Hook whitelabel por tema da loja no painel.
+Fase 3 (pendente): LOJ-04 exclusão perfil, e-mail de novo lead whitelabel.
 
 **Épico Fase 1 (e-mail + DNS multitenant) — encerrado 2026-06-17:** Resend + Supabase SMTP produção, wildcards Cloudflare, provisionamento Vercel por slug, rotas Auth admin/painel, convite colaborador com e-mail.
 
