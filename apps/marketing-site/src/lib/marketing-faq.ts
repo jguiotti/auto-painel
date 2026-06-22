@@ -21,9 +21,24 @@ export const MARKETING_FAQ_ITEMS: MarketingFaqItem[] = [
       "1) Você entra em contato e escolhe o plano. 2) Pagamos o setup e alinhamos marca (logo, cores, layout). 3) Configuramos vitrine, painel e domínio. 4) Importamos seu estoque inicial. 5) Treinamos sua equipe no painel. 6) Sua loja já encanta clientes online — você foca em vender.",
   },
   {
+    question: "Gestão de leads está incluída em todos os planos?",
+    answer:
+      "Sim. A central de contatos (leads da vitrine, simulador e formulários) faz parte da base da plataforma — não é módulo opcional. Gestores distribuem leads; vendedores acompanham status, notas e follow-up com o veículo de interesse sempre visível.",
+  },
+  {
+    question: "Preciso pagar extra para gerenciar o estoque no painel?",
+    answer:
+      "Não. Cadastro de veículos, fotos, preços e status (disponível/vendido) com vitrine sincronizada está incluído em qualquer plano. O tier de plano considera principalmente o volume de veículos ativos; módulos extras são simulador, QR Code, integrações com portais, recibo e métricas avançadas.",
+  },
+  {
+    question: "Como funciona o trial grátis do plano Essencial?",
+    answer:
+      "São vagas limitadas para os primeiros 20 lojistas interessados: 30 dias grátis no plano Essencial, com taxa de setup de R$ 497 isenta excepcionalmente nessa campanha. Preencha o formulário em autopainel.com.br/adesao-trial. Se as vagas imediatas estiverem preenchidas, você pode solicitar o trial mesmo assim e entrará na fila de espera — entraremos em contato quando abrirem novas vagas.",
+  },
+  {
     question: "Posso testar o painel antes de contratar?",
     answer:
-      "Sim. Agende uma demonstração pelo formulário de contato ou WhatsApp. Mostramos vitrine e painel ao vivo; o acesso de teste ao painel é liberado pela nossa equipe após qualificação — não há login público aberto por segurança das lojas.",
+      "Sim. Agende uma demonstração pelo formulário de contato ou WhatsApp, ou solicite o trial grátis em autopainel.com.br/adesao-trial (vagas limitadas). Mostramos vitrine e painel ao vivo; o acesso de teste ao painel é liberado pela nossa equipe após qualificação — não há login público aberto por segurança das lojas.",
   },
   {
     question: "O que inclui a taxa de setup obrigatória?",

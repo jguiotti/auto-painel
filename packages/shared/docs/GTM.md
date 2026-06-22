@@ -41,6 +41,7 @@ Antes de `gtm.js`, o snippet envia:
 | `ap_dealership_slug` | `guiotti` | Segmentar por loja (automático em `{slug}.*`) |
 | `ap_dealership_id` | UUID | Quando o cookie `ap-dealership-id` já existe |
 | `ap_analytics_consent` | `granted` / `denied` | Acionador Hotjar/GA4 na vitrine e marketing |
+| `ap_internal_traffic` | `true` quando IP ∈ `GA4_INTERNAL_TRAFFIC_IPS` | Exceção em tags GA4/Hotjar — **GTM container ainda carrega** (cobertura Tag Assistant) |
 | `ap_hotjar_tags` | `["customer_storefront","Vitrine","loja:guiotti"]` | Filtros de gravação Hotjar |
 
 Valores de `ap_app_surface`:
@@ -63,8 +64,10 @@ Valores de `ap_app_surface`:
 ```
 [ ] NEXT_PUBLIC_GTM_ID em los 4 projectos Vercel (Production)
 [ ] Redeploy após gravar env
+[ ] Exceção GTM `ap_internal_traffic = true` nas tags GA4/Hotjar (ver GTM_GA4_SETUP.md § Camada 3)
 [ ] GTM Preview: abrir guiotti.autopainel.com.br e confirmar dataLayer
 [ ] GTM Preview: abrir admin.autopainel.com.br → ap_app_surface = admin
+[ ] Cobertura da tag: rotas autenticadas aparecem «Com tag» (não omitir GTM em IP interno)
 [ ] Publicar container GTM
 ```
 

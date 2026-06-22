@@ -28,10 +28,7 @@ export async function AutopainelGoogleTagManagerHead({
 }: AutopainelGoogleTagManagerHeadProps) {
   const headerStore = await headers();
   const cookieStore = await cookies();
-
-  if (isInternalAnalyticsTrafficFromHeaders(headerStore)) {
-    return <AnalyticsExclusionBootstrap />;
-  }
+  const isInternalTraffic = isInternalAnalyticsTrafficFromHeaders(headerStore);
 
   const runtime = resolveAutopainelGtmRuntime({
     appSurface,
@@ -39,15 +36,20 @@ export async function AutopainelGoogleTagManagerHead({
     platformRootDomain,
     dealershipIdCookie: cookieStore.get(DEALERSHIP_ID_COOKIE)?.value ?? null,
     analyticsConsentGranted,
+    isInternalTraffic,
   });
 
   if (!runtime) {
     return null;
   }
 
+  const effectiveAnalyticsGranted =
+    !isInternalTraffic && analyticsConsentGranted;
+
   return (
     <>
-      <GoogleTagManagerConsentDefault analyticsGranted={analyticsConsentGranted} />
+      {isInternalTraffic ? <AnalyticsExclusionBootstrap /> : null}
+      <GoogleTagManagerConsentDefault analyticsGranted={effectiveAnalyticsGranted} />
       <GoogleTagManagerDataLayerBootstrap context={runtime.dataLayer} />
       <GoogleTagManagerHead containerId={runtime.containerId} />
     </>
@@ -67,10 +69,7 @@ export async function AutopainelGoogleTagManagerBody({
 }: AutopainelGoogleTagManagerBodyProps) {
   const headerStore = await headers();
   const cookieStore = await cookies();
-
-  if (isInternalAnalyticsTrafficFromHeaders(headerStore)) {
-    return null;
-  }
+  const isInternalTraffic = isInternalAnalyticsTrafficFromHeaders(headerStore);
 
   const runtime = resolveAutopainelGtmRuntime({
     appSurface,
@@ -78,18 +77,22 @@ export async function AutopainelGoogleTagManagerBody({
     platformRootDomain,
     dealershipIdCookie: cookieStore.get(DEALERSHIP_ID_COOKIE)?.value ?? null,
     analyticsConsentGranted,
+    isInternalTraffic,
   });
 
   if (!runtime) {
     return null;
   }
 
+  const effectiveAnalyticsGranted =
+    !isInternalTraffic && analyticsConsentGranted;
+
   return (
     <>
       <GoogleTagManagerBody containerId={runtime.containerId} />
       <AutopainelHotjarRecordingTags
         tags={runtime.dataLayer.ap_hotjar_tags}
-        enabled={analyticsConsentGranted}
+        enabled={effectiveAnalyticsGranted}
       />
     </>
   );

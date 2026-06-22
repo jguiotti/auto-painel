@@ -472,7 +472,7 @@ GA4_INTERNAL_TRAFFIC_IPS=SEU.IP.AQUI
 ```
 
 3. Rode `npm run sync:env` (se usar sync) e **redeploy** os 4 apps na Vercel com a mesma variável em **Environment Variables** (Production + Preview, se quiser).
-4. Confirme: abra o site → DevTools → Console → `window.__AP_ANALYTICS_EXCLUDED` deve ser `true` e **não** deve existir request a `googletagmanager.com`.
+4. Confirme: abra o site → DevTools → Console → `window.__AP_ANALYTICS_EXCLUDED` deve ser `true`. O request a `googletagmanager.com/gtm.js` **deve existir** (container carrega); tags GA4/Hotjar não disparam se o GTM tiver exceção em `ap_internal_traffic`.
 
 **IPv6:** inclua o endereço completo se sua rede usar IPv6.
 
@@ -515,11 +515,22 @@ São **dois passos obrigatórios** no GA4 — definir a regra de IP no fluxo e a
 - Com filtro em **Testando:** Explorar → dimensão **Nome do filtro de dados de teste** — seus hits devem aparecer marcados.
 - Depois de confirmar, mude o filtro para **Ativo** (exclusão permanente).
 
-> Filtros afetam dados **futuros**; não removem histórico. Com `.env.local` + `GA4_INTERNAL_TRAFFIC_IPS` o GTM nem carrega — esta camada GA4 é backup.
+> Filtros afetam dados **futuros**; não removem histórico. Com `GA4_INTERNAL_TRAFFIC_IPS` o dataLayer marca `ap_internal_traffic` e `__AP_ANALYTICS_EXCLUDED`; configure **exceção** nas tags GA4 no GTM para não contar hits internos.
 
-## Camada 3 — GTM (opcional)
+## Camada 3 — GTM (obrigatório após jun/2026)
 
-Se preferir marcar em vez de bloquear no código: variável **IP do visitante** no GTM + acionador de exceção nas tags GA. O código AutoPainel já bloqueia antes do GTM carregar — use GTM só se tiver tags de terceiros fora do nosso snippet.
+O container **sempre carrega** quando `NEXT_PUBLIC_GTM_ID` está definido (inclui tráfego interno). Isso garante **Cobertura da tag** no GTM e Tag Assistant em rotas autenticadas (`/painel/planos/…/editar`, `/painel/estoque/…/editar`, `/painel/equipe`, `/termos-de-uso`, etc.).
+
+Para **não enviar hits GA4/Hotjar** da equipe, adicione **exceção** em cada tag de medição:
+
+1. GTM → **Variables** → New → **Data Layer Variable** → Name: `DLV - ap_internal_traffic` → Data Layer Variable Name: `ap_internal_traffic`.
+2. Em **Tag GA4 Configuration**, **Tag GA4 — Event — AP Custom**, **Hotjar**, etc. → **Triggering** → **Add exception** → New trigger:
+   - Type: **Custom Event** ou **Page View** (mesmo acionador da tag)
+   - **Some Custom Events** (ou Page Views): `DLV - ap_internal_traffic` **equals** `true`
+   - Nome sugerido: `Exceção — tráfego interno`
+3. **Submit** → **Publish** o container.
+
+Alternativa no GTM (sem dataLayer): variável **IP do visitante** + acionador de exceção por IP — útil para tags de terceiros que não leem `ap_internal_traffic`.
 
 ---
 

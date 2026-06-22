@@ -44,6 +44,9 @@ export function PlatformCommercialLeadAttributionSheet({
   }
 
   function handleSubmit(formData: FormData) {
+    if (!lead) {
+      return;
+    }
     setError(null);
     formData.set("saas_prospect_id", lead.id);
     formData.set("confirm_immediately", "true");

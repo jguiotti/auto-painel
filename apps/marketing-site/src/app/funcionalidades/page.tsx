@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   Building2,
   Car,
+  ClipboardList,
   Globe,
   LayoutTemplate,
   Lock,
@@ -15,10 +16,12 @@ import Link from "next/link";
 
 import { Button, Card, CardDescription, CardHeader, CardTitle } from "@autopainel/shared/ui";
 
+import { CORE_OPERATION_HIGHLIGHTS } from "@/lib/marketing-content";
+
 export const metadata: Metadata = {
   title: "Funcionalidades",
   description:
-    "Site exclusivo, painel de gestão, estoque isolado, equipe com papéis, 3 layouts de vitrine, SEO e leads — tudo para concessionárias no AutoPainel.",
+    "Estoque sincronizado com a vitrine, central de contatos com atribuição por vendedor, site exclusivo, equipe com papéis e SEO — incluídos em todos os planos AutoPainel.",
 };
 
 const featureGroups = [
@@ -62,13 +65,13 @@ const featureGroups = [
         icon: Car,
         title: "Estoque e vitrine sincronizados",
         description:
-          "Cadastre veículos com fotos, preço e página pública. Alterou no painel, reflete no site na hora — sem fila de agência.",
+          "Cadastre veículos com fotos, preço, status disponível ou vendido e ficha técnica. Alterou no painel, a vitrine reflete na hora — sem fila de agência nem planilha duplicada.",
       },
       {
         icon: MessageCircle,
-        title: "Leads centralizados",
+        title: "Central de contatos (leads)",
         description:
-          "Interessados chegam com contexto do veículo. Histórico para o comercial responder rápido e não perder oportunidade.",
+          "Interessados da vitrine, simulador e formulários num só lugar. Status comercial, notas, follow-up, atribuição ao vendedor e contexto do veículo — para gestor e vendedor trabalharem juntos.",
       },
     ],
   },
@@ -116,12 +119,57 @@ export default function FuncionalidadesPage() {
           Tudo o que sua concessionária precisa para vender online com controle
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Site profissional, painel de gestão, equipe organizada e SEO de qualidade —
-          sem depender de agência todo mês e sem risco de misturar dados com outras lojas.
+          Site profissional, painel de gestão e operação comercial no dia a dia — estoque e
+          contatos vêm em qualquer plano. Módulos extras ampliam ainda mais o potencial de
+          vendas. Simulador de financiamento, gerador de QR Code por veículo, métricas avançadas e
+          integrações com ferramentas de mercado, vão levar a sua loja para outro nível.
         </p>
       </div>
 
-      <div className="mt-16 space-y-20">
+      <section id="operacao-comercial" className="mt-16 scroll-mt-24">
+        <div className="max-w-2xl">
+          <p className="font-slogan text-sm font-medium uppercase tracking-wider text-marketing-accent">
+            Operação comercial
+          </p>
+          <h2 className="font-display mt-3 text-2xl font-bold text-white md:text-3xl">
+            O que todo lojista usa desde o primeiro login
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Não depende de módulo contratado: estoque e central de contatos fazem parte da
+            base da plataforma — o diferencial para quem quer sair da agência e escalar com
+            processo.
+          </p>
+        </div>
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          {CORE_OPERATION_HIGHLIGHTS.map(({ icon: Icon, title, description, bullets }) => (
+            <Card
+              key={title}
+              className="border-marketing-accent/20 bg-marketing-accent/5"
+            >
+              <CardHeader>
+                <Icon className="size-10 text-marketing-accent" aria-hidden />
+                <CardTitle className="font-display text-xl">{title}</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  {description}
+                </CardDescription>
+                <ul className="mt-4 space-y-2 text-sm text-zinc-300">
+                  {bullets.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <ClipboardList
+                        className="mt-0.5 size-4 shrink-0 text-marketing-accent"
+                        aria-hidden
+                      />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <div className="mt-20 space-y-20">
         {featureGroups.map((group) => (
           <section key={group.title}>
             <div className="max-w-2xl">

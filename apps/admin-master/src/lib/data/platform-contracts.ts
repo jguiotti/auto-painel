@@ -21,7 +21,7 @@ export async function fetchPlatformContractTemplates(): Promise<
     .from("platform_contract_templates")
     .select("id, slug, name, version, body_md, is_active")
     .eq("is_active", true)
-    .order("slug")
+    .order("slug", { ascending: true })
     .order("version", { ascending: false });
 
   if (error) {

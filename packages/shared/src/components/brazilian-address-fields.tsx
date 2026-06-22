@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import {
   digitsOnly,
-  formatBrazilMobileMasked,
   formatCepMasked,
 } from "@autopainel/shared/lib/br/format-input-masks";
 import { lookupBrazilAddressByPostalCode } from "@autopainel/shared/lib/viacep";
@@ -24,19 +23,36 @@ function readInitial(addr: BrazilianAddressShape | undefined): BrazilianAddressS
 }
 
 interface BrazilianAddressFieldsProps {
-  prefix: string;
+  prefix?: string;
   initialAddress?: BrazilianAddressShape;
+  value?: BrazilianAddressShape;
+  onChange?: (next: BrazilianAddressShape) => void;
   disabled?: boolean;
   legend?: string;
+  /** When true, skip hidden form inputs (controlled JSON payloads). */
+  omitHiddenInputs?: boolean;
 }
 
 export function BrazilianAddressFields({
-  prefix,
+  prefix = "address",
   initialAddress,
+  value,
+  onChange,
   disabled,
   legend,
+  omitHiddenInputs = false,
 }: BrazilianAddressFieldsProps) {
-  const [address, setAddress] = useState(() => readInitial(initialAddress));
+  const [internalAddress, setInternalAddress] = useState(() => readInitial(initialAddress));
+  const isControlled = value !== undefined && onChange !== undefined;
+  const address = isControlled ? readInitial(value) : internalAddress;
+
+  function updateAddress(next: BrazilianAddressShape) {
+    if (isControlled) {
+      onChange(next);
+      return;
+    }
+    setInternalAddress(next);
+  }
   const [cepLookupMessage, setCepLookupMessage] = useState<string | null>(null);
   const [cepPending, setCepPending] = useState(false);
 
@@ -49,18 +65,18 @@ export function BrazilianAddressFields({
         setCepLookupMessage(result.message);
         return;
       }
-      setAddress((prev) => ({
-        ...prev,
+      updateAddress({
+        ...address,
         postal_code: formatCepMasked(result.data.postal_code),
         state: result.data.state,
         city: result.data.city,
         district: result.data.district,
-        street: result.data.street || prev.street,
+        street: result.data.street || address.street,
         complement:
-          result.data.complement_hint && !prev.complement
+          result.data.complement_hint && !address.complement
             ? result.data.complement_hint
-            : prev.complement,
-      }));
+            : address.complement,
+      });
     } finally {
       setCepPending(false);
     }
@@ -75,18 +91,32 @@ export function BrazilianAddressFields({
       {legend ? (
         <legend className="text-sm font-medium text-foreground">{legend}</legend>
       ) : null}
-      <input
-        type="hidden"
-        name={hiddenName("postal_code")}
-        value={digitsOnly(address.postal_code ?? "").slice(0, 8)}
-        readOnly
-      />
-      <input type="hidden" name={hiddenName("state")} value={address.state ?? ""} readOnly />
-      <input type="hidden" name={hiddenName("city")} value={address.city ?? ""} readOnly />
-      <input type="hidden" name={hiddenName("district")} value={address.district ?? ""} readOnly />
-      <input type="hidden" name={hiddenName("street")} value={address.street ?? ""} readOnly />
-      <input type="hidden" name={hiddenName("number")} value={address.number ?? ""} readOnly />
-      <input type="hidden" name={hiddenName("complement")} value={address.complement ?? ""} readOnly />
+      {!omitHiddenInputs ? (
+        <>
+          <input
+            type="hidden"
+            name={hiddenName("postal_code")}
+            value={digitsOnly(address.postal_code ?? "").slice(0, 8)}
+            readOnly
+          />
+          <input type="hidden" name={hiddenName("state")} value={address.state ?? ""} readOnly />
+          <input type="hidden" name={hiddenName("city")} value={address.city ?? ""} readOnly />
+          <input
+            type="hidden"
+            name={hiddenName("district")}
+            value={address.district ?? ""}
+            readOnly
+          />
+          <input type="hidden" name={hiddenName("street")} value={address.street ?? ""} readOnly />
+          <input type="hidden" name={hiddenName("number")} value={address.number ?? ""} readOnly />
+          <input
+            type="hidden"
+            name={hiddenName("complement")}
+            value={address.complement ?? ""}
+            readOnly
+          />
+        </>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-12">
         <div className="space-y-2 sm:col-span-4">
@@ -101,10 +131,10 @@ export function BrazilianAddressFields({
               disabled={disabled}
               className="min-w-[140px] flex-1"
               onChange={(event) =>
-                setAddress((prev) => ({
-                  ...prev,
+                updateAddress({
+                  ...address,
                   postal_code: formatCepMasked(event.target.value),
-                }))
+                })
               }
             />
             <Button
@@ -134,10 +164,10 @@ export function BrazilianAddressFields({
             disabled={disabled}
             className="uppercase"
             onChange={(event) =>
-              setAddress((prev) => ({
-                ...prev,
+              updateAddress({
+                ...address,
                 state: event.target.value.toUpperCase().slice(0, 2),
-              }))
+              })
             }
           />
         </div>
@@ -149,7 +179,7 @@ export function BrazilianAddressFields({
             value={address.city ?? ""}
             disabled={disabled}
             onChange={(event) =>
-              setAddress((prev) => ({ ...prev, city: event.target.value }))
+              updateAddress({ ...address, city: event.target.value })
             }
           />
         </div>
@@ -161,7 +191,7 @@ export function BrazilianAddressFields({
             value={address.district ?? ""}
             disabled={disabled}
             onChange={(event) =>
-              setAddress((prev) => ({ ...prev, district: event.target.value }))
+              updateAddress({ ...address, district: event.target.value })
             }
           />
         </div>
@@ -173,7 +203,7 @@ export function BrazilianAddressFields({
             value={address.street ?? ""}
             disabled={disabled}
             onChange={(event) =>
-              setAddress((prev) => ({ ...prev, street: event.target.value }))
+              updateAddress({ ...address, street: event.target.value })
             }
           />
         </div>
@@ -185,7 +215,7 @@ export function BrazilianAddressFields({
             value={address.number ?? ""}
             disabled={disabled}
             onChange={(event) =>
-              setAddress((prev) => ({ ...prev, number: event.target.value }))
+              updateAddress({ ...address, number: event.target.value })
             }
           />
         </div>
@@ -196,10 +226,10 @@ export function BrazilianAddressFields({
             value={address.complement ?? ""}
             disabled={disabled}
             onChange={(event) =>
-              setAddress((prev) => ({
-                ...prev,
+              updateAddress({
+                ...address,
                 complement: event.target.value,
-              }))
+              })
             }
           />
         </div>

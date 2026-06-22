@@ -114,7 +114,7 @@ export async function getVehicleSaleReceiptPageContext(
       dealership: emptyDealershipHeader(),
       receipt: null,
       leadOptions: [],
-      error: "Não foi possível carregar os dados do veículo. Verifique se as migrações de recibo foram aplicadas no Supabase.",
+      error: "Não foi possível carregar os dados do veículo. Tente novamente ou fale com o suporte.",
     };
   }
 

@@ -91,7 +91,7 @@ export function resolveClassifiedsOAuthErrorDetails(
     return {
       supportCode: "token_exchange_failed",
       title: `Não foi possível validar o login na ${label}`,
-      hint: `Credenciais ou redirect URI podem estar divergentes entre ${label}, Supabase e AutoPainel. Peça ao suporte para revisar platform_classifieds_oauth_providers e secrets da Edge.`,
+      hint: `Não foi possível validar o login na ${label}. Tente conectar novamente ou fale com o suporte AutoPainel.`,
     };
   }
 

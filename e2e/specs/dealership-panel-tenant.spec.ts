@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { TENANT_ERROR_HEADING_RE } from "../helpers/tenant-error-page";
+import { STORE_NOT_FOUND_CTA_RE, TENANT_ERROR_HEADING_RE } from "../helpers/tenant-error-page";
 
 const panelPort = process.env.E2E_DEALERSHIP_PANEL_PORT ?? "3002";
 const bareOrigin = `http://127.0.0.1:${panelPort}`;
@@ -44,14 +44,11 @@ test.describe("dealership-panel tenant routing", () => {
     await expect(h1).not.toContainText(/404/i);
   });
 
-  test("dev technical disclosure exists and starts collapsed", async ({ page }) => {
+  test("error page: no technical disclosure and CTA to AutoPainel home", async ({ page }) => {
     await page.goto(`${bareOrigin}/erro/concessionaria`);
-    const details = page.locator("details");
-    if ((await details.count()) === 0) {
-      test.skip(true, "Checklist técnica só em NODE_ENV=development (ex.: next dev).");
-    }
-    await expect(details).not.toHaveAttribute("open");
-    await expect(page.getByText("Detalhes para a equipe técnica")).toBeVisible();
+    await expect(page.getByText("Detalhes para a equipe técnica")).toHaveCount(0);
+    await expect(page.getByText(/Checklist \(desenvolvimento\)/i)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: STORE_NOT_FOUND_CTA_RE })).toBeVisible();
   });
 
   test("existing slug resolves tenant → login em /painel (sessão obrigatória)", async ({

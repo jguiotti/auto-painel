@@ -15,7 +15,7 @@ export {
 } from "@/lib/data/platform-commercial-leads-shared";
 
 const FULL_SELECT =
-  "id, full_name, email, phone, company_name, message, source, pipeline_status, lost_reason_code, lost_reason_note, created_at, updated_at";
+  "id, full_name, email, phone, company_name, message, source, metadata, pipeline_status, lost_reason_code, lost_reason_note, created_at, updated_at";
 
 const LEGACY_SELECT =
   "id, full_name, email, phone, company_name, message, source, created_at";
@@ -62,13 +62,44 @@ export async function fetchPlatformCommercialLeads(): Promise<
     }
 
     return (legacy.data ?? []).map((row) => ({
-      ...(row as Omit<PlatformCommercialLeadRow, "pipeline_status" | "lost_reason_code" | "lost_reason_note" | "updated_at">),
+      ...(row as Omit<
+        PlatformCommercialLeadRow,
+        "pipeline_status" | "lost_reason_code" | "lost_reason_note" | "updated_at" | "metadata"
+      >),
       pipeline_status: "new",
       lost_reason_code: null,
       lost_reason_note: null,
+      metadata: null,
       updated_at: (row as { created_at: string }).created_at,
     }));
   }
 
   return [];
+}
+
+export async function fetchPlatformCommercialLeadById(
+  leadId: string,
+): Promise<PlatformCommercialLeadRow | null> {
+  if (!leadId.trim()) {
+    return null;
+  }
+
+  let supabase;
+  try {
+    supabase = createSupabaseServiceRoleClient();
+  } catch {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("saas_prospects")
+    .select(FULL_SELECT)
+    .eq("id", leadId.trim())
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as PlatformCommercialLeadRow;
 }

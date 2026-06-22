@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { TENANT_ERROR_HEADING_RE } from "../helpers/tenant-error-page";
+import { STORE_NOT_FOUND_CTA_RE, TENANT_ERROR_HEADING_RE } from "../helpers/tenant-error-page";
 
 const storefrontPort = process.env.E2E_CUSTOMER_SITE_PORT ?? "3003";
 
@@ -61,14 +61,11 @@ test.describe("customer-site tenant routing", () => {
     await expect(h1).not.toContainText(/404/i);
   });
 
-  test("dev technical disclosure exists and starts collapsed", async ({ page }) => {
+  test("error page: no technical disclosure and CTA to AutoPainel home", async ({ page }) => {
     await page.goto(`http://127.0.0.1:${storefrontPort}/erro/concessionaria`);
-    const details = page.locator("details");
-    if ((await details.count()) === 0) {
-      test.skip(true, "Checklist técnica só em NODE_ENV=development (ex.: next dev).");
-    }
-    await expect(details).not.toHaveAttribute("open");
-    await expect(page.getByText("Detalhes para a equipe técnica")).toBeVisible();
+    await expect(page.getByText("Detalhes para a equipe técnica")).toHaveCount(0);
+    await expect(page.getByText(/Checklist \(desenvolvimento\)/i)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: STORE_NOT_FOUND_CTA_RE })).toBeVisible();
   });
 
   test("dealership slug loads storefront home when status is active", async ({

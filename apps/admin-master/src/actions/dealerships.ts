@@ -17,6 +17,7 @@ import googleFontFamilies from "@autopainel/shared/data/google-fonts-families.js
 
 import { deleteAuthUserOrOrphanProfile } from "@/lib/auth/delete-auth-user-or-orphan-profile";
 import { requireAdminSession } from "@/lib/auth/require-admin";
+import { linkCommercialLeadToDealershipAction } from "@/actions/platform-commercial-leads";
 import { provisionDealershipHostsInBackground } from "@/lib/provision-dealership-hosts";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { digitsOnly, normalizeDomainHostname } from "@/lib/br-format";
@@ -30,6 +31,7 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 const PRICING_PLAN_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const INTAKE_UUID_RE = PRICING_PLAN_UUID_RE;
 const BRANDING_BUCKET = "dealership-branding";
 const MAX_BRAND_BYTES = 2 * 1024 * 1024;
 const MAX_HERO_BACKGROUND_BYTES = 5 * 1024 * 1024;
@@ -67,6 +69,7 @@ const REVALIDATE_PATHS = [
   "/painel/dashboard",
   "/painel/financeiro",
   "/painel/leads-comerciais",
+  "/painel/adesoes-trial",
   "/painel/planos",
   "/painel/usuarios",
 ];
@@ -989,6 +992,20 @@ export async function createDealershipAction(
 
   REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
   provisionDealershipHostsInBackground(slug);
+
+  const sourceIntakeId = String(formData.get("source_intake_id") ?? "").trim();
+  if (INTAKE_UUID_RE.test(sourceIntakeId)) {
+    await supabase.rpc("mark_dealership_onboarding_intake_converted", {
+      p_intake_id: sourceIntakeId,
+      p_dealership_id: dealershipId,
+    });
+  }
+
+  const sourceSaasProspectId = String(formData.get("source_saas_prospect_id") ?? "").trim();
+  if (INTAKE_UUID_RE.test(sourceSaasProspectId)) {
+    await linkCommercialLeadToDealershipAction(sourceSaasProspectId, dealershipId);
+  }
+
   return { success: true };
 }
 

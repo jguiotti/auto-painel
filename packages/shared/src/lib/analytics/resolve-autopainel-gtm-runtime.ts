@@ -13,6 +13,7 @@ interface ResolveAutopainelGtmRuntimeParams {
   platformRootDomain?: string | null;
   dealershipIdCookie?: string | null;
   analyticsConsentGranted?: boolean;
+  isInternalTraffic?: boolean;
 }
 
 export function resolveAutopainelGtmRuntime(
@@ -34,7 +35,9 @@ export function resolveAutopainelGtmRuntime(
     platformRoot,
   );
 
-  const analyticsConsentGranted = params.analyticsConsentGranted ?? true;
+  const isInternalTraffic = params.isInternalTraffic === true;
+  const analyticsConsentGranted =
+    !isInternalTraffic && (params.analyticsConsentGranted ?? true);
 
   const dataLayer = {
     ap_app_surface: params.appSurface,
@@ -42,6 +45,7 @@ export function resolveAutopainelGtmRuntime(
     ap_dealership_slug: dealershipSlug,
     ap_dealership_id: params.dealershipIdCookie?.trim() || null,
     ap_analytics_consent: analyticsConsentGranted ? ("granted" as const) : ("denied" as const),
+    ap_internal_traffic: isInternalTraffic || undefined,
     ap_hotjar_tags: buildHotjarRecordingTags({
       ap_app_surface: params.appSurface,
       ap_dealership_slug: dealershipSlug,

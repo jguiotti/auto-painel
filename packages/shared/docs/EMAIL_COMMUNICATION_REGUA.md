@@ -238,6 +238,74 @@ Do PRD `tenant_operator_journey` — **não é Auth automático**, enviado pela 
 
 ---
 
+## 8. Régua — Campanha trial e vendas B2B (jun/2026)
+
+Complementa §3–§4 para prospecção ativa, trial Essencial e conversão comercial. **Canal alvo:** Resend (`noreply@autopainel.com.br`) + fila interna (fase 2). **Métrica:** taxa de abertura + clique no CTA principal; **prazo de validação:** 48 h após cada template publicado.
+
+### 8.1 Matriz de disparo (regras)
+
+| ID | Evento | Quando dispara | Destinatário | Bloqueio / dedupe | Prioridade |
+| --- | --- | --- | --- | --- | --- |
+| **TRIAL-01** | Adesão trial recebida (vaga imediata) | `submit_dealership_onboarding_intake` + `campaign.setup_fee_waived=true` | E-mail do representante legal | 1 e-mail / intake / 24 h | Alta |
+| **TRIAL-02** | Fila de espera trial | Mesmo RPC + `campaign.trial_waitlist=true` | Mesmo | 1 e-mail / intake | Média |
+| **TRIAL-03** | Trial ativado (go-live) | Admin converte intake → loja `trialing` | Gestor + e-mail comercial da loja | 1 e-mail / dealership | Alta |
+| **TRIAL-04** | Trial D-7 | Cron: `trial_ends_at - 7 dias` | Gestor da loja | 1 por ciclo trial | Alta |
+| **TRIAL-05** | Trial D-1 | Cron: `trial_ends_at - 1 dia` | Gestor | 1 por ciclo | Alta |
+| **TRIAL-06** | Trial encerrado sem contrato | Status → `paused`/`churned` pós-trial | Gestor + comercial interno | 1 | Média |
+| **SALES-01** | Lead comercial manual | Admin `createPlatformCommercialLeadAction` | **Interno:** ops@ ou Slack — **não** e-mail ao prospect | — | Baixa |
+| **SALES-02** | Proposta / contrato rascunho | `platform_contracts.status=draft` + `saas_prospect_id` | Comercial interno (opcional) | — | Baixa |
+| **SALES-03** | Contrato enviado p/ assinatura | `sent_for_signature` | Contratante (`counterparty_email`) | 1 / contrato | Alta |
+| **SALES-04** | Contrato assinado | `signed` | Contratante + gestor + ops | 1 | Alta |
+| **SALES-05** | Loja criada pós-lead | `linkCommercialLeadToDealershipAction` | Gestor (LOJ-01 convite senha) **antes** de TRIAL-03 | LOJ-01 substitui duplicata | Alta |
+| **MKT-01** | Formulário contato site | `submitSaasProspectAction` | Prospect (confirmação) + alerta interno | 1 / e-mail / 1 h | Média |
+| **MKT-02** | WhatsApp float lead | `lead_channel=whatsapp_float` | Interno comercial | dedupe 24 h | Média |
+
+### 8.2 Regras de negócio (disparo)
+
+| ID | Regra |
+| --- | --- |
+| **BZ-EMAIL-TR-001** | **TRIAL-01** e **TRIAL-02** são mutuamente exclusivos no mesmo intake. |
+| **BZ-EMAIL-TR-002** | Nunca enviar **TRIAL-03** sem **LOJ-01** (convite senha) ter sido disparado ou agendado no mesmo batch. |
+| **BZ-EMAIL-TR-003** | **TRIAL-04/05** só para lojas com `subscription_status=trialing` e sem contrato `signed`. |
+| **BZ-EMAIL-TR-004** | **SALES-03** usa template `saas-acquisition` (contrato comercial), **nunca** `trial-adhesion`. |
+| **BZ-EMAIL-TR-005** | `trial-adhesion` é termo informativo; e-mail **TRIAL-01** linka `/termo-adesao-trial`, não PDF de contrato. |
+| **BZ-EMAIL-TR-006** | Horário comercial BR (08h–20h America/Sao_Paulo) para e-mails ao lojista; transacionais Auth (LOJ/ADM) sem restrição. |
+| **BZ-EMAIL-TR-007** | Opt-out marketing não bloqueia transacionais de trial/contrato (base legal: execução contratual + legítimo interesse B2B). |
+
+### 8.3 Copy resumido — TRIAL-01 (adesão recebida)
+
+**Assunto:** `Recebemos sua adesão ao trial AutoPainel — próximo passo em até 1 dia útil`
+
+**CTA:** Aguardar contato (sem link) · **Rodapé:** link `/termo-adesao-trial` · **Métrica:** resposta comercial em ≤1 dia útil (manual até automação CRM).
+
+### 8.4 Copy resumido — TRIAL-02 (fila de espera)
+
+**Assunto:** `Você entrou na fila do trial Essencial — avisaremos quando abrir vaga`
+
+**Corpo:** vagas limitadas (20 setup isento) · **CTA:** nenhum · **Métrica:** conversão fila → TRIAL-01 quando vaga liberada.
+
+### 8.5 Copy resumido — SALES-03 (contrato comercial)
+
+**Assunto:** `Contrato AutoPainel — {{nome_loja}} · assinatura pendente`
+
+**Anexo / link:** provedor de assinatura · **Template DB:** `Contrato SaaS — Licença de Uso e Assinatura (comercial)`.
+
+### 8.6 Implementação sugerida (fases)
+
+| Fase | Escopo | Prazo |
+| --- | --- | --- |
+| **1** | Auth ADM/LOJ (§3–§4) + Resend SMTP Supabase | Imediato |
+| **2** | Edge Function `send-transactional-email` + tabela `email_outbox` (idempotency key) | Pós trial go-live |
+| **3** | Cron trial D-7/D-1 via Supabase pg_cron ou Vercel Cron | Pós 10 lojas trial |
+
+### 8.7 Próximo passo operacional
+
+1. Publicar templates HTML TRIAL-01/02 e SALES-03 no Resend.  
+2. Ligar **TRIAL-01/02** em `submit-trial-onboarding.ts` (após RPC sucesso). ✅ **Entregue** — `apps/marketing-site/src/lib/email/send-trial-onboarding-email.ts` (best-effort; não falha o submit).
+3. GTM evento `transactional_email_sent` (opcional) — ver `GTM_EVENTS.md`.
+
+---
+
 ## 7. Implementação técnica (resumo para DevOps / Backend)
 
 ### 7.1 Opções Supabase Auth
@@ -260,10 +328,11 @@ https://*.loja.autopainel.com.br/**
 
 ### 7.3 Gap de código (prioridade)
 
-1. `inviteDealershipCollaboratorAction` — chamar envio de e-mail também para **usuário novo** (hoje só `linked_existing_user`).
-2. Admin — criar `/recuperar-senha` + fluxo `/auth/confirm` + `/definir-senha`.
+1. `inviteDealershipCollaboratorAction` — envio de e-mail para usuário novo (verificar estado actual).
+2. Admin — `/recuperar-senha`, `/auth/confirm`, `/definir-senha` ✅ implementados; validar SMTP Resend em produção.
 3. Templates HTML AutoPainel + Edge Function whitelabel painel.
-4. SMTP produção (SendGrid/Resend) — `auth.email.smtp` no Supabase.
+4. SMTP produção (Resend) — `auth.email.smtp` no Supabase.
+5. Disparos **TRIAL-01/02** e **SALES-03** — ver §8 (**TRIAL-01/02** ✅ marketing-site + Resend).
 
 ### 7.4 Critérios de aceite (QA)
 
@@ -277,7 +346,7 @@ https://*.loja.autopainel.com.br/**
 
 ---
 
-## 8. Cronograma sugerido (squad)
+## 9. Cronograma sugerido (squad)
 
 | Fase | Entrega |
 | --- | --- |
@@ -286,6 +355,7 @@ https://*.loja.autopainel.com.br/**
 | **3** | Auth Hook whitelabel painel (LOJ-01, LOJ-02) |
 | **4** | Modelo OPS-01 na documentação operacional + optional SendGrid template |
 | **5** | LOJ-04, e-mail lead/cobrança (backlog) |
+| **6** | TRIAL-01…06 + SALES-03/04 (§8) |
 
 ---
 

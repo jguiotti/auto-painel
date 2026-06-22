@@ -115,7 +115,38 @@ export async function createPlatformContractAction(
     return { error: "Não foi possível criar o contrato." };
   }
 
+  if (saasProspectId) {
+    const { data: leadRow } = await supabase
+      .from("saas_prospects")
+      .select("metadata, pipeline_status")
+      .eq("id", saasProspectId)
+      .maybeSingle();
+
+    if (leadRow) {
+      const metadata =
+        leadRow.metadata && typeof leadRow.metadata === "object"
+          ? { ...(leadRow.metadata as Record<string, unknown>) }
+          : {};
+      metadata.last_contract_id = inserted.id as string;
+
+      const nextPipeline =
+        leadRow.pipeline_status === "won" || leadRow.pipeline_status === "onboarding"
+          ? leadRow.pipeline_status
+          : "proposal_sent";
+
+      await supabase
+        .from("saas_prospects")
+        .update({
+          pipeline_status: nextPipeline,
+          metadata,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", saasProspectId);
+    }
+  }
+
   REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+  revalidatePath("/painel/leads-comerciais");
   return { success: true, contractId: inserted.id as string };
 }
 

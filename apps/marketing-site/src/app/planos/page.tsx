@@ -12,7 +12,7 @@ import { fetchPublicPricingCatalog } from "@/lib/public-pricing-catalog";
 export const metadata: Metadata = {
   title: "Planos e módulos",
   description:
-    "Compare planos Essencial, Profissional e Completo do AutoPainel. A partir de R$ 197/mês + setup único de R$ 497 — estoque, CRM, simulador e integrações.",
+    "Compare planos Essencial, Profissional e Completo do AutoPainel. A partir de R$ 197/mês + setup único de R$ 497 — estoque, contatos, simulador e integrações.",
   alternates: { canonical: `${LEGAL_SITE_URL}/planos` },
   openGraph: {
     title: "Planos e módulos | AutoPainel",

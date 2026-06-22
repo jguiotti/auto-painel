@@ -11,6 +11,8 @@ import {
   readStorefrontHomeConfig,
   sellsMotorcyclesFromContentConfig,
 } from "@autopainel/shared/lib/dealership/storefront-home-copy";
+import { mapOnboardingIntakeToDealershipPrefill } from "@autopainel/shared/lib/dealership/map-onboarding-intake-to-form";
+import type { DealershipOnboardingIntakePayload } from "@autopainel/shared/types";
 import {
   Badge,
   Button,
@@ -23,12 +25,9 @@ import { cn } from "@autopainel/shared/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
-import {
-  createDealershipAction,
-  updateDealershipAction,
-} from "@/actions/dealerships";
+import type { CommercialLeadDealershipPrefill } from "@/lib/data/platform-commercial-leads-shared";
 import { BrazilianAddressFields as BrazilianAddressFieldsForm } from "@/components/brazilian-address-fields";
 import { DealershipCollaboratorsPanel } from "@/components/dealership-collaborators-panel";
 import { DealershipPlanModulesPreview } from "@/components/dealership-plan-modules-preview";
@@ -51,6 +50,10 @@ import type {
 } from "@/lib/data/dealership-operator-billing";
 import type { DealershipAdminRow } from "@/types/dealership-admin";
 
+import {
+  createDealershipAction,
+  updateDealershipAction,
+} from "@/actions/dealerships";
 import { DealershipBrandUpload } from "./dealership-brand-upload";
 import { DealershipUnitsEditor } from "./dealership-units-editor";
 import { DealershipTemplatePicker } from "./dealership-template-picker";
@@ -190,6 +193,8 @@ type FormDefaults = {
 function getDefaults(
   mode: "create" | "edit",
   dealership: DealershipAdminRow | null,
+  intakePrefill?: DealershipOnboardingIntakePayload | null,
+  leadPrefill?: CommercialLeadDealershipPrefill | null,
 ): FormDefaults {
   if (mode === "edit" && dealership) {
     const c = colorsFromTheme(dealership.theme_settings);
@@ -221,6 +226,65 @@ function getDefaults(
       status: dealership.status,
       layout_id: dealership.layout_id ?? 1,
       storefront_theme_mode: storefrontThemeModeFromDealership(dealership),
+    };
+  }
+  if (mode === "create" && intakePrefill) {
+    const mapped = mapOnboardingIntakeToDealershipPrefill(intakePrefill);
+    return {
+      name: mapped.name,
+      slug: mapped.slug,
+      cnpj: mapped.cnpj,
+      custom_domain: mapped.custom_domain,
+      contact_email: mapped.contact_email,
+      whatsapp_number: mapped.whatsapp_number,
+      pricing_plan_id: "",
+      primary: mapped.primary,
+      primaryForeground: mapped.primaryForeground,
+      secondary: mapped.secondary,
+      header_logo_url: mapped.logo_light_url || mapped.logo_dark_url,
+      logo_light_url: mapped.logo_light_url,
+      logo_dark_url: mapped.logo_dark_url,
+      footer_logo_url: mapped.footer_logo_url,
+      google_font_heading: mapped.google_font_heading,
+      google_font_body: mapped.google_font_body,
+      favicon_url: mapped.favicon_url,
+      about_text: mapped.about_text,
+      hq_address: mapped.hq_address,
+      social_instagram: mapped.social_instagram,
+      social_facebook: mapped.social_facebook,
+      social_website: mapped.social_website,
+      status: "pending_setup",
+      layout_id: mapped.layout_id,
+      storefront_theme_mode: mapped.storefront_theme_mode,
+    };
+  }
+  if (mode === "create" && leadPrefill) {
+    return {
+      name: leadPrefill.storeName,
+      slug: leadPrefill.slugSuggestion,
+      cnpj: leadPrefill.cnpj,
+      custom_domain: "",
+      contact_email: leadPrefill.contactEmail,
+      whatsapp_number: leadPrefill.whatsapp,
+      pricing_plan_id: "",
+      primary: "#0f172a",
+      primaryForeground: "#f8fafc",
+      secondary: "#64748b",
+      header_logo_url: "",
+      logo_light_url: "",
+      logo_dark_url: "",
+      footer_logo_url: "",
+      google_font_heading: "",
+      google_font_body: "",
+      favicon_url: "",
+      about_text: "",
+      hq_address: {},
+      social_instagram: "",
+      social_facebook: "",
+      social_website: "",
+      status: "pending_setup",
+      layout_id: 1,
+      storefront_theme_mode: "light",
     };
   }
   return {
@@ -277,6 +341,10 @@ export function DealershipForm({
   operatorBilling,
   billingHistory,
   billingTablesUnavailable,
+  intakePrefill,
+  intakeId,
+  leadPrefill,
+  leadId,
 }: {
   mode: "create" | "edit";
   dealership: DealershipAdminRow | null;
@@ -287,16 +355,44 @@ export function DealershipForm({
   operatorBilling?: DealershipBillingRow | null;
   billingHistory?: DealershipBillingHistoryRow[];
   billingTablesUnavailable?: boolean;
+  intakePrefill?: DealershipOnboardingIntakePayload | null;
+  intakeId?: string | null;
+  leadPrefill?: CommercialLeadDealershipPrefill | null;
+  leadId?: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const defaults = getDefaults(mode, dealership);
+  const defaults = useMemo(() => {
+    const base = getDefaults(mode, dealership, intakePrefill, leadPrefill);
+    if ((intakePrefill || leadPrefill) && !base.pricing_plan_id) {
+      const plan = pricingPlans.find(
+        (item) => item.slug === "starter" || item.slug === "trial",
+      );
+      if (plan) {
+        return { ...base, pricing_plan_id: plan.id };
+      }
+    }
+    return base;
+  }, [mode, dealership, intakePrefill, leadPrefill, pricingPlans]);
+
+  const initialHomeConfig = useMemo(() => {
+    if (intakePrefill) {
+      return mapOnboardingIntakeToDealershipPrefill(intakePrefill).storefront_home_config;
+    }
+    return readStorefrontHomeConfig(dealership?.content_config ?? null);
+  }, [dealership?.content_config, intakePrefill]);
   const [layoutId, setLayoutId] = useState<StorefrontLayoutTemplateId>(
     defaults.layout_id,
   );
   const [activeTab, setActiveTab] = useState<DealershipEditTab>("geral");
   const [selectedPlanId, setSelectedPlanId] = useState(defaults.pricing_plan_id);
+
+  useEffect(() => {
+    if (defaults.pricing_plan_id) {
+      setSelectedPlanId(defaults.pricing_plan_id);
+    }
+  }, [defaults.pricing_plan_id]);
 
   const planNameById = useMemo(() => {
     const map: Record<string, string> = {};
@@ -408,6 +504,12 @@ export function DealershipForm({
         className="relative space-y-8"
         aria-busy={pending}
       >
+        {intakeId ? (
+          <input type="hidden" name="source_intake_id" value={intakeId} />
+        ) : null}
+        {leadId ? (
+          <input type="hidden" name="source_saas_prospect_id" value={leadId} />
+        ) : null}
         {pending ? (
           <div
             className="fixed inset-0 z-40 flex items-center justify-center bg-background/70 backdrop-blur-[2px]"
@@ -697,7 +799,7 @@ export function DealershipForm({
 
         <StorefrontHomeContentFields
           layoutId={layoutId}
-          initialConfig={readStorefrontHomeConfig(dealership?.content_config ?? null)}
+          initialConfig={initialHomeConfig}
           dealershipName={defaults.name}
           sellsMotorcycles={sellsMotorcyclesFromContentConfig(
             dealership?.content_config ?? null,

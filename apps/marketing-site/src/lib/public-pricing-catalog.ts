@@ -7,6 +7,7 @@ import {
   resolveMarketingPlanStockBand,
 } from "@/lib/marketing-plan-prices";
 import {
+  MARKETING_MODULE_COMING_SOON_KEYS,
   PLAN_MODULES,
   PRICING_PLANS,
 } from "@/lib/plans-catalog";
@@ -26,6 +27,7 @@ export interface PublicPricingModule {
   label: string;
   description: string;
   planSlugs: string[];
+  comingSoon?: boolean;
 }
 
 export interface PublicPricingCatalog {
@@ -71,6 +73,7 @@ function staticFallbackCatalog(): PublicPricingCatalog {
         module.business ? "business" : null,
         module.enterprise ? "enterprise" : null,
       ].filter((slug): slug is string => slug !== null),
+      comingSoon: module.comingSoon ?? MARKETING_MODULE_COMING_SOON_KEYS.has(module.key),
     })),
   };
 }
@@ -107,6 +110,7 @@ function mapRpcCatalog(payload: {
       label: module.label,
       description: module.description,
       planSlugs: module.plan_slugs ?? [],
+      comingSoon: MARKETING_MODULE_COMING_SOON_KEYS.has(module.key),
     })),
   };
 }

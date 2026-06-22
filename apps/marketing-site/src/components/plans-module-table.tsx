@@ -1,9 +1,11 @@
 import { Check, Minus } from "lucide-react";
 
 import { AnalyticsTrackedLink } from "@autopainel/shared/components/analytics/analytics-tracked-link";
-import { Button } from "@autopainel/shared/ui";
+import { Badge, Button } from "@autopainel/shared/ui";
 
 import { BASE_INCLUDED_FEATURES } from "@/lib/plans-catalog";
+import { TRIAL_LIMITED_SPOTS } from "@/lib/legal/trial-constants";
+import { TRIAL_CAMPAIGN_SETUP_WAIVER_LINE } from "@/lib/trial-campaign-copy";
 import type { PublicPricingCatalog } from "@/lib/public-pricing-catalog";
 
 function CellIcon({ included }: { included: boolean }) {
@@ -45,7 +47,11 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
         <p className="mt-4 text-sm text-zinc-400">
           <span className="font-medium text-zinc-300">Setup único (obrigatório):</span>{" "}
           {setupFeeLabel} — onboarding assistido, configuração da vitrine e importação
-          inicial do estoque. Cobrado uma vez na contratação; não entra na mensalidade.
+          inicial do estoque. Cobrado uma vez na contratação; não entra na mensalidade.{" "}
+          <span className="text-marketing-accent">
+            Campanha trial Essencial: {TRIAL_LIMITED_SPOTS} vagas com setup isento —{" "}
+            {TRIAL_CAMPAIGN_SETUP_WAIVER_LINE}
+          </span>
         </p>
       </div>
 
@@ -91,7 +97,17 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
             {modules.map((row) => (
               <tr key={row.key} className="border-b border-white/5 hover:bg-white/[0.02]">
                 <th scope="row" className="px-4 py-4 font-normal md:px-6">
-                  <p className="font-medium text-zinc-200">{row.label}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium text-zinc-200">{row.label}</p>
+                    {row.comingSoon ? (
+                      <Badge
+                        variant="secondary"
+                        className="border border-amber-500/30 bg-amber-500/10 text-[10px] font-medium uppercase tracking-wide text-amber-200"
+                      >
+                        Em breve
+                      </Badge>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-xs text-zinc-500">{row.description}</p>
                 </th>
                 {plans.map((plan) => {
@@ -129,21 +145,34 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
               {plan.priceLabel}
             </p>
             <p className="mt-2 text-sm text-zinc-400">
-              Setup:{" "}
-              <span className="font-medium text-zinc-300">{plan.setupLabel}</span>
-              <span className="text-zinc-500"> (único, obrigatório)</span>
+              {plan.slug === "starter" ? (
+                <>
+                  Setup:{" "}
+                  <span className="font-medium text-marketing-accent">Isento na campanha trial</span>
+                  <span className="text-zinc-500">
+                    {" "}
+                    (primeiros {TRIAL_LIMITED_SPOTS} lojistas — depois {plan.setupLabel})
+                  </span>
+                </>
+              ) : (
+                <>
+                  Setup:{" "}
+                  <span className="font-medium text-zinc-300">{plan.setupLabel}</span>
+                  <span className="text-zinc-500"> (único, obrigatório)</span>
+                </>
+              )}
             </p>
             <Button
               className="mt-6 w-full bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
               asChild
             >
               <AnalyticsTrackedLink
-                href="/contato"
+                href="/adesao-trial"
                 apEvent="cta_click"
                 apEventCategory="conversion"
                 apEventLabel={`plan_card_${plan.slug}`}
               >
-                Falar com vendas
+                {plan.slug === "starter" ? "Começar trial grátis" : "Falar com vendas"}
               </AnalyticsTrackedLink>
             </Button>
           </div>

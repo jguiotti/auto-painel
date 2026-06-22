@@ -314,6 +314,7 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | **BZ-GR-002** | Painel: utilizador autenticado com loja não `active` redireciona para `/conta-inativa`. |
 | **BZ-GR-003** | Preços no marketing-site refletem `pricing_plans.price_amount`; fallback estático alinhado aos mesmos valores. |
 | **BZ-GR-004** | Leads do site entram em `saas_prospects` com pipeline comercial gerido no admin. |
+| **BZ-GR-005** | Admin cadastra leads manualmente (`source=admin_manual`) — mesmo pipeline, vínculo com contrato (`saas_prospect_id`) e loja (`metadata.dealership_id` + onboarding). |
 | **BZ-GR-005** | Slugs `guiotti` e `demo` são referência interna — protegidos contra inativação e exclusão. |
 | **BZ-GR-006** | Contrato comercial: rascunho editável (notas); envio congela `body_snapshot_md`; assinatura registra `signature_provider_ref`. |
 | **BZ-GR-007** | Calendário editorial marketing gerido no admin (`platform_content_calendar_items`). |
@@ -330,4 +331,100 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | **BZ-GR-008** | CRM loja: contato pode ter **vários veículos de interesse** (estoque disponível); após venda, veículo vincula ao comprador e sai da lista dos demais. |
 | **BZ-GR-009** | Contrato SaaS loja v2: boleto Sicoob; suspensão após **3 dias** de atraso; modelo em `CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` (revisão OAB). |
 
-*Última atualização: junho/2026 — épico crescimento **P0–P4 fechado** (exc. guerrilla marketing); épicos 3/4/5 base fechados — ver `EPICS_CLOSURE_JUN2026.md`*
+---
+
+## Épico campanha trial Essencial (jun/2026) — **em rollout**
+
+### Feature Description
+
+Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`starter`), com formulário público de onboarding completo, matriz comercial atualizada no marketing-site e conversão operacional no admin-master.
+
+### Superfícies
+
+| App | Escopo |
+| --- | --- |
+| **marketing-site** | `/planos` (módulos + badge «Em breve»); `/adesao-trial`; `/termo-adesao-trial`; CTA trial no Essencial |
+| **admin-master** | `/painel/adesoes-trial`; `/painel/concessionarias/nova?intake=` prefill; vínculo `saas_prospects` |
+| **customer-site** | Templates 1/2/3 exibem todos os blocos de texto; revisão LGPD vitrine |
+| **dealership-panel** | Lojas trial com módulos Essencial efetivos após provisionamento |
+
+### Matriz comercial (marketing + `pricing_plan_modules`)
+
+| Plano | Módulos destacados |
+| --- | --- |
+| **Essencial** | Simulador, QR Code, Métricas avançadas + base |
+| **Profissional** | Essencial + Recibo compra/venda |
+| **Completo** | Todos os módulos ativos |
+| **Em breve (UI)** | Integração iCarros · Kit redes sociais (Meta) |
+
+### Regras de negócio
+
+| ID | Regra |
+| --- | --- |
+| **BZ-TR-001** | Trial = 30 dias no tier **Essencial**; após prazo exige contrato pago ou suspensão. |
+| **BZ-TR-002** | Formulário `/adesao-trial` é **aberto** (anon); exige aceite Termo Trial + LGPD detentora de leads. |
+| **BZ-TR-003** | Intake gera lead B2B (`source=trial_onboarding`, pipeline `onboarding`) e registro em `dealership_onboarding_intakes`. |
+| **BZ-TR-004** | Admin converte intake em loja via prefill — operador revisa antes de publicar. |
+| **BZ-TR-005** | iCarros e Meta exibem «Em breve» no comparativo; **não** prometer disponibilidade no trial. |
+| **BZ-TR-006** | Loja controladora / AutoPainel operadora **e detentora** de dados de clientes e leads — cláusula obrigatória no termo trial e vitrine. |
+| **BZ-TR-007** | Campanha limitada a **20 vagas imediatas** com **setup R$ 497 isento** excepcionalmente; contagem = intakes `submitted` \| `linked` \| `converted`. |
+| **BZ-TR-008** | Após esgotar vagas imediatas, formulário permanece aberto como **fila de espera** (`payload.campaign.trial_waitlist`, lead `metadata.trial_waitlist`); contato quando houver nova vaga. |
+
+### Cenários de aceite
+
+| # | Cenário |
+| --- | --- |
+| CA-TR-01 | Lojista preenche adesão → intake `submitted` + lead comercial criado. |
+| CA-TR-02 | Admin abre «Converter em loja» → formulário pré-preenchido com slug/CNPJ/branding. |
+| CA-TR-03 | `/planos` Essencial lista Simulador, QR e Métricas; iCarros/Meta com badge «Em breve». |
+| CA-TR-neg-01 | Envio sem aceite LGPD detentora → bloqueado com mensagem clara. |
+| CA-TR-neg-02 | Slug inválido ou e-mail malformado → erro de validação. |
+| CA-TR-04 | Vagas imediatas esgotadas → envio entra fila de espera; sucesso com copy de fila; lead `trial_waitlist=true`. |
+| CA-TR-05 | Dentro das 20 vagas → setup isento; sucesso com copy de ativação em até 1 dia útil. |
+
+### Fora de escopo
+
+- Meta Lead Ads / iCarros homologação E2E
+- Cobrança automática pós-trial (fase manual + contrato)
+- Self-service go-live sem revisão admin
+
+### Open Questions
+
+- [ ] Cupom/UTM por campanha (LinkedIn vs WhatsApp)?
+- [ ] Limite de trials simultâneos por CNPJ?
+
+### Microcopy (Fase 2 — UX Writer) ✅
+
+Fonte completa: `packages/shared/docs/TRIAL_ONBOARDING_UX_COPY.md`
+
+| Superfície | Destaques |
+| --- | --- |
+| **`/planos`** | CTA Essencial «Começar trial grátis»; badge «Em breve» iCarros/Meta; módulos Essencial/Profissional/Completo alinhados à matriz BZ |
+| **`/adesao-trial`** | Wizard 5 passos; banner **20 vagas setup isento** + fila de espera; CTA «Entrar na fila» quando esgotado |
+| **`/termo-adesao-trial`** | Link no checkbox; termo validado juridicamente |
+| **Admin adesões** | Empty state; «Converter em loja»; banner prefill; toasts conversão |
+| **Vitrine legal** | Controladora loja + operadora/detentora AutoPainel |
+
+### UX (Fase 3) ✅
+
+Fonte completa: `packages/shared/docs/TRIAL_CAMPAIGN_UX_DESIGN.md`
+
+| Entrega | Resumo |
+| --- | --- |
+| Jornadas | Prospect trial → admin converte → vitrine ativa |
+| Componentes novos shared | `Stepper`, `StorefrontLayoutPreview`, `FileUploadField`, `KeyValueRepeater`, export `BrazilianAddressFields` |
+| Responsivo | Marketing mobile-first; admin desktop-first |
+| Edge cases | Empty adesões, slug duplicado, upload parcial — copy UX Writer |
+
+### Arquitetura (Fase 4) ✅
+
+Fonte: `packages/shared/docs/TRIAL_CAMPAIGN_ARCHITECTURE.md`
+
+| Item | Decisão |
+| --- | --- |
+| Escopo dados | Intake = plataforma (sem tenant_id); pós-conversão RLS normal em `dealerships` |
+| RPCs | submit, update payload, link, convert, archive, lookup by prospect |
+| Module gating | trial/starter = simulador + QR + métricas via `pricing_plan_modules` |
+| Conversão | `createDealershipAction` + `mark_dealership_onboarding_intake_converted` |
+
+*Última atualização: junho/2026 — épico trial **em rollout** (Fase 4 Arquiteto concluída)*

@@ -47,8 +47,11 @@ export default async function PoliticaDePrivacidadePage() {
         ) : null}
       </p>
       <p>
-        A plataforma tecnológica é fornecida pela AutoPainel, que atua como operadora de
-        tratamento conforme instruções da concessionária. Dúvidas sobre a plataforma:{" "}
+        A plataforma tecnológica é fornecida pela AutoPainel, que atua como{" "}
+        <strong>operadora e detentora</strong> do tratamento de dados processados na infraestrutura
+        da vitrine (incluindo leads, simulações e registros de navegação técnica), conforme
+        instruções e contrato com a concessionária, que permanece{" "}
+        <strong>controladora</strong> perante os titulares. Dúvidas sobre a plataforma:{" "}
         <a href={`mailto:${PLATFORM_PRIVACY_EMAIL}`}>{PLATFORM_PRIVACY_EMAIL}</a>.
       </p>
 
@@ -71,11 +74,12 @@ export default async function PoliticaDePrivacidadePage() {
         <li>Segurança e prevenção a fraudes.</li>
       </ul>
 
-      <h2>4. Compartilhamento</h2>
+      <h2>4. Compartilhamento e detenção na plataforma</h2>
       <p>
         Seus dados podem ser acessados pela equipe autorizada da {storeName} e por prestadores
-        essenciais (hospedagem, e-mail, analytics), sempre com medidas de segurança. Não vendemos
-        seus dados.
+        essenciais (hospedagem, e-mail, analytics), sempre com medidas de segurança. A infraestrutura
+        da vitrine é operada pela AutoPainel, que <strong>detém e processa</strong> os registros na
+        condição de operadora contratada pela loja. Não vendemos seus dados.
       </p>
 
       <h2>5. Seus direitos</h2>

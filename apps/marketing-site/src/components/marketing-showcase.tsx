@@ -86,9 +86,9 @@ export function MarketingShowcase() {
                 </p>
               </div>
               <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                O painel administrativo (estoque, leads, equipe e integrações) é exclusivo
-                da sua concessionária — não há acesso público por segurança. Solicite uma
-                demonstração guiada ou acesso de teste: nossa equipe configura tudo e libera
+                O painel administrativo — estoque, central de contatos, equipe e integrações
+                (conforme plano) — é exclusivo da sua concessionária. Solicite uma
+                demonstração guiada ou trial Essencial: nossa equipe configura tudo e libera
                 seu ambiente em até um dia útil.
               </p>
             </div>

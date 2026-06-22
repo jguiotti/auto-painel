@@ -11,6 +11,8 @@ export interface AutopainelGtmDataLayerContext {
   ap_dealership_id: string | null;
   /** granted | denied — vitrine/marketing follow cookie banner; painel/admin default granted */
   ap_analytics_consent: "granted" | "denied";
+  /** true when GA4_INTERNAL_TRAFFIC_IPS matches — GTM still loads; tags should not fire */
+  ap_internal_traffic?: boolean;
   /** Hotjar recording tags (same site ID, filter by tag in dashboard) */
   ap_hotjar_tags: string[];
 }

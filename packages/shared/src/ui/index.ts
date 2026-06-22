@@ -98,6 +98,14 @@ export {
   SheetTrigger,
 } from "./sheet";
 export { ScrollArea, ScrollBar } from "./scroll-area";
+export { Stepper, type StepperProps, type StepperStep } from "./stepper";
+export { FileUploadField, type FileUploadFieldProps } from "./file-upload-field";
+export { StorefrontLayoutPreview, type StorefrontLayoutPreviewProps } from "./storefront-layout-preview";
+export {
+  StorefrontLayoutPicker,
+  type StorefrontLayoutPickerProps,
+} from "./storefront-layout-picker";
+export { KeyValueRepeater, type KeyValueRepeaterProps, type KeyValueRepeaterRow } from "./key-value-repeater";
 export {
   NotificationCenter,
   NotificationCenterSheet,

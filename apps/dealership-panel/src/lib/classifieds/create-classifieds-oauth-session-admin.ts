@@ -13,7 +13,7 @@ export class ClassifiedsOAuthSessionStoreMismatchError extends Error {
 }
 
 export function classifiedsOAuthSessionStoreMismatchMessage(): string {
-  return "Para conectar a OLX a partir do localhost, use CLASSIFIEDS_OAUTH_DEV_STUB=true (simulação), aponte NEXT_PUBLIC_SUPABASE_URL para o projeto remoto (wcgevmvystdhqpzwuyig), ou teste no painel publicado em {slug}.loja.autopainel.com.br.";
+  return "Não foi possível conectar a integração no momento. Acesse o painel pelo endereço oficial da sua loja ou fale com o suporte AutoPainel.";
 }
 
 /**

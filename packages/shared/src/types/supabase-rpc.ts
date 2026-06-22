@@ -333,6 +333,42 @@ export interface ClawbackDealershipSalesCommissionsArgs {
   p_dealership_id: string;
 }
 
+/** `public.submit_dealership_onboarding_intake` — marketing trial onboarding insert. */
+export interface SubmitDealershipOnboardingIntakeArgs {
+  p_payload: Record<string, unknown>;
+  p_trial_legal_version: string;
+  p_trial_accepted_at: string;
+  p_saas_prospect_id?: string | null;
+}
+
+/** `public.link_dealership_onboarding_intake_to_prospect` — admin CRM link. */
+export interface LinkDealershipOnboardingIntakeToProspectArgs {
+  p_intake_id: string;
+  p_saas_prospect_id: string;
+}
+
+/** `public.mark_dealership_onboarding_intake_converted` — post createDealership. */
+export interface MarkDealershipOnboardingIntakeConvertedArgs {
+  p_intake_id: string;
+  p_dealership_id: string;
+}
+
+/** `public.archive_dealership_onboarding_intake` — admin archive. */
+export interface ArchiveDealershipOnboardingIntakeArgs {
+  p_intake_id: string;
+}
+
+/** `public.get_dealership_onboarding_intake_id_for_prospect` — CRM lookup. */
+export interface GetDealershipOnboardingIntakeIdForProspectArgs {
+  p_saas_prospect_id: string;
+}
+
+/** `public.update_dealership_onboarding_intake_payload` — merge asset URLs. */
+export interface UpdateDealershipOnboardingIntakePayloadArgs {
+  p_intake_id: string;
+  p_payload: Record<string, unknown>;
+}
+
 /** `public.approve_sales_commission_ledger_entries` — bulk approve pending lines. */
 export interface ApproveSalesCommissionLedgerEntriesArgs {
   p_entry_ids: string[];

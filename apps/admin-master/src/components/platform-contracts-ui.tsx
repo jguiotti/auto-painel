@@ -99,7 +99,7 @@ export function PlatformContractsTable({ rows }: PlatformContractsTableProps) {
 }
 
 interface CreateContractFormProps {
-  templates: Array<{ id: string; name: string; version: number }>;
+  templates: Array<{ id: string; slug: string; name: string; version: number }>;
   defaultProspect?: {
     id: string;
     full_name: string;
@@ -152,11 +152,20 @@ export function CreateContractForm({
           name="template_id"
           required
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-          defaultValue={templates[0]?.id ?? ""}
+          defaultValue={
+            templates.find((template) => template.slug === "saas-acquisition")?.id ??
+            templates[0]?.id ??
+            ""
+          }
         >
           {templates.map((template) => (
             <option key={template.id} value={template.id}>
-              {template.name} (v{template.version})
+              {template.name}
+              {template.slug === "trial-adhesion"
+                ? " — termo trial (não substitui contrato comercial)"
+                : template.slug === "saas-acquisition"
+                  ? " — contrato comercial pós-trial"
+                  : ""}
             </option>
           ))}
         </select>

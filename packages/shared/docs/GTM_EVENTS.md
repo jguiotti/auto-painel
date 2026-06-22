@@ -59,6 +59,7 @@ Campos de contexto (`ap_app_surface`, etc.) já foram enviados no bootstrap da p
 | `cookie_consent_essential` | consent | Apenas cookies essenciais | ✅ implementado |
 | `whatsapp_click` | conversion | Abrir dialog WhatsApp (float/trigger) | ✅ implementado |
 | `cta_click` | engagement / conversion | CTAs hero, header, planos, bottom (`ap_event_label` = destino) | ✅ implementado |
+| `trial_onboarding_submit` | conversion | Formulário `/adesao-trial` enviado com sucesso | ✅ implementado |
 
 Labels comuns em `cta_click`: `hero_demo`, `hero_planos`, `header_demo`, `bottom_demo`, `bottom_funcionalidades`, `plan_card_starter`, `plan_card_business`, `plan_card_enterprise`.
 

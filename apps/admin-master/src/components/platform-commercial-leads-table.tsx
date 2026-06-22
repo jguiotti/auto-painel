@@ -1,11 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useTransition } from "react";
-import { Inbox } from "lucide-react";
+import { Building2, ExternalLink, FileSignature, Inbox, MoreHorizontal } from "lucide-react";
 
 import { EmptyState } from "@autopainel/shared/components/empty-state";
-
 import {
+  Badge,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -21,10 +28,33 @@ import {
 
 import { updatePlatformCommercialLeadPipelineAction } from "@/actions/platform-commercial-leads";
 import {
+  PLATFORM_LEAD_MANUAL_CHANNELS,
   PLATFORM_LEAD_PIPELINE_LABELS,
   PLATFORM_LEAD_PIPELINE_STATUSES,
+  readDealershipIdFromLeadMetadata,
+  readIntakeIdFromLeadMetadata,
   type PlatformCommercialLeadRow,
 } from "@/lib/data/platform-commercial-leads-shared";
+
+function formatSourceLabel(
+  source: string,
+  metadata: Record<string, unknown> | null,
+): string {
+  if (source === "trial_onboarding") {
+    return "Trial — formulário";
+  }
+  if (source === "marketing_site") {
+    return "Site marketing";
+  }
+  if (source === "admin_manual") {
+    const channel = metadata?.lead_channel;
+    const channelLabel = PLATFORM_LEAD_MANUAL_CHANNELS.find(
+      (item) => item.value === channel,
+    )?.label;
+    return channelLabel ? `Manual — ${channelLabel}` : "Cadastro manual";
+  }
+  return source;
+}
 
 function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -59,7 +89,7 @@ export function PlatformCommercialLeadsTable({
       <EmptyState
         icon={Inbox}
         title="Nenhum lead comercial ainda"
-        description="Leads do site marketing e formulários aparecem aqui automaticamente."
+        description="Leads do site marketing e cadastros manuais aparecem aqui. Use «Novo lead» para prospecção ativa."
       />
     );
   }
@@ -74,45 +104,101 @@ export function PlatformCommercialLeadsTable({
             <TableHead>Origem</TableHead>
             <TableHead>Pipeline</TableHead>
             <TableHead>Criado em</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>
-                <div className="font-medium">{row.full_name}</div>
-                <div className="text-xs text-muted-foreground">{row.email}</div>
-                {row.phone ? (
-                  <div className="text-xs text-muted-foreground">{row.phone}</div>
-                ) : null}
-              </TableCell>
-              <TableCell className="max-w-[200px] truncate">
-                {row.company_name ?? "—"}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">{row.source}</TableCell>
-              <TableCell>
-                <Select
-                  value={row.pipeline_status}
-                  onValueChange={(value) => handleStatusChange(row.id, value)}
-                  disabled={isPending}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PLATFORM_LEAD_PIPELINE_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {PLATFORM_LEAD_PIPELINE_LABELS[status]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {formatDate(row.created_at)}
-              </TableCell>
-            </TableRow>
-          ))}
+          {rows.map((row) => {
+            const intakeId = readIntakeIdFromLeadMetadata(row.metadata);
+            const dealershipId = readDealershipIdFromLeadMetadata(row.metadata);
+
+            return (
+              <TableRow key={row.id}>
+                <TableCell>
+                  <div className="font-medium">{row.full_name}</div>
+                  <div className="text-xs text-muted-foreground">{row.email}</div>
+                  {row.phone ? (
+                    <div className="text-xs text-muted-foreground">{row.phone}</div>
+                  ) : null}
+                </TableCell>
+                <TableCell className="max-w-[200px]">
+                  <div className="truncate">{row.company_name ?? "—"}</div>
+                  {dealershipId ? (
+                    <Badge variant="secondary" className="mt-1 text-[10px]">
+                      Loja vinculada
+                    </Badge>
+                  ) : null}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatSourceLabel(row.source, row.metadata)}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={row.pipeline_status}
+                    onValueChange={(value) => handleStatusChange(row.id, value)}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLATFORM_LEAD_PIPELINE_STATUSES.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {PLATFORM_LEAD_PIPELINE_LABELS[status]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatDate(row.created_at)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <MoreHorizontal className="size-4" />
+                        <span className="sr-only">Ações do lead</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/painel/contratos/novo?lead=${row.id}`}>
+                          <FileSignature className="mr-2 size-4" />
+                          Criar contrato
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/painel/concessionarias/nova?lead=${row.id}`}>
+                          <Building2 className="mr-2 size-4" />
+                          Criar loja
+                        </Link>
+                      </DropdownMenuItem>
+                      {dealershipId ? (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/painel/concessionarias/${dealershipId}/editar`}>
+                            <ExternalLink className="mr-2 size-4" />
+                            Abrir loja
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {intakeId ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href={`/painel/concessionarias/nova?intake=${intakeId}`}>
+                              <ExternalLink className="mr-2 size-4" />
+                              Ver adesão trial
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

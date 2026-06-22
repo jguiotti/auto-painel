@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         targetOrigin: "*",
         provider,
         success: false,
-        error: "Servidor sem credenciais Supabase.",
+        error: "Servidor indisponível no momento. Tente novamente.",
       }),
       { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 500 },
     );

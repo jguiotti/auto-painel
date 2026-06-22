@@ -58,6 +58,21 @@
       "import": "./src/lib/dealership/storefront-home-copy.ts",
       "default": "./src/lib/dealership/storefront-home-copy.ts"
     },
+    "./lib/dealership/map-onboarding-intake-to-form": {
+      "types": "./src/lib/dealership/map-onboarding-intake-to-form.ts",
+      "import": "./src/lib/dealership/map-onboarding-intake-to-form.ts",
+      "default": "./src/lib/dealership/map-onboarding-intake-to-form.ts"
+    },
+    "./lib/dealership/onboarding-intake-errors": {
+      "types": "./src/lib/dealership/onboarding-intake-errors.ts",
+      "import": "./src/lib/dealership/onboarding-intake-errors.ts",
+      "default": "./src/lib/dealership/onboarding-intake-errors.ts"
+    },
+    "./lib/dealership/validate-onboarding-intake-step": {
+      "types": "./src/lib/dealership/validate-onboarding-intake-step.ts",
+      "import": "./src/lib/dealership/validate-onboarding-intake-step.ts",
+      "default": "./src/lib/dealership/validate-onboarding-intake-step.ts"
+    },
     "./lib/dealership/parse-dealership-social-links": {
       "types": "./src/lib/dealership/parse-dealership-social-links.ts",
       "import": "./src/lib/dealership/parse-dealership-social-links.ts",
@@ -223,10 +238,35 @@
       "import": "./src/components/empty-state.tsx",
       "default": "./src/components/empty-state.tsx"
     },
+    "./components/system/app-system-status-page": {
+      "types": "./src/components/system/app-system-status-page.tsx",
+      "import": "./src/components/system/app-system-status-page.tsx",
+      "default": "./src/components/system/app-system-status-page.tsx"
+    },
+    "./components/system/app-system-error-boundary": {
+      "types": "./src/components/system/app-system-error-boundary.tsx",
+      "import": "./src/components/system/app-system-error-boundary.tsx",
+      "default": "./src/components/system/app-system-error-boundary.tsx"
+    },
+    "./components/system/store-not-found-page": {
+      "types": "./src/components/system/store-not-found-page.tsx",
+      "import": "./src/components/system/store-not-found-page.tsx",
+      "default": "./src/components/system/store-not-found-page.tsx"
+    },
+    "./lib/autopainel-site-url": {
+      "types": "./src/lib/autopainel-site-url.ts",
+      "import": "./src/lib/autopainel-site-url.ts",
+      "default": "./src/lib/autopainel-site-url.ts"
+    },
     "./components/brazilian-address-fields": {
       "types": "./src/components/brazilian-address-fields.tsx",
       "import": "./src/components/brazilian-address-fields.tsx",
       "default": "./src/components/brazilian-address-fields.tsx"
+    },
+    "./components/onboarding-intake-status-badge": {
+      "types": "./src/components/onboarding-intake-status-badge.tsx",
+      "import": "./src/components/onboarding-intake-status-badge.tsx",
+      "default": "./src/components/onboarding-intake-status-badge.tsx"
     },
     "./components/analytics/autopainel-google-tag-manager": {
       "types": "./src/components/analytics/autopainel-google-tag-manager.tsx",

@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { MarketingCoreOperations } from "@/components/marketing-core-operations";
 import { MarketingShowcase } from "@/components/marketing-showcase";
 import {
   MarketingHomeBottomCtas,
@@ -52,9 +53,9 @@ export default function MarketingHomePage() {
             Site exclusivo e painel de gestão — só da sua concessionária.
           </h1>
           <p className="font-slogan mt-6 max-w-2xl text-lg text-zinc-400 md:text-xl">
-            Venda mais com vitrine profissional, estoque atualizado e leads organizados.
-            Cada loja opera no seu ambiente: ninguém de fora acessa seu estoque nem seus
-            contatos.
+            Venda mais com vitrine profissional, estoque sempre atualizado e contatos
+            organizados para sua equipe comercial — incluídos em qualquer plano, sem
+            depender de agência.
           </p>
           <MarketingHomeHeroCtas />
           <ul className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
@@ -99,6 +100,8 @@ export default function MarketingHomePage() {
           </ul>
         </div>
       </section>
+
+      <MarketingCoreOperations />
 
       <MarketingShowcase />
 

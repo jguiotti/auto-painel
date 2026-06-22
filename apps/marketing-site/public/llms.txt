@@ -4,14 +4,14 @@
 
 ## O que é
 
-AutoPainel oferece vitrine whitelabel por loja, painel de estoque, leads, simulador de financiamento, integrações com classificados e publicação em redes sociais (Meta).
+AutoPainel oferece vitrine whitelabel por loja, painel de estoque sincronizado com a vitrine, central de contatos (leads) com atribuição por vendedor — incluídos em todos os planos — simulador de financiamento, QR Code, métricas e integrações com classificados (conforme plano).
 
 ## Site oficial
 
 - https://autopainel.com.br
 - https://autopainel.com.br/funcionalidades
 - https://autopainel.com.br/planos
-- https://autopainel.com.br/contato
+- https://autopainel.com.br/adesao-trial
 
 ## Redes sociais
 

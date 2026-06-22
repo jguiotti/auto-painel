@@ -368,7 +368,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | Vitrines demo (marketing) | Slugs `demo-2` (layout 1), `demo-3` (layout 2), `demo` (layout 3) — links na home `marketing-showcase.tsx`; painel em `{slug}.loja.autopainel.com.br` com login partilhado `gestor.demo@autopainel.demo` / `LojaDemo123!` (RPC `bind_showcase_demo_panel_dealership`, migração `20260620190300`). Nova loja demo: `npm run dealership:hosts:provision -- <slug>`. Estoque showcase: migração `20260620190000_seed_showcase_demo_vehicles.sql` (20 veículos/loja, 4 fotos cada, prefixo `showcase-`); regerar catálogo: `node scripts/generate-showcase-demo-vehicles-migration.mjs`. Hero layout 2: `home-hero.tsx` centralizado verticalmente |
 | Vitrine inativa | RPC `resolve_dealership_storefront_tenant`, `get_dealership_storefront_shell_by_id`; rota `customer-site` `/loja-inativa` |
 | Painel inativo | `require-dashboard-session.ts` → `/conta-inativa` (status ≠ `active`) |
-| CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` |
+| CRM B2B | `saas_prospects.pipeline_status`; admin `/painel/leads-comerciais` (cadastro manual + atalhos contrato/loja) |
 | Lojas internas | `dealerships.billing_exempt`; trigger `enforce_internal_dealership_protection` (slugs `guiotti`, `demo`) |
 | Auto-provision | `provisionDealershipHostsInBackground` em `createDealershipAction` → `scripts/dealership-hosts-provision.mjs --cloudflare` |
 | Email routing | `packages/shared/docs/CLOUDFLARE_EMAIL_ROUTING.md` |
@@ -531,7 +531,48 @@ Smoke + E2E produção OK. Regressão E2E local completa opcional com `dev:all` 
 | Entrega | Path |
 | --- | --- |
 | Modelo v2 (OAB) | `packages/shared/docs/CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` |
-| Template admin DB | migração `20260621150000_platform_contract_template_v2.sql` → `/painel/contratos` versão 2 |
+| Template admin DB | migração `20260621150000_platform_contract_template_v2.sql` + `20260623103000_platform_contract_template_names_trial.sql` — trial-adhesion vs saas-acquisition comercial |
+| Erros sistêmicos | `@autopainel/shared/components/system/app-system-status-page` — `not-found.tsx` + `error.tsx` nos 4 apps |
+| Loja não encontrada | `@autopainel/shared/components/system/store-not-found-page` — `/erro/concessionaria` (painel + vitrine); CTA `autopainel.com.br`; sem checklist dev na UI |
+
+### Campanha trial Essencial (jun/2026)
+
+| Item | Detalhe |
+| --- | --- |
+| Migração | `20260622120000_trial_campaign_pricing_and_onboarding.sql` — pivots plano + `dealership_onboarding_intakes` + bucket storage |
+| RPC | `submit_dealership_onboarding_intake`, `link_dealership_onboarding_intake_to_prospect` |
+| Marketing | `/adesao-trial`, `/termo-adesao-trial`, `plans-catalog.ts`, `plans-module-table.tsx` («Em breve») |
+| Admin | `/painel/adesoes-trial`, prefill `concessionarias/nova?intake=` |
+| Shared | `dealership-onboarding-intake.ts`, `map-onboarding-intake-to-form.ts` |
+| Vitrine | `storefront-home-layout.tsx` — trust/finance/heritage em layouts 1–3 |
+| Legal vitrine | `STOREFRONT_LEGAL_VERSION=2026-06-22`; operadora/detentora LGPD |
+| Termo trial | `packages/shared/docs/TERMO_ADESAO_TRIAL_PLATAFORMA.md` |
+| Microcopy Fase 2 | `packages/shared/docs/TRIAL_ONBOARDING_UX_COPY.md` |
+| UX Fase 3 | `packages/shared/docs/TRIAL_CAMPAIGN_UX_DESIGN.md` |
+| Arquitetura Fase 4 | `packages/shared/docs/TRIAL_CAMPAIGN_ARCHITECTURE.md` |
+| Migração lifecycle | `20260622140000_trial_onboarding_intake_lifecycle_rpcs.sql` |
+| RPC lifecycle | `mark_dealership_onboarding_intake_converted`, `archive_dealership_onboarding_intake`, `update_dealership_onboarding_intake_payload`, `get_dealership_onboarding_intake_id_for_prospect` |
+| Backend Fase 5 | `validate-onboarding-intake-step.ts`, `onboarding-intake-errors.ts`, `submit-trial-onboarding.ts` (validação + mapeamento RPC/upload + **TRIAL-01/02** Resend), `trial-onboarding-form.tsx` (§3.5 completo, máscaras, `saas_prospect_id`) |
+| Frontend Fase 6 | Shared: `Stepper`, `FileUploadField`, `StorefrontLayoutPreview`, `StorefrontLayoutPicker`, `KeyValueRepeater`, `OnboardingIntakeStatusBadge`; marketing wizard com Cards, layout picker visual, sticky footer mobile; admin DRY via shared picker/upload |
+| DevOps Fase 7 | `apps/marketing-site/.env.example` (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`); sitemap `/adesao-trial`; GTM `trial_onboarding_submit`; checklist Vercel marketing abaixo |
+| QA Fase 8 | `packages/shared/docs/TRIAL_CAMPAIGN_QA.md` — roteiro E2E campanha + matriz tenant |
+| GTM cobertura (jun/2026) | Snippet GTM carrega mesmo com `GA4_INTERNAL_TRAFFIC_IPS`; `ap_internal_traffic` no dataLayer — ver `autopainel-google-tag-manager.tsx` |
+| Marketing copy (jun/2026) | Home `MarketingCoreOperations` — estoque + contatos como núcleo incluído em todos os planos; FAQ; tagline Profissional alinhada (recibo); `BASE_INCLUDED_FEATURES` revisado |
+| Campanha 20 vagas (jun/2026) | `trial-constants.ts` (`TRIAL_LIMITED_SPOTS=20`); `fetch-trial-campaign-availability.ts`; `trial-campaign-copy.ts`; `TrialCampaignNotice`; submit marca `payload.campaign` + `metadata.trial_waitlist`; termo v `2026-06-10` |
+| Admin leads | `platform-commercial-leads-table.tsx` — ação «Ver adesão» via `metadata.intake_id`; `adesoes-trial-page-client.tsx` (vincular/arquivar) |
+| Actions admin | `apps/admin-master/src/actions/dealership-onboarding-intakes.ts`, `dealerships.ts` (`source_intake_id`, `trialing`) |
+| Deploy | `npm run supabase:deploy`; marketing Vercel precisa `SUPABASE_SERVICE_ROLE_KEY` para uploads onboarding |
+
+**Checklist go-live campanha trial (DevOps):**
+
+| Item | Onde |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel projeto `marketing-site` (Production + Preview) |
+| `RESEND_API_KEY` | Vercel projeto `marketing-site` — e-mails **TRIAL-01** (vaga imediata) / **TRIAL-02** (fila); ver `EMAIL_COMMUNICATION_REGUA.md` §8 |
+| Migrações `20260622120000` + `20260622140000` | Supabase remoto (via `npm run supabase:deploy`) |
+| GTM evento `trial_onboarding_submit` | Tag GA4 Event em `ap_custom_event` — ver `GTM_EVENTS.md` |
+| Sitemap | `/adesao-trial`, `/termo-adesao-trial` em `apps/marketing-site/src/app/sitemap.ts` |
+| Smoke | Enviar `/adesao-trial` com logo; confirmar intake + lead em admin; confirmar e-mail TRIAL-01 ou TRIAL-02 na caixa do representante |
 
 ---
 

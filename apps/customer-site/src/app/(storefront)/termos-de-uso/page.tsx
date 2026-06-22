@@ -57,10 +57,12 @@ export default async function TermosDeUsoPage() {
         AutoPainel.
       </p>
 
-      <h2>5. Privacidade</h2>
+      <h2>5. Privacidade e dados de leads</h2>
       <p>
         O tratamento de dados pessoais rege-se pela{" "}
-        <Link href="/politica-de-privacidade">Política de Privacidade</Link>.
+        <Link href="/politica-de-privacidade">Política de Privacidade</Link>. Ao utilizar
+        formulários deste site, você declara ciência de que a {storeName} é controladora e a
+        plataforma AutoPainel pode deter e processar seus dados como operadora contratada.
       </p>
 
       <h2>6. Limitação de responsabilidade</h2>

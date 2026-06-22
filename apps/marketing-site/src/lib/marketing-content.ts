@@ -2,11 +2,13 @@ import type { LucideIcon } from "lucide-react";
 import {
   Globe,
   Lock,
+  MessageCircle,
   Palette,
   Search,
   ShieldCheck,
   Store,
   Users,
+  Car,
 } from "lucide-react";
 
 export interface MarketingHighlight {
@@ -17,9 +19,42 @@ export interface MarketingHighlight {
 
 export const HERO_TRUST_POINTS = [
   "Site e painel exclusivos da sua loja",
+  "Estoque e contatos incluídos em todos os planos — sem módulo extra",
   "3 vitrines demo ao vivo para comparar layout",
   "Loja configurada em até 1 dia útil após contratação",
 ] as const;
+
+/** Core product capabilities included in every plan (not gated by module). */
+export const CORE_OPERATION_HIGHLIGHTS: Array<
+  MarketingHighlight & { badge: string; bullets: readonly string[] }
+> = [
+  {
+    icon: Car,
+    badge: "Incluso em todos os planos",
+    title: "Estoque que alimenta a vitrine",
+    description:
+      "Cadastre veículos uma vez no painel: fotos, preço, status e ficha técnica. Alterou no estoque, o site reflete na hora — sem depender de agência ou planilha paralela.",
+    bullets: [
+      "Disponível ou vendido — controle claro do pátio",
+      "Página pública por veículo com SEO amigável",
+      "Dashboard com volume e valor em estoque",
+      "Equipe publica no painel; vitrine sincroniza automaticamente",
+    ],
+  },
+  {
+    icon: MessageCircle,
+    badge: "Incluso em todos os planos",
+    title: "Contatos centralizados para escalar vendas",
+    description:
+      "Interessados da vitrine, simulador de financiamento e formulários chegam organizados no painel. Gestores distribuem; vendedores atendem com contexto do veículo e histórico.",
+    bullets: [
+      "Status comercial, notas e próximo follow-up",
+      "Atribuição por vendedor ou «assumir lead» no time",
+      "Tipo contato ou simulação — com veículo vinculado",
+      "Menos lead perdido no WhatsApp solto ou planilha",
+    ],
+  },
+];
 
 export const PILLARS: MarketingHighlight[] = [
   {
@@ -65,7 +100,7 @@ export const DIFFERENTIATORS: MarketingHighlight[] = [
     icon: Lock,
     title: "Operação sem planilha solta",
     description:
-      "Cadastre veículos uma vez: site, painel e integrações (conforme plano) refletem a mesma informação. Menos retrabalho, menos lead perdido no caminho.",
+      "Estoque, contatos e vitrine compartilham a mesma base. Módulos extras (simulador, QR, integrações) ampliam — o dia a dia comercial já vem pronto em qualquer plano.",
   },
 ];
 

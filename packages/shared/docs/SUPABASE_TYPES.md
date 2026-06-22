@@ -48,6 +48,10 @@ Tabela **`public.dealership_meta_oauth_apps`** (1:1 `dealership_id`): **App ID**
 
 Escopo **plataforma** (não tenant loja). Tabelas: **`platform_sales_reps`**, **`platform_sales_rep_bank_accounts`**, **`platform_sales_rep_dealership_attributions`**, **`platform_commission_ledger_entries`**, **`platform_payout_batches`**, etc. Helpers: **`current_platform_sales_rep_id()`**, **`is_platform_sales_rep()`**. RPCs: **`transfer_sales_rep_portfolio`**, **`confirm_dealership_sales_attribution`**, **`clawback_dealership_sales_commissions`**, **`approve_sales_commission_ledger_entries`**. Tipos: **`platform-sales-squad.ts`**, args em **`supabase-rpc.ts`**. Migração: **`20260620180100_platform_sales_squad.sql`**. Doc: **`PLATFORM_SALES_SQUAD_ARCHITECTURE.md`**.
 
+### Trial onboarding intakes
+
+Tabela **`public.dealership_onboarding_intakes`**: payload JSONB do formulário `/adesao-trial`; status `submitted` | `linked` | `converted` | `archived`. RLS super admin. RPCs: **`submit_dealership_onboarding_intake`**, **`update_dealership_onboarding_intake_payload`**, **`link_dealership_onboarding_intake_to_prospect`**, **`mark_dealership_onboarding_intake_converted`**, **`archive_dealership_onboarding_intake`**, **`get_dealership_onboarding_intake_id_for_prospect`**. Tipos: **`dealership-onboarding-intake.ts`**, args em **`supabase-rpc.ts`**. Migrações: **`20260622120000_*`**, **`20260622140000_*`**. Doc: **`TRIAL_CAMPAIGN_ARCHITECTURE.md`**.
+
 ## Generated types (optional)
 
 You may complement with `supabase gen types` and merge with hand-written types; consume shared types from **`@autopainel/shared/types`** in all apps.
