@@ -167,7 +167,7 @@ export function PlansModuleTable({ catalog }: PlansModuleTableProps) {
               asChild
             >
               <AnalyticsTrackedLink
-                href="/adesao-trial"
+                href={plan.slug === "starter" ? "/adesao-trial" : "/contato"}
                 apEvent="cta_click"
                 apEventCategory="conversion"
                 apEventLabel={`plan_card_${plan.slug}`}

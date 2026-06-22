@@ -17,7 +17,7 @@ Dashboard → **Project** `wcgevmvystdhqpzwuyig` → **Authentication** → **SM
 | Host | `smtp.resend.com` |
 | Port | `465` |
 | Username | `resend` |
-| Password | API key Resend (`re_JmiN64Hr_De5EtFjTQ1ujFF9bzjzD9uJy`) |
+| Password | API key Resend atual (`re_...` — [Resend → API Keys](https://resend.com/api-keys); **atualize aqui sempre que rotacionar a chave**) |
 | Sender email | `noreply@autopainel.com.br` |
 | Sender name | `AutoPainel` |
 
@@ -89,7 +89,20 @@ Cron GitHub: `.github/workflows/lead-notification-dispatch.yml` (requer `NEXT_PU
 2. Verificar inbox + link abre `{slug}.loja.autopainel.com.br/definir-senha`.
 3. Admin → `/recuperar-senha` → e-mail com marca AutoPainel.
 
-## 8. Cloudflare wildcards (novas lojas)
+## 8. Rotação da API key (checklist)
+
+Quando gerar uma **nova** `RESEND_API_KEY` no Resend, atualize **todos** estes pontos (o `supabase deploy` **não** propaga secrets nem SMTP):
+
+| Onde | O quê |
+| --- | --- |
+| Resend | Revogar chave antiga |
+| `.env.local` + `npm run sync:env` | Dev local |
+| **Supabase Dashboard** → Authentication → SMTP → Password | Auth (convite, recuperar senha) |
+| **Supabase** Edge secrets | `supabase secrets set RESEND_API_KEY=re_... --project-ref wcgevmvystdhqpzwuyig` |
+| **Vercel** → projeto `marketing-site` | TRIAL-01/02 + **redeploy** |
+| Cloudflare | **Nada** — DNS do domínio Resend não muda com rotação de key |
+
+## 9. Cloudflare wildcards (novas lojas)
 
 DNS propagado (`dig NS` → `*.ns.cloudflare.com`). Criar wildcards:
 

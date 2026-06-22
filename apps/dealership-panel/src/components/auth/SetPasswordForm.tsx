@@ -55,16 +55,11 @@ export function SetPasswordForm() {
   }
 
   if (!isReady) {
-    return (
-      <div className="text-sm text-zinc-600 dark:text-zinc-400">A carregar…</div>
-    );
+    return <div className="text-sm text-muted-foreground">Carregando…</div>;
   }
 
   return (
-    <form
-      onSubmit={(e) => void handleSubmit(e)}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="np1">Nova senha</Label>
         <PasswordInput

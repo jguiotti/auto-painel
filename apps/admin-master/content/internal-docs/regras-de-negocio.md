@@ -399,7 +399,7 @@ Fonte completa: `packages/shared/docs/TRIAL_ONBOARDING_UX_COPY.md`
 
 | Superfície | Destaques |
 | --- | --- |
-| **`/planos`** | CTA Essencial «Começar trial grátis»; badge «Em breve» iCarros/Meta; módulos Essencial/Profissional/Completo alinhados à matriz BZ |
+| **`/planos`** | CTA Essencial → `/adesao-trial`; Profissional e Completo → `/contato` («Falar com vendas»); badge «Em breve» iCarros/Meta |
 | **`/adesao-trial`** | Wizard 5 passos; banner **20 vagas setup isento** + fila de espera; CTA «Entrar na fila» quando esgotado |
 | **`/termo-adesao-trial`** | Link no checkbox; termo validado juridicamente |
 | **Admin adesões** | Empty state; «Converter em loja»; banner prefill; toasts conversão |

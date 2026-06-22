@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { Button, Input, Label } from "@autopainel/shared/ui";
+
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function RecoverPasswordForm() {
@@ -28,7 +30,9 @@ export function RecoverPasswordForm() {
     );
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(
+        "Não foi possível enviar o link. Verifique o e-mail ou tente novamente em instantes.",
+      );
       setIsSubmitting(false);
       return;
     }
@@ -40,18 +44,10 @@ export function RecoverPasswordForm() {
   }
 
   return (
-    <form
-      onSubmit={(e) => void handleSubmit(e)}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <div>
-        <label
-          htmlFor="recover-email"
-          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
-          E-mail
-        </label>
-        <input
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="recover-email">E-mail</Label>
+        <Input
           id="recover-email"
           name="email"
           type="email"
@@ -59,26 +55,29 @@ export function RecoverPasswordForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-50"
+          disabled={isSubmitting}
+          placeholder="seu@email.com"
         />
       </div>
       {errorMessage ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p
+          className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
       {message ? (
-        <p className="text-sm text-green-700 dark:text-green-400" role="status">
+        <p
+          className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          role="status"
+        >
           {message}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="flex h-11 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
-      >
-        {isSubmitting ? "A enviar…" : "Enviar link"}
-      </button>
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Enviando…" : "Enviar link"}
+      </Button>
     </form>
   );
 }
