@@ -8,7 +8,6 @@ export const DEALERSHIP_OPTIONAL_FEATURES = [
   { key: "advanced_metrics", label: "Métricas avançadas" },
   { key: "olx_sync", label: "Integração OLX" },
   { key: "webmotors_sync", label: "Integração WebMotors" },
-  { key: "icarros_sync", label: "Integração iCarros" },
   { key: "social_media_kit", label: "Kit de redes sociais (Meta)" },
   { key: "recibo_compra", label: "Recibo de compra/venda" },
 ] as const;
@@ -17,7 +16,6 @@ export const DEALERSHIP_OPTIONAL_FEATURES = [
 export const CLASSIFIEDS_PROVIDER_MODULE_KEYS = {
   olx: "olx_sync",
   webmotors: "webmotors_sync",
-  icarros: "icarros_sync",
 } as const;
 
 export type ClassifiedsProvider = keyof typeof CLASSIFIEDS_PROVIDER_MODULE_KEYS;

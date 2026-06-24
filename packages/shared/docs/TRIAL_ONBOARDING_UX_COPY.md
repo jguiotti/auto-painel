@@ -50,7 +50,6 @@
 | QR Code por veículo | QR vinculado ao anúncio para divulgação física e digital. |
 | Integração OLX | Publicação e baixa de anúncios via OAuth. |
 | Integração WebMotors | Sincronização com portal WebMotors (Sensedia). |
-| Integração iCarros | Publicação no portal iCarros quando homologado. **+ badge Em breve** |
 | Kit redes sociais (Meta) | Carrosséis e publicação Facebook/Instagram. **+ badge Em breve** |
 | Métricas avançadas | Indicadores extras no painel da loja. |
 | Recibo de compra/venda | Emissão de recibo com dados da loja. |
@@ -59,7 +58,7 @@
 
 | Contexto | Headline | Corpo | CTA |
 | --- | --- | --- | --- |
-| iCarros / Meta no comparativo | — (só badge) | — | — |
+| Meta no comparativo | — (só badge) | — | — |
 | Lead pergunta integração no trial | Integração ainda não disponível no trial | OLX, WebMotors e portais adicionais fazem parte do plano Completo. No trial Essencial você já tem vitrine, estoque, simulador, QR Code e métricas. | Ver plano Completo |
 | Recibo no Essencial | Disponível no plano Profissional | Emita recibo de compra e venda direto no painel, com dados da loja. | Falar com vendas |
 

@@ -41,7 +41,7 @@ flowchart TD
 
 | Passo | Ação do usuário | Resposta do sistema | UI / copy (UX Writer) |
 | --- | --- | --- | --- |
-| 1 | Abre `/planos` | SSR catálogo DB ou fallback estático | Tabela módulos; badge «Em breve» iCarros/Meta |
+| 1 | Abre `/planos` | SSR catálogo DB ou fallback estático | Tabela módulos; badge «Em breve» Meta |
 | 2 | Clica «Começar trial grátis» (Essencial) | Navega `/adesao-trial` | Hero campanha + wizard |
 | 3 | Preenche passos 1–4 | Estado local React; «Continuar» sem persistência server | Stepper 1–5; hints por campo §3.3–3.6 |
 | 4 | Aceita 3 checkboxes obrigatórios + envia | `submitTrialOnboardingAction`: RPC intake → uploads → lead B2B | Loading «Enviando…»; botão disabled |
@@ -223,7 +223,7 @@ Legenda **DS:** `@autopainel/shared/ui` · **Novo shared:** criar em `packages/s
 | Termos não aceitos | Submit | Erros §7.1 por checkbox |
 | Slug duplicado na conversão | Admin nova loja | «Este subdomínio já está em uso…» §5.2 |
 | Upload falha pós-intake | Trial submit | «Não foi possível enviar a imagem agora…» §7.1 |
-| Módulo iCarros/Meta | `/planos` | Badge «Em breve» — sem CTA falso |
+| Módulo Meta | `/planos` | Badge «Em breve» — sem CTA falso |
 | Recibo no Essencial | FAQ / contato | Module-gated §2.4 marketing |
 | Loja inativa pós-trial | customer-site + panel | Fluxos existentes `/loja-inativa`, `/conta-inativa` |
 | Permissão negada admin | adesões | RLS — redirect login; nunca raw 403 |

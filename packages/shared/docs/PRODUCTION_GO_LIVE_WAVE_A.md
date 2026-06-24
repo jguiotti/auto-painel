@@ -92,13 +92,12 @@ https://wcgevmvystdhqpzwuyig.supabase.co/functions/v1/classifieds-oauth-callback
 
 ---
 
-## 6. iCarros e WebMotors — expectativa do lojista
+## 6. WebMotors — expectativa do lojista
 
 | Portal | Fluxo no painel | Estado |
 | --- | --- | --- |
 | **OLX** | Popup login (OAuth) | Homologável — credenciais AutoPainel |
-| **iCarros** | Popup login (OAuth Keycloak) | Aguarda `client_id`/`secret` da [central iCarros](https://www.icarros.com.br/apidocs/apiOauth.html#pp-credenciais) |
-| **WebMotors** | **Não** é popup — usuário integrador CRM | Backlog **INT-5b** — ver `CLASSIFIEDS_OAUTH_SETUP.md` §2 |
+| **WebMotors** | **Não** é popup — usuário integrador CRM | Homologável — ver `CLASSIFIEDS_OAUTH_SETUP.md` §2 |
 
 O lojista **não** configura chaves — só clica **Conectar** quando a plataforma publicar credenciais.
 
@@ -138,4 +137,4 @@ GitHub Action: `.github/workflows/supabase-health-ping.yml`
 [ ] Ping remoto §8 OK
 ```
 
-Próxima onda: **Cloudflare wildcard** (escalar slugs) + **INT-5b WebMotors** + **INT-3 iCarros homologação**.
+Próxima onda: **Cloudflare wildcard** (escalar slugs) + homologação WebMotors em produção.

@@ -26,7 +26,6 @@ test.describe("dealership-panel — integrações OAuth autenticado", () => {
     await expect(page.getByRole("heading", { name: /integrações/i })).toBeVisible();
     await expect(page.locator('[data-provider="olx"]').first()).toBeVisible();
     await expect(page.locator('[data-provider="webmotors"]').first()).toBeVisible();
-    await expect(page.locator('[data-provider="icarros"]').first()).toBeVisible();
   });
 
   test("UI conecta OLX via dev stub quando habilitado", async ({ page, context }) => {

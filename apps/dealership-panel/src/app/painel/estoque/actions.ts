@@ -38,15 +38,12 @@ async function runVehicleSavePromotions(vehicleId: string, formData: FormData) {
     await enqueueVehicleSocialShareAction(vehicleId, socialChannels, "vehicle_save");
   }
 
-  const providers: Array<"olx" | "webmotors" | "icarros"> = [];
+  const providers: Array<"olx" | "webmotors"> = [];
   if (formData.get("promote_olx") === "true") {
     providers.push("olx");
   }
   if (formData.get("promote_webmotors") === "true") {
     providers.push("webmotors");
-  }
-  if (formData.get("promote_icarros") === "true") {
-    providers.push("icarros");
   }
   if (providers.length > 0) {
     await publishVehicleToClassifiedsAction(vehicleId, providers);

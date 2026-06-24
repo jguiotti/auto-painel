@@ -182,7 +182,7 @@ npm run supabase:ping:remote
 | --- | --- |
 | `platform-health-ping` | Keep-alive instância |
 | `meta-oauth-start` / `meta-oauth-callback` | OAuth Meta |
-| `classifieds-sync-worker` | Sync OLX/WebMotors/iCarros |
+| `classifieds-sync-worker` | Sync OLX/WebMotors |
 | `social-publish-worker` | Publicação FB/IG |
 
 Invocação workers: GitHub Actions cron (15 min) — ver `INTEGRATIONS_DEPLOY.md`.
@@ -234,7 +234,7 @@ Tipos TypeScript: `packages/shared/src/types/supabase-rpc.ts`.
 | **Meta FB/IG** | `META_INTEGRATION_SIMPLIFIED.md` | Connect OK; App Review em curso |
 | **OLX** | `CLASSIFIEDS_OAUTH_SETUP.md` | OAuth scaffold |
 | **WebMotors** | `CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` | Password grant + worker |
-| **iCarros** | `CLASSIFIEDS_OAUTH_SETUP.md` §3 | Connect password |
+| **WebMotors** | `CLASSIFIEDS_OAUTH_SETUP.md` §2 | Connect integrador CRM |
 
 Deploy secrets e workers: `INTEGRATIONS_DEPLOY.md`.
 
@@ -419,7 +419,9 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | RPCs | `transfer_sales_rep_portfolio`, `confirm_dealership_sales_attribution`, `clawback_dealership_sales_commissions`, `approve_sales_commission_ledger_entries` |
 | QA Fase 8 | `packages/shared/docs/PLATFORM_SALES_SQUAD_QA.md` · `e2e/specs/platform-sales-squad.spec.ts` · `npm run qa:platform-sales-squad-rls` · seed `npm run seed:platform-sales-rep-qa` |
 
-**Bloqueado externamente (fora deste épico):** integração Meta e iCarros — ver `PLATFORM_BACKLOG_REMAINING.md`.
+**Bloqueado externamente (fora deste épico):** integração Meta — ver `PLATFORM_BACKLOG_REMAINING.md`.
+
+**Integradores classificados (2026-06):** apenas OLX e WebMotors; portal adicional removido da plataforma (descontinuação API). Migração `20260624130000_remove_icarros_integration.sql`.
 
 ---
 

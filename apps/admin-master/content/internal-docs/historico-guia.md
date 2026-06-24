@@ -38,7 +38,6 @@ Documentação **estática e consultável** para toda a equipe. **Não é precis
 | Métricas avançadas | `advanced_metrics` | Dashboard métricas loja |
 | OLX | `olx_sync` | Publicar/delistar OLX |
 | WebMotors | `webmotors_sync` | Publicar/delistar WebMotors |
-| iCarros | `icarros_sync` | Publicar/delistar iCarros |
 | Redes sociais Meta | `social_media_kit` | Connect FB/IG + publicação |
 | Recibo de venda | `recibo_compra` | Recibo simples pós-venda |
 
@@ -48,7 +47,7 @@ Documentação **estática e consultável** para toda a equipe. **Não é precis
 | --- | --- |
 | **Starter** | Base (estoque, vitrine, leads) — sem integrações |
 | **Business** | + `finance_simulator`, `qr_generator` |
-| **Enterprise** | + integrações (`olx_sync`, `webmotors_sync`, `icarros_sync`, `social_media_kit`), `advanced_metrics`, etc. |
+| **Enterprise** | + integrações (`olx_sync`, `webmotors_sync`, `social_media_kit`), `advanced_metrics`, etc. |
 
 **Regras chave**
 
@@ -110,7 +109,6 @@ Documentação **estática e consultável** para toda a equipe. **Não é precis
 | **Meta (FB/IG)** | Connect entregue; App Review em curso; dry-run activo | `packages/shared/docs/META_INTEGRATION_SIMPLIFIED.md` |
 | **OLX** | OAuth scaffold; homologação portal | `CLASSIFIEDS_OAUTH_SETUP.md` |
 | **WebMotors** | Password grant + worker; API comercial pendente | Idem + `CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` |
-| **iCarros** | Connect password; homologação central pendente | Idem §3 |
 
 **Meta — regras:** app única da plataforma (BZ-META-S01); gestor não insere App ID/Secret.
 

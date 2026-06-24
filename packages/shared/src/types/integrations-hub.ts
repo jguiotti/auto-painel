@@ -41,7 +41,7 @@ export interface FinalizeMetaPageSelectionResult {
   error?: string;
 }
 
-export type ClassifiedsProvider = "olx" | "webmotors" | "icarros";
+export type ClassifiedsProvider = "olx" | "webmotors";
 
 export type ClassifiedsConnectionStatus =
   | "disconnected"

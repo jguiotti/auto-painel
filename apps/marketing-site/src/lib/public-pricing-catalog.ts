@@ -40,7 +40,7 @@ export interface PublicPricingCatalog {
 const MARKETING_PLAN_TAGLINES: Record<string, string> = {
   starter: "Presença digital essencial — ideal para até 10 veículos",
   business: "Simulador, QR Code e operação comercial — de 11 a 30 veículos",
-  enterprise: "Integrações e escala digital — acima de 30 veículos",
+  enterprise: "Integrações OLX, WebMotors e escala digital — acima de 30 veículos",
 };
 
 const SETUP_FEE_LABEL = formatMarketingSetupFeeLabel();

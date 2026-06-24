@@ -119,11 +119,6 @@ const PROVIDER_CATALOG: Array<{
     subtitle:
       "Envie veículos para a WebMotors. A conexão usa o usuário integrador do CRM Cockpit (em homologação).",
   },
-  {
-    key: "icarros",
-    subtitle:
-      "Publique anúncios no iCarros com o login da sua loja no portal (sem janela popup).",
-  },
 ];
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
@@ -342,21 +337,14 @@ export function ClassifiedsIntegrationCards({
 
     const username = integratorUsername.trim();
     if (!username || !integratorPassword) {
-      setInlineFeedback(
-        provider === "webmotors"
-          ? "Informe o usuário e a senha do integrador CRM WebMotors."
-          : "Informe o usuário e a senha da sua conta iCarros.",
-      );
+      setInlineFeedback("Informe o usuário e a senha do integrador CRM WebMotors.");
       return;
     }
 
     setPendingProvider(provider);
     logOAuthEvent(`${provider}_connect_start`);
 
-    const connectPath =
-      provider === "webmotors"
-        ? "/api/painel/integracoes/webmotors/connect"
-        : "/api/painel/integracoes/icarros/connect";
+    const connectPath = "/api/painel/integracoes/webmotors/connect";
 
     try {
       const res = await fetch(connectPath, {
@@ -673,19 +661,13 @@ export function ClassifiedsIntegrationCards({
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label htmlFor={`${dialogProvider}-integrator-username`}>
-                  {dialogProvider === "webmotors"
-                    ? "Usuário integrador CRM"
-                    : "Usuário iCarros"}
+                  Usuário integrador CRM
                 </Label>
                 <Input
                   id={`${dialogProvider}-integrator-username`}
-                  type={dialogProvider === "webmotors" ? "email" : "text"}
+                  type="email"
                   autoComplete="username"
-                  placeholder={
-                    dialogProvider === "webmotors"
-                      ? "ex.: integrador@sualoja.com.br"
-                      : "Login da loja no iCarros"
-                  }
+                  placeholder="ex.: integrador@sualoja.com.br"
                   value={integratorUsername}
                   disabled={pendingProvider !== null}
                   onChange={(event) => {
@@ -695,18 +677,12 @@ export function ClassifiedsIntegrationCards({
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`${dialogProvider}-integrator-password`}>
-                  {dialogProvider === "webmotors"
-                    ? "Senha do integrador"
-                    : "Senha iCarros"}
+                  Senha do integrador
                 </Label>
                 <PasswordInput
                   id={`${dialogProvider}-integrator-password`}
                   autoComplete="current-password"
-                  placeholder={
-                    dialogProvider === "webmotors"
-                      ? "Senha criada no Cockpit WebMotors"
-                      : "Senha da conta iCarros da loja"
-                  }
+                  placeholder="Senha criada no Cockpit WebMotors"
                   value={integratorPassword}
                   disabled={pendingProvider !== null}
                   onChange={(event) => {
@@ -743,9 +719,7 @@ export function ClassifiedsIntegrationCards({
               {pendingProvider
                 ? "Conectando..."
                 : dialogProvider && classifiedsUsesIntegratorCredentials(dialogProvider)
-                  ? dialogProvider === "webmotors"
-                    ? "Conectar WebMotors"
-                    : "Conectar iCarros"
+                  ? "Conectar WebMotors"
                   : "Continuar para login"}
             </Button>
           </DialogFooter>

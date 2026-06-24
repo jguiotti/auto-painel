@@ -11,7 +11,6 @@ import { parseClassifiedsProvider } from "@/lib/classifieds/oauth-provider";
 const PROVIDER_LABEL: Record<string, string> = {
   olx: "OLX",
   webmotors: "WebMotors",
-  icarros: "iCarros",
 };
 
 function escapeHtml(value: string): string {

@@ -10,7 +10,7 @@ Roteiro de validação pós-implementação (Fase 8). Critérios de negócio: `a
 
 | Teste | Given | When | Then | Status |
 | --- | --- | --- | --- | --- |
-| Matriz Essencial trial | Catálogo publicado | Abrir `/planos` | Essencial: Simulador, QR, Métricas ✓; iCarros/Meta «Em breve» | [ ] |
+| Matriz Essencial trial | Catálogo publicado | Abrir `/planos` | Essencial: Simulador, QR, Métricas ✓; Meta «Em breve» | [ ] |
 | CTA trial Essencial | Plano Essencial visível | Clicar «Começar trial grátis» | Navega para `/adesao-trial`; GTM `cta_click` plan_card_starter | [ ] |
 | Núcleo operacional home | Home carregada | Scroll seção «Do pátio ao fechamento» | Estoque + contatos com «Incluso em todos os planos» | [ ] |
 | Funcionalidades operação | `/funcionalidades` | Anchor `#operacao-comercial` | Dois cards estoque + contatos antes dos demais grupos | [ ] |

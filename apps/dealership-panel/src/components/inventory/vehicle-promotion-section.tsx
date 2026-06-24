@@ -24,13 +24,11 @@ interface VehiclePromotionSectionProps {
   facebook: boolean;
   olx: boolean;
   webmotors: boolean;
-  icarros: boolean;
   skipClassifieds: boolean;
   onInstagramChange: (value: boolean) => void;
   onFacebookChange: (value: boolean) => void;
   onOlxChange: (value: boolean) => void;
   onWebmotorsChange: (value: boolean) => void;
-  onIcarrosChange: (value: boolean) => void;
   onSkipClassifiedsChange: (value: boolean) => void;
 }
 
@@ -40,13 +38,11 @@ export function VehiclePromotionSection({
   facebook,
   olx,
   webmotors,
-  icarros,
   skipClassifieds,
   onInstagramChange,
   onFacebookChange,
   onOlxChange,
   onWebmotorsChange,
-  onIcarrosChange,
   onSkipClassifiedsChange,
 }: VehiclePromotionSectionProps) {
   const showSocial = config.socialEnabled && config.metaConnected;
@@ -146,25 +142,6 @@ export function VehiclePromotionSection({
               />
               Publicar na WebMotors ao salvar
             </label>
-          ) : null}
-          {config.connectedProviders.includes("icarros") ? (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="promote_icarros"
-                value="true"
-                checked={icarros}
-                onChange={(event) => onIcarrosChange(event.target.checked)}
-                className="size-4 rounded border-input"
-              />
-              Publicar no iCarros ao salvar
-            </label>
-          ) : null}
-          {config.enabledClassifiedProviders.includes("icarros") &&
-          !config.connectedProviders.includes("icarros") ? (
-            <p className="text-xs text-muted-foreground">
-              iCarros está no seu plano — conecte em Integrações quando o canal estiver disponível.
-            </p>
           ) : null}
         </div>
       ) : null}

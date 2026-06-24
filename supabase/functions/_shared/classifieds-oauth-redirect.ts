@@ -1,4 +1,4 @@
-type ClassifiedsProvider = "olx" | "webmotors" | "icarros";
+type ClassifiedsProvider = "olx" | "webmotors";
 
 /**
  * OLX registers a bare callback URL and replaces the entire query string on redirect.

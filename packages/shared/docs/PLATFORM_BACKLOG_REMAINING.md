@@ -9,7 +9,6 @@
 | Item | Motivo | Quando retomar |
 | --- | --- | --- |
 | **Integração Meta** (Lead Ads / CAPI) | Homologação e credenciais pendentes com suporte Meta | Após aprovação + secrets em prod |
-| **Integração iCarros** | Homologação API/publicação pendente com suporte iCarros | Após credenciais e sandbox aprovados |
 
 **Não iniciar** desenvolvimento adicional nessas integrações até liberação do fornecedor.
 

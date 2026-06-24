@@ -77,7 +77,7 @@ export default function TermosDeUsoPage() {
       <h2>7. Limitação de responsabilidade</h2>
       <p>
         Empregamos boas práticas de segurança e disponibilidade, porém não garantimos operação
-        ininterrupta. Integrações com terceiros (Meta, OLX, WebMotors, iCarros) dependem também
+        ininterrupta. Integrações com terceiros (Meta, OLX, WebMotors) dependem também
         das políticas e disponibilidade desses provedores.
       </p>
 

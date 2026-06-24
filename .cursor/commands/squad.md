@@ -40,7 +40,7 @@ Sprint Review + atualizar regras-de-negocio.md e documentacao-tecnica.md.
 
 ---
 
-## Épico integradores classificados (OLX · WebMotors · iCarros)
+## Épico integradores classificados (OLX · WebMotors)
 
 Use este roteiro quando a feature envolver `classifieds_sync`, publish/delist ou novo portal.
 
@@ -50,18 +50,18 @@ Use este roteiro quando a feature envolver `classifieds_sync`, publish/delist ou
 
 | Fase | Foco integradores |
 | --- | --- |
-| **PM** | Módulos **por portal** (`olx_sync`, `webmotors_sync`, `icarros_sync`); plano escolhe subset; bundle `classifieds_sync` legado; auto-publish só portais contratados+conectados; Meta fora |
-| **UX Writer** | Copy «Conectar iCarros»; toasts enqueue; estados fila (pendente/publicado/erro); opt-out «Não divulgar em classificados» |
+| **PM** | Módulos **por portal** (`olx_sync`, `webmotors_sync`); plano escolhe subset; bundle `classifieds_sync` legado; auto-publish só portais contratados+conectados; Meta fora |
+| **UX Writer** | Copy «Conectar» por portal; toasts enqueue; estados fila (pendente/publicado/erro); opt-out «Não divulgar em classificados» |
 | **UX** | Hub mostra **só** cards do plano; ficha com linhas por portal habilitado; formulário sem checkboxes obrigatórios se auto-publish |
-| **Arquiteto** | Migração split `saas_modules`; enum SQL `icarros`; `isClassifiedsProviderModuleEnabled`; RPC enqueue valida módulo |
+| **Arquiteto** | Migração split `saas_modules`; `isClassifiedsProviderModuleEnabled`; RPC enqueue valida módulo |
 | **Backend** | `createVehicleAction`/`updateVehicleAction` enqueue; `deleteVehicleAction` delist first; refresh token |
-| **Frontend** | Card iCarros; remover/simplificar `vehicle-promotion-section` checkboxes OLX/WM |
-| **DevOps** | `ICARROS_*` secrets; homologação APIs; cron workers |
+| **Frontend** | Remover/simplificar `vehicle-promotion-section` checkboxes OLX/WM |
+| **DevOps** | `OLX_*` / `WEBMOTORS_*` secrets; homologação APIs; cron workers |
 | **QA** | Dry-run E2E publish+delist; manual credenciais reais; cross-tenant |
 
 ### Definition of Done (integradores)
 
-- [ ] Plano pode incluir só OLX, só WM, só iCarros ou combinação — cards Integrações reflectem o plano.
+- [ ] Plano pode incluir só OLX, só WM ou ambos — cards Integrações reflectem o plano.
 - [ ] Novo veículo com foto → vitrine + fila publish **só** nos portais contratados e conectados.
 - [ ] Vendido/inativo/excluído → delist enfileirado em todos conectados.
 - [ ] Ficha mostra URL externa quando publicado.

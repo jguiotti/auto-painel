@@ -63,6 +63,6 @@ export const MARKETING_FAQ_ITEMS: MarketingFaqItem[] = [
   {
     question: "Quais portais e redes integra?",
     answer:
-      "OLX, WebMotors e iCarros (conforme plano Completo e homologação). Redes sociais via Meta (Facebook e Instagram Business).",
+      "OLX e WebMotors (conforme plano Completo e homologação). Redes sociais via Meta (Facebook e Instagram Business).",
   },
 ];

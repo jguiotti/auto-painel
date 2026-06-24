@@ -281,7 +281,7 @@ export async function resetStuckClassifiedsConnections(slug?: string) {
 
 export async function postClassifiedsOAuthStart(
   page: Page,
-  provider: "olx" | "webmotors" | "icarros",
+  provider: "olx" | "webmotors",
 ) {
   return page.evaluate(async (providerKey) => {
     const res = await fetch(

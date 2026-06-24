@@ -47,12 +47,8 @@ function requireProviderEnv(provider) {
   const scope = process.env[`${prefix}_OAUTH_SCOPE`]?.trim() || null;
   const redirectUri = process.env[`${prefix}_OAUTH_REDIRECT_URI`]?.trim() || null;
 
-  if (provider === "webmotors" || provider === "icarros") {
-    const defaultTokenUrl =
-      provider === "icarros"
-        ? "https://api.icarros.com.br/oauth-api/oauth/token"
-        : null;
-    const resolvedTokenUrl = tokenUrl || defaultTokenUrl;
+  if (provider === "webmotors") {
+    const resolvedTokenUrl = tokenUrl;
     if (!clientId || !clientSecret || !resolvedTokenUrl) {
       console.error(
         `Missing ${prefix}_OAUTH_CLIENT_ID, ${prefix}_OAUTH_CLIENT_SECRET or ${prefix}_OAUTH_TOKEN_URL`,
@@ -97,13 +93,6 @@ if (
 }
 
 if (
-  process.env.ICARROS_OAUTH_CLIENT_ID?.trim() &&
-  process.env.ICARROS_OAUTH_CLIENT_SECRET?.trim()
-) {
-  providers.push(requireProviderEnv("icarros"));
-}
-
-if (
   process.env.WEBMOTORS_OAUTH_CLIENT_ID?.trim() &&
   process.env.WEBMOTORS_OAUTH_CLIENT_SECRET?.trim()
 ) {
@@ -112,7 +101,7 @@ if (
 
 if (providers.length === 0) {
   console.error(
-    "No provider credentials found. Fill OLX_OAUTH_* and/or ICARROS_OAUTH_* in .env.local (see packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md).",
+    "No provider credentials found. Fill OLX_OAUTH_* and/or WEBMOTORS_OAUTH_* in .env.local (see packages/shared/docs/CLASSIFIEDS_OAUTH_SETUP.md).",
   );
   process.exit(1);
 }

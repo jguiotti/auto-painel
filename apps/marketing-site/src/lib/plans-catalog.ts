@@ -11,7 +11,6 @@ export interface PlanModuleRow {
 
 /** Modules displayed with an «Em breve» badge on the public pricing table. */
 export const MARKETING_MODULE_COMING_SOON_KEYS = new Set([
-  "icarros_sync",
   "social_media_kit",
 ]);
 
@@ -58,15 +57,6 @@ export const PLAN_MODULES: PlanModuleRow[] = [
     enterprise: true,
   },
   {
-    key: "icarros_sync",
-    label: "Integração iCarros",
-    description: "Publicação no portal iCarros quando homologado.",
-    starter: false,
-    business: false,
-    enterprise: true,
-    comingSoon: true,
-  },
-  {
     key: "social_media_kit",
     label: "Kit redes sociais (Meta)",
     description: "Carrosséis e publicação Facebook/Instagram.",
@@ -109,7 +99,7 @@ export const PRICING_PLANS = [
   {
     id: "enterprise",
     name: "Completo",
-    tagline: "Integrações e escala digital — acima de 30 veículos",
+    tagline: "Integrações OLX, WebMotors e kit Meta — acima de 30 veículos",
     priceLabel: "R$ 997/mês",
   },
 ] as const;

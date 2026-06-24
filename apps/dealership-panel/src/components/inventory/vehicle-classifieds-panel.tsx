@@ -37,7 +37,6 @@ interface VehicleClassifiedsPanelProps {
 const PROVIDER_LABEL: Record<ClassifiedsProvider, string> = {
   olx: "OLX",
   webmotors: "WebMotors",
-  icarros: "iCarros",
 };
 
 function listingStatusLabel(status: VehicleClassifiedListingStatus["syncStatus"]): string {
@@ -87,7 +86,6 @@ export function VehicleClassifiedsPanel({
     () => ({
       olx: publishableProviders.includes("olx"),
       webmotors: publishableProviders.includes("webmotors"),
-      icarros: publishableProviders.includes("icarros"),
     }),
   );
   const [message, setMessage] = useState<string | null>(null);

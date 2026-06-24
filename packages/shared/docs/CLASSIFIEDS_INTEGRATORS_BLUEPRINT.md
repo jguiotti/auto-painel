@@ -1,4 +1,4 @@
-# Classificados — blueprint OLX, WebMotors e iCarros
+# Classificados — blueprint OLX e WebMotors
 
 Fonte de verdade operacional para integradores de anúncios. PRD resumido em `apps/admin-master/content/internal-docs/regras-de-negocio.md`; trace técnica em `documentacao-tecnica.md`.
 
@@ -8,7 +8,9 @@ Fonte de verdade operacional para integradores de anúncios. PRD resumido em `ap
 
 ## 1. Visão em uma frase
 
-**Três módulos SaaS independentes** (`olx_sync`, `webmotors_sync`, `icarros_sync`), **três portais**, um fluxo: o plano define **quais** integradores a loja pode usar → o gestor **só conecta** os portais que comprou → cada veículo elegível **publica sozinho** na vitrine + portais conectados **e habilitados no plano** → ao sair do estoque **remove sozinho** desses portais.
+**Dois módulos SaaS independentes** (`olx_sync`, `webmotors_sync`), **dois portais**, um fluxo: o plano define **quais** integradores a loja pode usar → o gestor **só conecta** os portais que comprou → cada veículo elegível **publica sozinho** na vitrine + portais conectados **e habilitados no plano** → ao sair do estoque **remove sozinho** desses portais.
+
+> **Atualização 2026-06-24:** integrações classificados limitam-se a OLX e WebMotors.
 
 **Não** obrigar OAuth nem conta em portal sem módulo no plano.
 
@@ -20,12 +22,11 @@ Fonte de verdade operacional para integradores de anúncios. PRD resumido em `ap
 | --- | --- | --- |
 | OLX | `olx_sync` | Integração OLX |
 | WebMotors | `webmotors_sync` | Integração WebMotors |
-| iCarros | `icarros_sync` | Integração iCarros |
 
 | Item | Valor |
 | --- | --- |
 | **Gating por portal** | `isClassifiedsProviderModuleEnabled(resolvedKeys, provider)` — ver `packages/shared/src/lib/dealership-features.ts` |
-| **Legado** | `classifieds_sync` permanece como **bundle** temporário: se presente no plano, trata como os três portais ligados (migração copia pivôs; código aceita ambos até descontinuar o bundle) |
+| **Legado** | `classifieds_sync` permanece como **bundle** temporário: se presente no plano, trata como OLX + WebMotors ligados (migração copia pivôs; código aceita ambos até descontinuar o bundle) |
 | **Hub Integrações** | Mostrar **apenas** cards cujo módulo está no plano — loja sem `webmotors_sync` **não vê** card WebMotors |
 | **Auto-publish** | Enfileira só portais **conectados** **e** com módulo ativo — nunca força portal não contratado |
 | **Plano típico** | Enterprise demo pode ter os três; planos custom podem ter só OLX, só WM, etc. |
@@ -37,7 +38,7 @@ Fonte de verdade operacional para integradores de anúncios. PRD resumido em `ap
 | Starter / Business | *(nenhum)* | Sem secção Integrações / sem cards classificados |
 | «Premium OLX» | `olx_sync` | Só card OLX; auto-publish só OLX se conectado |
 | «Premium WM + OLX» | `olx_sync`, `webmotors_sync` | Dois cards; escolhe conectar um ou ambos |
-| Enterprise completo | os três (ou legado `classifieds_sync`) | Três cards disponíveis |
+| Enterprise completo | `olx_sync`, `webmotors_sync` (ou legado `classifieds_sync`) | Dois cards disponíveis |
 
 ---
 
@@ -48,7 +49,6 @@ flowchart LR
   subgraph once [Uma vez]
     A["/painel/integracoes"] --> B["Conectar OLX"]
     A --> C["Conectar WebMotors"]
-    A --> D["Conectar iCarros"]
   end
   subgraph daily [Dia a dia]
     E["Cadastrar veículo"] --> F["Vitrine automática"]
@@ -71,7 +71,7 @@ Quando **todas** as condições forem verdadeiras **por portal**:
 
 | # | Condição |
 | --- | --- |
-| P1 | Módulo **daquele portal** ativo no plano (`olx_sync` / `webmotors_sync` / `icarros_sync`, ou legado `classifieds_sync`) |
+| P1 | Módulo **daquele portal** ativo no plano (`olx_sync` / `webmotors_sync`, ou legado `classifieds_sync`) |
 | P2 | Portal **conectado** (OAuth ok) |
 | P3 | Veículo `status = available` e `is_active = true` |
 | P4 | Veículo com **≥ 1 foto** |
@@ -96,7 +96,7 @@ Quando **todas** as condições forem verdadeiras **por portal**:
 
 **Implementado hoje:** trigger SQL `trg_vehicles_enqueue_classifieds_delist` + dispatch do worker após marcar vendido/editar; **INT-1** auto-publish no save normal; **INT-2** delist antes de `deleteVehicleAction`.
 
-**Pendente:** homologação publish real em produção (`CLASSIFIEDS_SYNC_DRY_RUN=false` na Edge); WebMotors/iCarros APIs reais.
+**Pendente:** homologação publish real em produção (`CLASSIFIEDS_SYNC_DRY_RUN=false` na Edge); WebMotors API real.
 
 ---
 
@@ -121,19 +121,7 @@ Edge Functions
   └─ classifieds-sync-worker → adapter por provider
 ```
 
-### 4.1 Provider `icarros` — o que adicionar
-
-Mesmo padrão OLX/WebMotors ( **não** novo módulo):
-
-| Camada | Alteração |
-| --- | --- |
-| **SQL** | Estender `check (provider in ('olx','webmotors','icarros'))` em todas as tabelas/RPCs/triggers; seed `platform_classifieds_oauth_providers` |
-| **Types** | `ClassifiedsProvider = "olx" \| "webmotors" \| "icarros"` em `integrations-hub.ts` |
-| **Edge** | `icarros-adapter.ts` ou generalizar `classifieds-providers/` com registry |
-| **Env** | `ICARROS_OAUTH_*`, `ICARROS_LISTINGS_API_URL` em `.env.example` |
-| **UI** | Terceiro card em `classifieds-integration-cards.tsx`; toggles na ficha + formulário |
-
-### 4.2 Modo homologação
+### 4.1 Modo homologação
 
 `CLASSIFIEDS_SYNC_DRY_RUN=true` (default dev): gera `external_listing_id` e URL fake — fila e UI funcionam sem credenciais reais.
 
@@ -143,7 +131,7 @@ Mesmo padrão OLX/WebMotors ( **não** novo módulo):
 
 | Onde | O que o gestor vê |
 | --- | --- |
-| `/painel/integracoes` | Cards OLX / WebMotors / iCarros — Conectar, Desconectar, último erro |
+| `/painel/integracoes` | Cards OLX / WebMotors — Conectar, Desconectar, último erro |
 | `/painel/estoque/novo` e editar | Após auto-publish: toast «Divulgação enfileirada»; opt-out opcional |
 | Ficha veículo (sidebar) | Status por portal: pendente / publicado / erro / link «Ver anúncio» |
 | Vendido / inativo | Badge «Baixa enfileirada» ou «Removido do portal» |
@@ -159,7 +147,7 @@ Prioridade sugerida (squad):
 | **INT-0** | **Split módulos SaaS** por portal + helper gating + migração planos | Arch + Backend | 🔴 pendente |
 | **INT-1** | **Auto-publish** pós create/update (P1–P6 **por portal**) | Backend + Frontend | 🟢 entregue |
 | **INT-2** | **Delist antes de delete** veículo | Backend | 🟢 entregue |
-| **INT-3** | **iCarros** provider end-to-end | Arch → Backend → Frontend | ⏸ aguardando credenciais iCarros |
+| **INT-3** | ~~Terceiro portal classificados~~ | — | ❌ cancelado (2026-06) |
 | **INT-4** | **Refresh token** + status `reauth_required` | Backend + Edge | 🟢 entregue (OLX) |
 | **INT-5** | Credenciais reais OLX + adapter autoupload | DevOps + QA manual | 🟢 código entregue — ativar `CLASSIFIEDS_SYNC_DRY_RUN=false` |
 | **INT-6** | Admin UI `platform_classifieds_oauth_providers` | Frontend admin | 🟡 pendente |
@@ -198,13 +186,13 @@ Ver `.cursor/commands/squad.md` — secção **Épico integradores classificados
 
 Ordem recomendada **nesta iteración**:
 
-1. **PM** — fechar PRD INT-1…INT-3 em `regras-de-negocio.md` (decisões O1–O5 abaixo).
-2. **UX Writer** — copy auto-publish, iCarros card, toasts fila.
+1. **PM** — fechar PRD INT-1…INT-5 em `regras-de-negocio.md` (decisões O1–O5 abaixo).
+2. **UX Writer** — copy auto-publish, toasts fila.
 3. **UX** — formulário sem fricção (opt-out vs opt-in).
-4. **Arquiteto** — migration `icarros` + contrato adapter.
+4. **Arquiteto** — contrato adapter por provider.
 5. **Backend** — auto-publish + delist-on-delete + refresh token.
-6. **Frontend** — card iCarros + simplificar VehicleForm.
-7. **DevOps** — secrets iCarros + homologação.
+6. **Frontend** — simplificar VehicleForm.
+7. **DevOps** — secrets OLX/WebMotors + homologação.
 8. **QA** — E2E dry-run publish/delist + manual com credenciais.
 
 ---
@@ -213,8 +201,8 @@ Ordem recomendada **nesta iteración**:
 
 | # | Decisão |
 | --- | --- |
-| **O1** | **Três módulos SaaS:** `olx_sync`, `webmotors_sync`, `icarros_sync` — plano escolhe quais portais a loja pode usar. |
-| **O1b** | `classifieds_sync` = bundle legado (habilita os três até descontinuar); novos planos usam módulos por portal. |
+| **O1** | **Dois módulos SaaS:** `olx_sync`, `webmotors_sync` — plano escolhe quais portais a loja pode usar. |
+| **O1b** | `classifieds_sync` = bundle legado (habilita OLX + WebMotors até descontinuar); novos planos usam módulos por portal. |
 | **O2** | **Publicação automática** só nos portais **contratados + conectados** (não forçar conta em portal não incluído no plano). |
 | **O3** | **Baixa automática** ao sair do estoque (sold/inativo/delete) — reforçar delete. |
 | **O4** | Vitrine continua **nativa** (sem fila classificados). |

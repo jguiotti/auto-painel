@@ -71,7 +71,6 @@ Cada loja tem **um plano** (Starter, Business ou Enterprise). O plano define **q
 | **Métricas avançadas** | Dashboard com indicadores extras |
 | **OLX** | Publicar e remover anúncios na OLX |
 | **WebMotors** | Publicar e remover anúncios na WebMotors |
-| **iCarros** | Publicar e remover anúncios no iCarros |
 | **Redes sociais (Meta)** | Conectar Facebook/Instagram e publicar posts |
 | **Recibo de venda** | Recibo simples após venda |
 
@@ -81,7 +80,7 @@ Cada loja tem **um plano** (Starter, Business ou Enterprise). O plano define **q
 | --- | --- |
 | **Starter** | Só o pacote base (estoque + vitrine + leads) |
 | **Business** | Base + **Simulador** + **QR Code** |
-| **Enterprise** | Base + Business + integrações (OLX, WebMotors, iCarros, Meta) + métricas avançadas e demais módulos premium |
+| **Enterprise** | Base + Business + integrações (OLX, WebMotors, Meta) + métricas avançadas e demais módulos premium |
 
 **Na prática:** ao criar ou editar uma loja no Admin, você escolhe o **plano**. O sistema libera automaticamente os módulos daquele plano — o gestor da loja vê no painel apenas o que o plano permite.
 
@@ -195,7 +194,7 @@ Depois, no **Registro.br** (ou Cloudflare), criam-se dois registros CNAME aponta
 | Integração | O que o gestor faz no painel | Observação |
 | --- | --- | --- |
 | **Meta (Facebook/Instagram)** | Conectar páginas e publicar carrosséis | App Review Meta em andamento; loja **demo** serve para homologação |
-| **OLX / WebMotors / iCarros** | Conectar conta e publicar veículos | Disponível em planos com o módulo; homologação com cada portal |
+| **OLX / WebMotors** | Conectar conta e publicar veículos | Disponível em planos com o módulo; homologação com cada portal |
 
 O gestor **não** configura chaves de API — a plataforma usa credenciais centralizadas da AutoPainel.
 
@@ -286,7 +285,7 @@ Ajustes solicitados por lojistas após uso real. **Status: encerrado (2026-06-19
 | **BZ-FO-007** | Equipe: só **owner** convida/edita; manager/seller sem acesso à página. |
 | **BZ-FO-008** | E-mail transacional a equipe comercial a cada novo lead. |
 | **BZ-FO-009** | Admin: logo fundo claro + logo fundo escuro; vitrine segue tema; painel/impressos sempre logo claro. |
-| **BZ-FO-010** | Despublicar classificados: ação por portal (OLX, WebMotors, iCarros). Meta **fora** deste épico. |
+| **BZ-FO-010** | Despublicar classificados: ação por portal (OLX, WebMotors). Meta **fora** deste épico. |
 | **BZ-FO-011** | Exclusão de contato no CRM: confirmação via `ConfirmActionDialog` (nunca `window.confirm`). |
 
 Detalhe técnico: `documentacao-tecnica.md`.
@@ -355,7 +354,7 @@ Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`
 | **Essencial** | Simulador, QR Code, Métricas avançadas + base |
 | **Profissional** | Essencial + Recibo compra/venda |
 | **Completo** | Todos os módulos ativos |
-| **Em breve (UI)** | Integração iCarros · Kit redes sociais (Meta) |
+| **Em breve (UI)** | Kit redes sociais (Meta) |
 
 ### Regras de negócio
 
@@ -365,7 +364,7 @@ Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`
 | **BZ-TR-002** | Formulário `/adesao-trial` é **aberto** (anon); exige aceite Termo Trial + LGPD detentora de leads. |
 | **BZ-TR-003** | Intake gera lead B2B (`source=trial_onboarding`, pipeline `onboarding`) e registro em `dealership_onboarding_intakes`. |
 | **BZ-TR-004** | Admin converte intake em loja via prefill — operador revisa antes de publicar. |
-| **BZ-TR-005** | iCarros e Meta exibem «Em breve» no comparativo; **não** prometer disponibilidade no trial. |
+| **BZ-TR-005** | Meta exibe «Em breve» no comparativo; **não** prometer disponibilidade no trial. |
 | **BZ-TR-006** | Loja controladora / AutoPainel operadora **e detentora** de dados de clientes e leads — cláusula obrigatória no termo trial e vitrine. |
 | **BZ-TR-007** | Campanha limitada a **20 vagas imediatas** com **setup R$ 497 isento** excepcionalmente; contagem = intakes `submitted` \| `linked` \| `converted`. |
 | **BZ-TR-008** | Após esgotar vagas imediatas, formulário permanece aberto como **fila de espera** (`payload.campaign.trial_waitlist`, lead `metadata.trial_waitlist`); contato quando houver nova vaga. |
@@ -376,7 +375,7 @@ Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`
 | --- | --- |
 | CA-TR-01 | Lojista preenche adesão → intake `submitted` + lead comercial criado. |
 | CA-TR-02 | Admin abre «Converter em loja» → formulário pré-preenchido com slug/CNPJ/branding. |
-| CA-TR-03 | `/planos` Essencial lista Simulador, QR e Métricas; iCarros/Meta com badge «Em breve». |
+| CA-TR-03 | `/planos` Essencial lista Simulador, QR e Métricas; Meta com badge «Em breve». |
 | CA-TR-neg-01 | Envio sem aceite LGPD detentora → bloqueado com mensagem clara. |
 | CA-TR-neg-02 | Slug inválido ou e-mail malformado → erro de validação. |
 | CA-TR-04 | Vagas imediatas esgotadas → envio entra fila de espera; sucesso com copy de fila; lead `trial_waitlist=true`. |
@@ -384,7 +383,7 @@ Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`
 
 ### Fora de escopo
 
-- Meta Lead Ads / iCarros homologação E2E
+- Meta Lead Ads homologação E2E
 - Cobrança automática pós-trial (fase manual + contrato)
 - Self-service go-live sem revisão admin
 
@@ -399,7 +398,7 @@ Fonte completa: `packages/shared/docs/TRIAL_ONBOARDING_UX_COPY.md`
 
 | Superfície | Destaques |
 | --- | --- |
-| **`/planos`** | CTA Essencial → `/adesao-trial`; Profissional e Completo → `/contato` («Falar com vendas»); badge «Em breve» iCarros/Meta |
+| **`/planos`** | CTA Essencial → `/adesao-trial`; Profissional e Completo → `/contato` («Falar com vendas»); badge «Em breve» Meta |
 | **`/adesao-trial`** | Wizard 5 passos; banner **20 vagas setup isento** + fila de espera; CTA «Entrar na fila» quando esgotado |
 | **`/termo-adesao-trial`** | Link no checkbox; termo validado juridicamente |
 | **Admin adesões** | Empty state; «Converter em loja»; banner prefill; toasts conversão |

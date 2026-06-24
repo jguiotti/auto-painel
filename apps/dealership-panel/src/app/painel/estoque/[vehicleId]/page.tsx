@@ -168,7 +168,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
           last_error: string | null;
           external_listing_url: string | null;
         } =>
-          (row.provider === "olx" || row.provider === "webmotors" || row.provider === "icarros") &&
+          (row.provider === "olx" || row.provider === "webmotors") &&
           isClassifiedsProviderModuleEnabled(activeFeatures, row.provider as ClassifiedsProvider),
       )
       .map((row) => ({
@@ -189,7 +189,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
           last_error: string | null;
           created_at: string;
         } =>
-          (row.provider === "olx" || row.provider === "webmotors" || row.provider === "icarros") &&
+          (row.provider === "olx" || row.provider === "webmotors") &&
           (row.action === "publish" || row.action === "delist"),
       )
       .map((row) => ({
@@ -204,7 +204,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
       ?.filter((row) => row.status === "connected")
       .map((row) => row.provider)
       .filter((provider): provider is ClassifiedsProvider =>
-        (provider === "olx" || provider === "webmotors" || provider === "icarros") &&
+        (provider === "olx" || provider === "webmotors") &&
         isClassifiedsProviderModuleEnabled(activeFeatures, provider as ClassifiedsProvider),
       ) ?? [];
 

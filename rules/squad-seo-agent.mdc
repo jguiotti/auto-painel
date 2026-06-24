@@ -270,7 +270,7 @@ LLMs foram treinados com conteúdo de sites de alta autoridade. Para ser citado 
 |------|-----------|----------|
 | Artigos técnicos | Medium, Dev.to, Substack | Autoridade de conteúdo |
 | Perfil e reviews | G2, Capterra, Trustpilot | LLMs consultam estas fontes |
-| Menções em portais do setor | Webmotors, iCarros, AutoMais | Backlinks de autoridade |
+| Menções em portais do setor | Webmotors, AutoMais | Backlinks de autoridade |
 | Wikipedia (eventual) | Wikipedia pt-BR | Fonte primária para LLMs |
 | GitHub (se open source parcial) | GitHub | Autoridade técnica |
 | Podcast do setor | Spotify/YouTube | Transcrições indexáveis |

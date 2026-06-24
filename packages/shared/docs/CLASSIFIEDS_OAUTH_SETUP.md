@@ -1,6 +1,8 @@
-# Credenciais OAuth — classificados (OLX, WebMotors, iCarros)
+# Credenciais OAuth — classificados (OLX, WebMotors)
 
 Guia para homologar conexão **real** no painel da loja. O fluxo de popup já está implementado; falta registrar o app no portal e preencher secrets.
+
+> Integrações classificados: apenas **OLX** e **WebMotors** (jun/2026).
 
 **Projeto Supabase:** `wcgevmvystdhqpzwuyig`
 
@@ -281,100 +283,7 @@ Após homologação aprovada (evidências: listagem, publicação, status Public
 
 ---
 
-## 3. iCarros — OAuth password grant
-
-Documentação oficial (PDF/portal iCarros): fluxo **Resource Owner Password** com token em Keycloak.
-
-### 3.0 Por que a URL do token «dá erro» no navegador?
-
-A URL `https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/token` é um **endpoint de API** (só aceita **POST** com `client_id`, `client_secret`, etc.). Abrir no Chrome/Firefox faz um **GET** e o iCarros responde com página genérica de erro — **comportamento esperado**, não indica credenciais inválidas.
-
-Para testar, use `curl`:
-
-```bash
-curl -sS -X POST \
-  'https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/token' \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=password' \
-  -d 'username=SEU_LOGIN_ICARROS' \
-  -d 'password=SUA_SENHA' \
-  -d 'client_id=SEU_CLIENT_ID' \
-  -d 'client_secret=SEU_CLIENT_SECRET' \
-  -d 'scope=openid'
-```
-
-### 3.1 Como obter `client_id` e `client_secret` (AutoPainel — integrador)
-
-**Não existe portal self-service.** A doc iCarros indica:
-
-| Perfil | Como solicitar |
-| --- | --- |
-| **Integrador SaaS** (AutoPainel) | Contatar **equipe comercial iCarros** e pedir credenciais OAuth 2.0 para integração de estoque |
-| **Revenda (lojista)** | Consultor comercial ou atendimento iCarros |
-
-Essas credenciais são **da aplicação AutoPainel** (uma vez). O lojista só informa **login/senha iCarros** no painel ao conectar a loja.
-
-**Depois de receber as credenciais**, configure:
-
-1. `.env.local` (dev) ou secrets Edge (`npm run classifieds:oauth:secrets:configure`):
-   - `ICARROS_OAUTH_CLIENT_ID`
-   - `ICARROS_OAUTH_CLIENT_SECRET`
-   - `ICARROS_OAUTH_TOKEN_URL` (confirmar com iCarros qual endpoint vale no seu contrato)
-   - `ICARROS_OAUTH_SCOPE=openid` (Keycloak)
-2. Tabela `platform_classifieds_oauth_providers`: `npm run classifieds:oauth:platform:configure` com `is_enabled=true`
-3. `ICARROS_LISTINGS_API_URL` — pedir URL REST de anúncios na mesma homologação
-
-> **Dois endpoints possíveis:** a doc em PDF costuma citar Keycloak (`accounts.icarros.com/.../token`). Alguns contratos usam `https://api.icarros.com.br/oauth-api/oauth/token`. **Confirme com o iCarros** qual aplicar — o código aceita override via `ICARROS_OAUTH_TOKEN_URL`.
-
-### 3.2 Como funciona no AutoPainel
-
-1. **Plataforma** guarda `client_id` / `client_secret` (env ou `platform_classifieds_oauth_providers`).
-2. **Lojista** informa usuário/senha iCarros em `/painel/integracoes` — **sem popup**.
-3. Backend faz `POST` no token URL e guarda tokens cifrados por loja.
-
-### 3.3 URLs (doc anexa 2026)
-
-| Campo | Valor (Keycloak — doc PDF) |
-| --- | --- |
-| Token | `https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/token` |
-| Password grant body | `grant_type=password`, `username`, `password`, `client_id`, `client_secret`, `scope=openid` |
-| Alternativa | `https://api.icarros.com.br/oauth-api/oauth/token` (sem `scope` se o contrato indicar) |
-
-### 3.4 Estado no código
-
-| Item | Status |
-| --- | --- |
-| UI formulário login lojista | **Entregue (INT-3)** — `POST /api/painel/integracoes/icarros/connect` |
-| Password grant + `scope=openid` | **Entregue** — `exchange-icarros-password-grant.ts` |
-| Homologação credenciais reais | 🔴 pendente — depende do iCarros |
-
-### 3.5 Modelo de pedido à central iCarros
-
-Assunto: `Homologação integrador AutoPainel — OAuth estoque (password grant)`
-
-> Solicitamos credenciais OAuth 2.0 (`client_id`, `client_secret`) para a aplicação **AutoPainel** (SaaS para concessionárias).
->
-> - Website: https://autopainel.com.br  
-> - Fluxo: **Resource Owner Password Credentials** (login do lojista por loja)  
-> - Token endpoint: confirmar Keycloak ou `api.icarros.com.br/oauth-api/oauth/token`  
-> - Escopo: publicação/gestão de estoque  
-> - URL da API REST de anúncios (`ICARROS_LISTINGS_API_URL`)
-
----
-
-## 3-alt. iCarros — popup OAuth Keycloak (não usar)
-
-<details>
-<summary>Scaffold legado — apenas referência</summary>
-
-Authorization: `https://accounts.icarros.com/auth/realms/icarros/protocol/openid-connect/auth`  
-Redirect: `.../classifieds-oauth-callback?provider=icarros`
-
-</details>
-
----
-
-## 4. Checklist produção (OLX)
+## 3. Checklist produção (OLX)
 
 | # | Item |
 | --- | --- |
@@ -383,10 +292,8 @@ Redirect: `.../classifieds-oauth-callback?provider=icarros`
 | 3 | Edge secrets: `CLASSIFIEDS_TOKENS_CRYPTO_SECRET`, `OLX_OAUTH_*` |
 | 4 | Edge `classifieds-oauth-callback` deployada |
 | 5 | `CLASSIFIEDS_OAUTH_DEV_STUB=false` no Vercel + Edge |
-| 6 | Migração `20260611160000_classifieds_icarros_oauth_provider.sql` aplicada no remoto |
-| 7 | iCarros: credenciais central + `is_enabled=true` — ver `CLASSIFIEDS_OAUTH_SETUP.md` §3 |
-| 8 | WebMotors: INT-5b (password grant + CRM integrador) — ver §2 |
-| 9 | Teste E2E manual: conectar → publicar veículo (dry-run ou API real) |
+| 6 | WebMotors: INT-5b (password grant + CRM integrador) — ver §2 |
+| 7 | Teste E2E manual: conectar → publicar veículo (dry-run ou API real) |
 
 ---
 
@@ -395,7 +302,6 @@ Redirect: `.../classifieds-oauth-callback?provider=icarros`
 | Portal | O que o gestor faz | O que a AutoPainel faz nos bastidores |
 | --- | --- | --- |
 | OLX | Clica Conectar → login OLX na janela | Credenciais app AutoPainel + OAuth |
-| iCarros | Informar login e senha iCarros no painel | App iCarros + password grant por loja |
 | WebMotors | Informar usuário integrador CRM Cockpit | App Sensedia + password grant por loja |
 
 Nenhum portal exige que o lojista copie chaves técnicas — excepto WebMotors no futuro (login integrador CRM, não `client_secret`).

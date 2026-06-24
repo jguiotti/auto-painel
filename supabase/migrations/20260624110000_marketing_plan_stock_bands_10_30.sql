@@ -15,6 +15,6 @@ where slug = 'business';
 
 update public.pricing_plans
 set
-  description = 'Integrações OLX, WebMotors, iCarros e kit Meta — faixa típica acima de 30 veículos.',
+  description = 'Integrações OLX, WebMotors e kit Meta — faixa típica acima de 30 veículos.',
   updated_at = now()
 where slug = 'enterprise';

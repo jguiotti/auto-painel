@@ -156,7 +156,6 @@ export function VehicleForm({
   const [promoteFacebook, setPromoteFacebook] = useState(true);
   const [promoteOlx, setPromoteOlx] = useState(true);
   const [promoteWebmotors, setPromoteWebmotors] = useState(true);
-  const [promoteIcarros, setPromoteIcarros] = useState(true);
   const [skipClassifieds, setSkipClassifieds] = useState(false);
   const promotionActionAvailable = promotionConfig
     ? isVehiclePromotionActionAvailable(promotionConfig)
@@ -597,13 +596,11 @@ export function VehicleForm({
               facebook={promoteFacebook}
               olx={promoteOlx}
               webmotors={promoteWebmotors}
-              icarros={promoteIcarros}
               skipClassifieds={skipClassifieds}
               onInstagramChange={setPromoteInstagram}
               onFacebookChange={setPromoteFacebook}
               onOlxChange={setPromoteOlx}
               onWebmotorsChange={setPromoteWebmotors}
-              onIcarrosChange={setPromoteIcarros}
               onSkipClassifiedsChange={setSkipClassifieds}
             />
           ) : null}

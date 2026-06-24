@@ -14,10 +14,7 @@ function resolvePublishUrl(provider: ClassifiedsProviderKey): string | null {
   if (provider === "olx") {
     return Deno.env.get("OLX_LISTINGS_API_URL")?.trim() || null;
   }
-  if (provider === "webmotors") {
-    return Deno.env.get("WEBMOTORS_LISTINGS_API_URL")?.trim() || null;
-  }
-  return Deno.env.get("ICARROS_LISTINGS_API_URL")?.trim() || null;
+  return Deno.env.get("WEBMOTORS_LISTINGS_API_URL")?.trim() || null;
 }
 
 function resolveDelistUrl(provider: ClassifiedsProviderKey, externalId: string): string | null {
@@ -35,7 +32,7 @@ function dryRunListingUrl(provider: ClassifiedsProviderKey, dryRunId: string): s
   if (provider === "webmotors") {
     return `https://www.webmotors.com.br/carros/detalhe/${encodeURIComponent(dryRunId)}`;
   }
-  return `https://www.icarros.com.br/comprar/${encodeURIComponent(dryRunId)}`;
+  return `https://www.olx.com.br/vi/${encodeURIComponent(dryRunId)}`;
 }
 
 function buildListingBody(vehicle: VehicleListingPayload): Record<string, unknown> {
@@ -145,7 +142,6 @@ function createAdapter(provider: ClassifiedsProviderKey): ClassifiedsProviderAda
 const adapters: Record<ClassifiedsProviderKey, ClassifiedsProviderAdapter> = {
   olx: createAdapter("olx"),
   webmotors: createAdapter("webmotors"),
-  icarros: createAdapter("icarros"),
 };
 
 export function createClassifiedsProviderAdapter(

@@ -14,7 +14,7 @@ import {
   parseClassifiedsOAuthDevStubCode,
 } from "../_shared/classifieds-oauth-dev-stub.ts";
 
-type ProviderKey = "olx" | "webmotors" | "icarros";
+type ProviderKey = "olx" | "webmotors";
 
 interface OAuthSessionRow {
   id: string;
@@ -42,7 +42,7 @@ interface TokenResponsePayload {
 }
 
 function resolveProvider(raw: string | null): ProviderKey | null {
-  if (raw === "olx" || raw === "webmotors" || raw === "icarros") {
+  if (raw === "olx" || raw === "webmotors") {
     return raw;
   }
   return null;
@@ -107,14 +107,7 @@ function getProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig 
     };
   }
 
-  return {
-    provider,
-    tokenUrl: requireEnvVar("ICARROS_OAUTH_TOKEN_URL"),
-    clientId: requireEnvVar("ICARROS_OAUTH_CLIENT_ID"),
-    clientSecret: requireEnvVar("ICARROS_OAUTH_CLIENT_SECRET"),
-    redirectUri:
-      Deno.env.get("ICARROS_OAUTH_REDIRECT_URI")?.trim() || defaultRedirectUri,
-  };
+  throw new Error(`Unsupported classifieds OAuth provider: ${provider}`);
 }
 
 function tryGetProviderConfigFromEnv(provider: ProviderKey): ProviderRuntimeConfig | null {
@@ -589,7 +582,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!oauthSession && code && !state && !provider) {
-    for (const candidate of ["olx", "webmotors", "icarros"] as ProviderKey[]) {
+    for (const candidate of ["olx", "webmotors"] as ProviderKey[]) {
       const session = await tryResolveLatestPendingSessionForProvider(admin, candidate);
       if (session) {
         oauthSession = session;

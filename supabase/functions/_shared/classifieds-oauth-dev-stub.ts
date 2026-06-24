@@ -4,7 +4,7 @@ export const CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_ID = "autopainel-dev-stub-client"
 export const CLASSIFIEDS_OAUTH_DEV_STUB_CLIENT_SECRET = "autopainel-dev-stub-secret";
 export const CLASSIFIEDS_OAUTH_DEV_STUB_CODE_PREFIX = "autopainel_dev_stub:";
 
-export type ClassifiedsOAuthDevStubProvider = "olx" | "webmotors" | "icarros";
+export type ClassifiedsOAuthDevStubProvider = "olx" | "webmotors";
 
 export function isClassifiedsOAuthDevStubEnabled(): boolean {
   const flag = Deno.env.get("CLASSIFIEDS_OAUTH_DEV_STUB")?.trim().toLowerCase();
@@ -14,7 +14,7 @@ export function isClassifiedsOAuthDevStubEnabled(): boolean {
 export function isClassifiedsOAuthDevStubProvider(
   provider: string,
 ): provider is ClassifiedsOAuthDevStubProvider {
-  return provider === "olx" || provider === "webmotors" || provider === "icarros";
+  return provider === "olx" || provider === "webmotors";
 }
 
 export function parseClassifiedsOAuthDevStubCode(code: string): {

@@ -7,5 +7,5 @@ export function classifiedsUsesOAuthPopup(provider: ClassifiedsProvider): boolea
 
 /** Portals that connect with lojista username + password (password grant). */
 export function classifiedsUsesIntegratorCredentials(provider: ClassifiedsProvider): boolean {
-  return provider === "webmotors" || provider === "icarros";
+  return provider === "webmotors";
 }

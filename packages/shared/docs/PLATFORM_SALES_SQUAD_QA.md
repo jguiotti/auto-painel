@@ -14,7 +14,7 @@
 | Admin CRUD lista/form/extrato/repasse | Campanhas incentivo (UI `/campanhas`) |
 | RPCs: confirm, transfer, clawback, approve | Drawer vínculo em leads/contratos |
 | Hook churn em `updateDealershipAction` | Criptografia PIX em repouso |
-| Playwright smoke + script RLS local | Meta / iCarros (bloqueado externamente) |
+| Playwright smoke + script RLS local | Meta (bloqueado externamente) |
 
 ---
 

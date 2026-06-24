@@ -104,7 +104,7 @@ Migração: `20260622120000_trial_campaign_pricing_and_onboarding.sql`.
 
 - Loja criada com `pricing_plan_id` → plano **starter** ou **trial** (campanha).
 - Módulos efetivos via `effective_feature_keys_for_active_dealership(dealership_id)` — herda pivots acima.
-- **iCarros / Meta:** no catálogo Completo com badge marketing «Em breve»; **não** incluir em trial/starter pivots.
+- **Meta:** no catálogo Completo com badge marketing «Em breve»; **não** incluir em trial/starter pivots.
 - Recibo: só Profissional+ — não prometer no trial.
 
 ---
@@ -186,7 +186,7 @@ Arquivo: `apps/admin-master/src/actions/dealership-onboarding-intakes.ts`.
 - Cobrança automática fim trial
 - Edge Function para e-mail confirmação
 - Self-service activate sem admin
-- Meta / iCarros homologação
+- Meta homologação
 
 ---
 

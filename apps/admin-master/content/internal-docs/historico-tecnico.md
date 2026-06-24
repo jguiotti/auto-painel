@@ -102,7 +102,9 @@ Decisões PM em `regras-de-negocio.md` (secção 2026-06-10). Ordem de **impleme
 | **E2-UX4** | «Salvar e divulgar» no formulário de veículo | ✅ `vehicle-promotion-section.tsx`, `runVehicleSavePromotions` em `estoque/actions.ts` |
 | **E2-S** | Secrets OLX/WM/Meta + homologação portais | DevOps / `.env.example` |
 
-### Integradores classificados v2 — OLX + WebMotors + iCarros + auto-publish (2026-06-11)
+### Integradores classificados v2 — OLX + WebMotors + auto-publish (2026-06-11)
+
+> **Atualização 2026-06-24:** terceiro portal classificados removido da plataforma (API descontinuada). Registo abaixo é histórico.
 
 **PRD:** `regras-de-negocio.md` (secção 2026-06-11). **Blueprint:** `packages/shared/docs/CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md`. **Squad:** `.cursor/commands/squad.md` (épico integradores).
 

@@ -24,7 +24,7 @@ export function createClassifiedsOAuthState(provider: ClassifiedsProvider): stri
 export function parseProviderFromClassifiedsOAuthState(
   state: string,
 ): ClassifiedsProvider | null {
-  const match = /^ap:(olx|webmotors|icarros):/.exec(state.trim());
+  const match = /^ap:(olx|webmotors):/.exec(state.trim());
   if (!match) {
     return null;
   }

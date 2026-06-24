@@ -1,6 +1,6 @@
 # Fechamento de épicos — junho/2026
 
-> **Atualizado:** 2026-06-21 · Escopo fechado em código/QA, exceto **Meta**, **iCarros** e itens **operacionais** (1ª loja cliente paga).
+> **Atualizado:** 2026-06-24 · Escopo fechado em código/QA, exceto **Meta** e itens **operacionais** (1ª loja cliente paga).
 
 ---
 
@@ -27,7 +27,7 @@ npm run verify:epics-closure
 | --- | --- | --- | --- | --- |
 | **0** | Decisões PM | ✅ | — | — |
 | **1** | UX mobile + copy | ✅ base | E2E visual smoke | Copy residual opcional |
-| **2** | Workers integração | ✅ | E2E integrações UX/OAuth | Auto-publish P2 · Meta/iCarros **bloqueados** |
+| **2** | Workers integração | ✅ | E2E integrações UX/OAuth | Auto-publish P2 · Meta **bloqueado** |
 | **3** | Go-live multitenant | ✅ | smoke + E2E prod | **1ª loja cliente** + `custom_domain` + Auth URLs |
 | **4** | Operação admin polish | ✅ | — | — |
 | **5** | QA encerramento | 🟡 | smoke/E2E prod OK | Regressão E2E local admin :3001 |
@@ -74,7 +74,7 @@ EmptyState listagens admin, `fetchDealershipsForAdminList`, KPIs, command palett
 | Cross-tenant E2E (local com seed) | ✅ spec existente |
 | CRM vitrine ↔ painel | ✅ `crm-storefront-panel.spec.ts` |
 | Platform Sales Squad RLS | ✅ `qa:platform-sales-squad-rls` |
-| Matriz integrações manual credenciais | ⏸ OLX/WM homologados; Meta/iCarros bloqueados |
+| Matriz integrações manual credenciais | ⏸ OLX/WM homologados; Meta bloqueado |
 
 ---
 
@@ -83,7 +83,6 @@ EmptyState listagens admin, `fetchDealershipsForAdminList`, KPIs, command palett
 | Item | Motivo |
 | --- | --- |
 | Meta Lead Ads / CAPI | Homologação Meta |
-| iCarros end-to-end | Credenciais/sandbox iCarros |
 
 ---
 

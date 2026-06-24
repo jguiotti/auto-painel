@@ -25,10 +25,7 @@ function envPrefixForProvider(provider: ClassifiedsProviderKey): string {
   if (provider === "olx") {
     return "OLX";
   }
-  if (provider === "webmotors") {
-    return "WEBMOTORS";
-  }
-  return "ICARROS";
+  return "WEBMOTORS";
 }
 
 function resolveTokenUrlFromEnv(provider: ClassifiedsProviderKey): string | null {
@@ -113,7 +110,7 @@ async function markConnectionReauthRequired(
 }
 
 function usesIntegratorPasswordGrant(provider: ClassifiedsProviderKey): boolean {
-  return provider === "webmotors" || provider === "icarros";
+  return provider === "webmotors";
 }
 
 async function exchangeIntegratorPasswordGrant(params: {

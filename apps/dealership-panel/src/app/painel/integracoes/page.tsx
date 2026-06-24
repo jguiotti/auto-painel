@@ -25,7 +25,6 @@ import {
 const CLASSIFIEDS_SECTION_LABEL: Record<ClassifiedsProvider, string> = {
   olx: "OLX",
   webmotors: "WebMotors",
-  icarros: "iCarros",
 };
 
 function formatClassifiedsSectionTitle(providers: ClassifiedsProvider[]): string {
@@ -85,9 +84,7 @@ export default async function IntegracoesPage() {
       last_error: string | null;
     } =>
       enabledClassifiedProviders.includes(row.provider as ClassifiedsProvider) &&
-      (row.provider === "olx" ||
-        row.provider === "webmotors" ||
-        row.provider === "icarros"),
+      (row.provider === "olx" || row.provider === "webmotors"),
   );
 
   const metaRow = metaConnectionRes.data;
@@ -140,7 +137,7 @@ export default async function IntegracoesPage() {
           panelOrigin: process.env.NEXT_PUBLIC_DEALERSHIP_AUTH_REDIRECT_ORIGIN?.replace(/\/$/, "") ||
             undefined,
         })
-      : { olx: false, webmotors: false, icarros: false };
+      : { olx: false, webmotors: false };
 
   const showOnboarding =
     !carouselSettings.integrationsOnboardingDismissedAt &&

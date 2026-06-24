@@ -12,7 +12,7 @@ import {
   type ClassifiedsOAuthDevStubProvider,
 } from "@autopainel/shared/lib/classifieds-oauth-dev-stub";
 
-export const CLASSIFIEDS_OAUTH_PROVIDERS = ["olx", "webmotors", "icarros"] as const;
+export const CLASSIFIEDS_OAUTH_PROVIDERS = ["olx", "webmotors"] as const;
 
 export type ClassifiedsOAuthProvider = (typeof CLASSIFIEDS_OAUTH_PROVIDERS)[number];
 
@@ -52,7 +52,7 @@ export function parseClassifiedsProvider(
   if (!raw) {
     return null;
   }
-  if (raw === "olx" || raw === "webmotors" || raw === "icarros") {
+  if (raw === "olx" || raw === "webmotors") {
     return raw;
   }
   return null;
@@ -99,15 +99,7 @@ function resolveProductionOAuthConfig(provider: ClassifiedsProvider): Classified
     };
   }
 
-  return {
-    provider,
-    authorizationUrl: requireEnvVar("ICARROS_OAUTH_AUTHORIZATION_URL"),
-    clientId: requireEnvVar("ICARROS_OAUTH_CLIENT_ID"),
-    scope: process.env.ICARROS_OAUTH_SCOPE?.trim() || null,
-    redirectUri:
-      process.env.ICARROS_OAUTH_REDIRECT_URI?.trim() ||
-      resolveDefaultCallbackUrl(provider),
-  };
+  throw new Error(`Unsupported classifieds OAuth provider: ${provider}`);
 }
 
 /**

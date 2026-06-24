@@ -22,7 +22,6 @@ Esta página é **somente para a equipe AutoPainel**. Clientes das concessionár
 | Métricas avançadas da concessionária | `advanced_metrics` | **Passo C implementado no repositório** (pendente aplicar migração no Supabase + QA funcional final) | Esta página + `documentacao-tecnica.md` |
 | Integração OLX | `olx_sync` | **Blueprint 2026-06-11** — módulo por portal; scaffold OAuth entregue; pendente split planos + auto-publish | `CLASSIFIEDS_INTEGRATORS_BLUEPRINT.md` |
 | Integração WebMotors | `webmotors_sync` | Idem | Idem |
-| Integração iCarros | `icarros_sync` | **INT-3 connect entregue (2026-06-15)** — password grant; homologação central pendente | `CLASSIFIEDS_OAUTH_SETUP.md` §3 |
 | Kit de redes sociais com postagem automática (Meta) | `social_media_kit` | **Connect entregue (2026-06-10)** — wizard OAuth, carrossel, worker FB+IG; homologação App Review + `SOCIAL_PUBLISH_DRY_RUN=false` | Esta página + `META_INTEGRATION_SIMPLIFIED.md` §9 |
 | Site marketing — SEO e analytics | `marketing_site_growth` | **Em curso (2026-06-17)** — footer redes, JSON-LD, GTM eventos unificados | `GTM_EVENTS.md` + secção técnica abaixo |
 | Central de gestão (Admin Master) | `dealership_management_hub` | **Passo A–B documentados**; scaffold parcial no repositório (BD + papel `manager` + bloqueio painel inativo); UI por abas e exportações — roadmap | Esta página + `documentacao-tecnica.md` |
