@@ -16,6 +16,8 @@ export function ProvisionManagerForm({
   const [error, setError] = useState<string | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [createdEmail, setCreatedEmail] = useState<string | null>(null);
+  const [welcomeEmailSent, setWelcomeEmailSent] = useState<boolean | null>(null);
+  const [welcomeEmailError, setWelcomeEmailError] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,6 +25,8 @@ export function ProvisionManagerForm({
     setError(null);
     setTempPassword(null);
     setCreatedEmail(null);
+    setWelcomeEmailSent(null);
+    setWelcomeEmailError(null);
     const fd = new FormData(form);
     startTransition(async () => {
       const result = await provisionDealershipManagerAction(fd);
@@ -30,11 +34,17 @@ export function ProvisionManagerForm({
         setError(result.error);
         return;
       }
-      if (result.temporary_password) {
-        setTempPassword(result.temporary_password);
-      }
       if (result.email) {
         setCreatedEmail(result.email);
+      }
+      if (result.welcome_email_sent) {
+        setWelcomeEmailSent(true);
+      } else {
+        setWelcomeEmailSent(false);
+        setWelcomeEmailError(result.welcome_email_error ?? null);
+        if (result.temporary_password) {
+          setTempPassword(result.temporary_password);
+        }
       }
       form.reset();
     });
@@ -47,13 +57,37 @@ export function ProvisionManagerForm({
           {error}
         </p>
       ) : null}
-      {tempPassword ? (
+      {welcomeEmailSent ? (
         <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
           <p className="font-medium text-emerald-800 dark:text-emerald-200">
             Conta criada para {createdEmail}
           </p>
           <p className="mt-1 text-muted-foreground">
-            Senha temporária (copie agora; não será exibida de novo):
+            Enviamos um e-mail com link para criar a senha e acessar o painel da loja. Peça
+            para verificar a caixa de entrada e o spam.
+          </p>
+        </div>
+      ) : null}
+      {welcomeEmailSent === false ? (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+          <p className="font-medium text-amber-900 dark:text-amber-100">
+            Conta criada para {createdEmail}, mas o e-mail não foi enviado.
+          </p>
+          {welcomeEmailError ? (
+            <p className="mt-1 text-muted-foreground">{welcomeEmailError}</p>
+          ) : (
+            <p className="mt-1 text-muted-foreground">
+              Verifique Resend (`RESEND_API_KEY`) e as URLs de redirect no Supabase Auth.
+            </p>
+          )}
+        </div>
+      ) : null}
+      {tempPassword ? (
+        <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+          <p className="font-medium">Senha temporária (fallback)</p>
+          <p className="mt-1 text-muted-foreground">
+            Repasse por canal seguro — o titular pode entrar no painel e trocar a senha em
+            Conta:
           </p>
           <code className="mt-2 block break-all rounded bg-muted px-2 py-1 text-xs">
             {tempPassword}

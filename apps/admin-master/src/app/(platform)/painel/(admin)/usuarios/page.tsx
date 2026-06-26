@@ -51,8 +51,9 @@ export default async function UsuariosPage() {
         <CardHeader>
           <CardTitle>Novo gestor (titular)</CardTitle>
           <CardDescription>
-            Cadastre o primeiro gestor de uma loja. A senha temporária é exibida uma vez nesta
-            tela — repasse por canal seguro.
+            Cadastre o primeiro gestor de uma loja. Enviamos um e-mail (LOJ-01) com link
+            para criar a senha no painel da concessionária. Se o e-mail falhar, uma senha
+            temporária aparece aqui como fallback.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -305,7 +305,7 @@ Setup Resend + Supabase SMTP/templates/redirect URLs: [`EMAIL_RESEND_SETUP.md`](
 
 | ID | Evento | Marca | Código |
 | --- | --- | --- | --- |
-| **LOJ-01** | Convite colaborador (boas-vindas) | Loja (`theme_config`, logo) | `packages/shared/src/lib/email/send-dealership-auth-email.ts` → `sendDealershipWelcomeEmail` |
+| **LOJ-01** | Convite colaborador ou titular (boas-vindas) | Loja (`theme_config`, logo) | `sendDealershipWelcomeEmail` — `dealership-collaborators.ts`, `provision-dealership-manager.ts` |
 | **LOJ-02** | Recuperar senha painel | Loja | `apps/dealership-panel/src/app/(auth)/actions.ts` |
 | **ADM-02** | Recuperar senha admin | AutoPainel (logo color) | `apps/admin-master/src/actions/auth-recovery.ts` |
 | **TRIAL-01** | Onboarding trial marketing | AutoPainel | `apps/marketing-site/src/lib/email/send-trial-onboarding-email.ts` |

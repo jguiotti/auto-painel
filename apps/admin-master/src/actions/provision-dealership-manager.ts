@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { sendDealershipWelcomeEmail } from "@autopainel/shared/lib/auth/send-password-setup-email";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 
 import { requireAdminSession } from "@/lib/auth/require-admin";
@@ -9,9 +10,12 @@ import { requireAdminSession } from "@/lib/auth/require-admin";
 export interface ProvisionResult {
   error?: string;
   success?: boolean;
+  /** Fallback when Resend/redirect fails — share securely if email was not sent. */
   temporary_password?: string;
   user_id?: string;
   email?: string;
+  welcome_email_sent?: boolean;
+  welcome_email_error?: string;
 }
 
 function isDuplicateAuthEmailError(err: { message?: string } | null): boolean {
@@ -55,13 +59,15 @@ export async function provisionDealershipManagerAction(
 
   const { data: dealership, error: dealershipError } = await supabase
     .from("dealerships")
-    .select("id")
+    .select("id, slug")
     .eq("id", dealershipId)
     .maybeSingle();
 
-  if (dealershipError || !dealership) {
+  if (dealershipError || !dealership?.slug) {
     return { error: "Concessionária não encontrada." };
   }
+
+  const dealershipSlug = String(dealership.slug);
 
   const tempPassword =
     crypto.randomUUID().replaceAll("-", "").slice(0, 20) + "Aa1!";
@@ -132,10 +138,21 @@ export async function provisionDealershipManagerAction(
   revalidatePath("/painel/usuarios");
   revalidatePath("/painel/concessionarias");
 
+  const welcomeResult = await sendDealershipWelcomeEmail(supabase, {
+    email,
+    recipientName: fullName,
+    role: "owner",
+    dealershipId,
+    dealershipSlug,
+    isExistingAuthUser: false,
+  });
+
   return {
     success: true,
     user_id: userId,
     email,
-    temporary_password: tempPassword,
+    welcome_email_sent: welcomeResult.ok,
+    welcome_email_error: welcomeResult.ok ? undefined : welcomeResult.message,
+    temporary_password: welcomeResult.ok ? undefined : tempPassword,
   };
 }
