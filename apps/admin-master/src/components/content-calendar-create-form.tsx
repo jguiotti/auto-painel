@@ -18,7 +18,8 @@ export function ContentCalendarCreateForm() {
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     startTransition(async () => {
       setError(null);
       const result = await upsertContentCalendarItemAction(formData);
@@ -26,7 +27,7 @@ export function ContentCalendarCreateForm() {
         setError(result.error);
         return;
       }
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     });
   }

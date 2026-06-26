@@ -19,10 +19,11 @@ export function ProvisionManagerForm({
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setError(null);
     setTempPassword(null);
     setCreatedEmail(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     startTransition(async () => {
       const result = await provisionDealershipManagerAction(fd);
       if (result.error) {
@@ -35,7 +36,7 @@ export function ProvisionManagerForm({
       if (result.email) {
         setCreatedEmail(result.email);
       }
-      e.currentTarget.reset();
+      form.reset();
     });
   }
 
