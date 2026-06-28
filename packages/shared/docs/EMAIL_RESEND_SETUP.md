@@ -81,7 +81,14 @@ Teste manual (processa fila `lead_notification_outbox`):
 node scripts/dispatch-lead-notification-worker.mjs
 ```
 
-Cron GitHub: `.github/workflows/lead-notification-dispatch.yml` (requer `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` nos secrets do repo).
+Cron GitHub: `.github/workflows/lead-notification-dispatch.yml` (a cada 15 min). Secrets no repositório:
+
+| Secret | Valor |
+| --- | --- |
+| `SUPABASE_URL` | URL do projeto (ex. `https://xxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave **service_role** (Dashboard → Project Settings → API) |
+
+Os demais crons (`supabase-health-ping`, `integration-workers-cron`, `platform-sales-cron`) usam os mesmos nomes — **não** cadastre `NEXT_PUBLIC_SUPABASE_URL` separado no GitHub.
 
 ## 7. Testar Auth
 

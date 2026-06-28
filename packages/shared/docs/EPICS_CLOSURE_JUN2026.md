@@ -1,6 +1,6 @@
 # Fechamento de épicos — junho/2026
 
-> **Atualizado:** 2026-06-24 · Escopo fechado em código/QA, exceto **Meta** e itens **operacionais** (1ª loja cliente paga).
+> **Atualizado:** 2026-06-25 · Growth Operations + campanha trial **fechados em código**. Pendências restantes são **operacionais** (1ª loja paga, OAB, QA manual).
 
 ---
 
@@ -15,6 +15,9 @@ E2E_PRODUCTION=true npm run test:e2e -- e2e/specs/production-go-live.spec.ts
 
 # Tudo junto
 npm run verify:epics-closure
+
+# Cron billing (local, service role)
+npm run admin:billing-notifications:scan
 ```
 
 **Última execução local (2026-06-21):** smoke 11/11 OK · E2E produção 1/1 OK · www.autopainel.com.br = WARN DNS (ver checklist).
@@ -34,6 +37,33 @@ npm run verify:epics-closure
 | **Crescimento P4** | Wizard + CRM | ✅ | CRM E2E spec | Guerrilla marketing (produto) |
 | **Sales Squad** | Comercial B2B | ✅ v1.1 | RLS + E2E | Campanhas incentivo (opcional) |
 | **CRM loja** | Contatos enriquecidos | ✅ | `crm-storefront-panel.spec.ts` | — |
+| **Trial Essencial** | Campanha onboarding | ✅ | smoke manual | QA upload cross-browser |
+| **Growth Operations** | Estoque, upgrade, contratos, admin | ✅ | parcial | QA manual aceite contrato + stock limit |
+
+---
+
+## Growth Operations — fechado (jun/2026)
+
+**Entregue:**
+
+- Limite estoque 10/30/∞ + modal upgrade + FAB WhatsApp (dealership-panel)
+- Contrato v3 Pix-only + opt-in triplo + `/aceite-contrato/[token]`
+- Admin: notificações (`/painel/notificacoes`), solicitações upgrade, financeiro interno
+- Leads: excluir, atribuir representante; trial: revisão assets + upload wizard
+- Foro **Mongaguá/SP** (web + templates DB)
+- Cron billing: `admin-billing-notifications-cron.yml` + `npm run admin:billing-notifications:scan`
+- CI lead e-mail: `lead-notification-dispatch.yml` (secrets `SUPABASE_URL`)
+
+**Migrações (aplicar com `npm run supabase:deploy`):**
+
+| Migração | Conteúdo |
+| --- | --- |
+| `20260624150000` | Stock limits + admin notifications + billing scan RPC |
+| `20260624150100` | Contrato v3 + trial opt-in RPCs |
+| `20260625120000` | Delete admin notifications |
+| `20260625130000` | Delete support requests |
+| `20260625140000` | Financeiro interno plataforma |
+| `20260625150000` | Foro Mongaguá nos templates |
 
 ---
 
@@ -50,10 +80,10 @@ npm run verify:epics-closure
 
 **Operação (único bloqueio de go-live comercial):**
 
-1. Fechar contrato v2 (admin `/painel/contratos` — template versão 2 após migração `20260621150000`)
+1. Contrato v3 + aceite eletrônico (admin `/painel/contratos` — template versão 3)
 2. Criar loja no admin + `npm run dealership:hosts:provision -- <slug>`
 3. Auth Redirect URLs no Supabase para novos domínios
-4. Primeiro boleto pago → go-live
+4. Primeiro Pix pago → go-live
 
 Ver: `PRODUCTION_GO_LIVE_WAVE_A.md`, `DEALERSHIP_HOSTS_PROVISIONING.md`
 
@@ -86,17 +116,16 @@ EmptyState listagens admin, `fetchDealershipsForAdminList`, KPIs, command palett
 
 ---
 
-## Migrações pós-commit (aplicar se ainda não)
+## GitHub Actions — secrets necessários
 
-| Migração | Conteúdo |
+| Workflow | Secrets |
 | --- | --- |
-| `20260621120000_lead_profile_enrichment.sql` | RPC perfil lead |
-| `20260621140000_lead_vehicle_interests.sql` | N veículos de interesse |
-| `20260621150000_platform_contract_template_v2.sql` | Template contrato v2 admin |
+| `lead-notification-dispatch.yml` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `integration-workers-cron.yml` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `INTEGRATION_WORKERS_CRON_SECRET` |
+| `admin-billing-notifications-cron.yml` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `platform-sales-cron.yml` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-```bash
-npm run supabase:deploy
-```
+Configurar workers: `npm run github:secrets:workers:manual`
 
 ---
 
@@ -104,4 +133,5 @@ npm run supabase:deploy
 
 - `PLATFORM_BACKLOG_REMAINING.md` — backlog vivo
 - `documentacao-tecnica.md` — rastreabilidade
+- `regras-de-negocio.md` — BZ Growth Operations + trial
 - `CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` — modelo jurídico (revisão OAB)

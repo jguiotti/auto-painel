@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import type { DealershipOnboardingIntakePayload } from "@autopainel/shared/types";
 
 import { requireAdminSession } from "@/lib/auth/require-admin";
+import { fetchDealershipOnboardingIntakeById } from "@/lib/data/dealership-onboarding-intakes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { DealershipOnboardingIntakeRow } from "@autopainel/shared/types";
 
 export interface OnboardingIntakeActionResult {
   error?: string;
@@ -112,3 +114,20 @@ export async function markOnboardingIntakeConvertedAction(
 }
 
 export type { DealershipOnboardingIntakePayload };
+
+export async function fetchOnboardingIntakeForReviewAction(
+  intakeId: string,
+): Promise<{ data?: DealershipOnboardingIntakeRow; error?: string }> {
+  await requireAdminSession();
+
+  if (!UUID_RE.test(intakeId)) {
+    return { error: "Identificador inválido." };
+  }
+
+  const row = await fetchDealershipOnboardingIntakeById(intakeId);
+  if (!row) {
+    return { error: "Adesão não encontrada." };
+  }
+
+  return { data: row };
+}

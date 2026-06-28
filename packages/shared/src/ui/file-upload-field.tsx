@@ -20,6 +20,8 @@ export interface FileUploadFieldProps {
   previewClassName?: string;
   /** Applied to the preview image (e.g. rounded avatar). */
   previewImageClassName?: string;
+  /** Called when the user selects or clears a local file. */
+  onFileSelected?: (file: File | null) => void;
 }
 
 export function FileUploadField({
@@ -34,6 +36,7 @@ export function FileUploadField({
   inputClassName,
   previewClassName,
   previewImageClassName,
+  onFileSelected,
 }: FileUploadFieldProps) {
   const inputId = useId();
   const [preview, setPreview] = useState<string | null>(null);
@@ -55,6 +58,7 @@ export function FileUploadField({
         }
         return null;
       });
+      onFileSelected?.(null);
       return;
     }
 
@@ -65,6 +69,7 @@ export function FileUploadField({
       }
       return url;
     });
+    onFileSelected?.(file);
   }
 
   const remoteSrc = initialRemoteUrl.length > 0 ? initialRemoteUrl : null;

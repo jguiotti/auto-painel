@@ -1,0 +1,33 @@
+name: Admin billing notifications cron
+
+on:
+  schedule:
+    # 12:00 UTC ≈ 09:00 BRT — billing D-7 / D-3 / D-0 / overdue
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: admin-billing-notifications-cron
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Scan billing due admin notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY."
+            exit 1
+          fi
+          node scripts/scan-billing-due-admin-notifications.mjs

@@ -4,13 +4,21 @@ import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  digitsOnly,
   formatBrazilMobileMasked,
   formatCnpjMasked,
   formatCpfMasked,
 } from "@autopainel/shared/lib/br/format-input-masks";
 import { pushAutopainelAnalyticsEvent } from "@autopainel/shared/lib/analytics/push-autopainel-analytics-event";
+import { cn } from "@autopainel/shared/lib/utils";
 import { BrazilianAddressFields } from "@autopainel/shared/components/brazilian-address-fields";
-import { validateOnboardingIntakeStep } from "@autopainel/shared/lib/dealership/validate-onboarding-intake-step";
+import {
+  firstOnboardingIntakeStep0Error,
+  slugifyStoreName,
+  validateOnboardingIntakeStep,
+  validateOnboardingIntakeStep0Fields,
+  type OnboardingIntakeStep0FieldErrors,
+} from "@autopainel/shared/lib/dealership/validate-onboarding-intake-step";
 import type {
   DealershipOnboardingIntakePayload,
   DealershipOnboardingUnitDraft,
@@ -43,6 +51,13 @@ import {
   submitTrialOnboardingAction,
   type SubmitTrialOnboardingState,
 } from "@/actions/submit-trial-onboarding";
+import { LegalDocumentLink } from "@/components/legal-document-link";
+import {
+  clearTrialOnboardingDraft,
+  loadTrialOnboardingDraft,
+  saveTrialOnboardingDraft,
+} from "@/lib/trial-onboarding-draft-storage";
+import { PRIVACY_POLICY_VERSION, PLATFORM_TERMS_VERSION } from "@/lib/legal/constants";
 import { TRIAL_ADHESION_VERSION, TRIAL_DURATION_DAYS } from "@/lib/legal/trial-constants";
 
 const WIZARD_STEPS = [
@@ -55,6 +70,14 @@ const WIZARD_STEPS = [
 
 const BRAND_ACCEPT = ONBOARDING_BRAND_ASSET_SPEC.acceptMime.join(",");
 const HERO_ACCEPT = ONBOARDING_HERO_BANNER_SPEC.acceptMime.join(",");
+const TRIAL_UPLOAD_FIELD_KEYS = [
+  "logo_dark_file",
+  "logo_light_file",
+  "footer_logo_file",
+  "favicon_file",
+  "hero_background_file",
+] as const;
+type TrialUploadFieldKey = (typeof TRIAL_UPLOAD_FIELD_KEYS)[number];
 const MARKETING_FILE_INPUT =
   "text-zinc-300 file:mr-4 file:rounded-md file:border-0 file:bg-marketing-accent/20 file:px-4 file:py-2 file:text-sm file:text-white";
 const MARKETING_FIELD =
@@ -154,23 +177,89 @@ export function TrialOnboardingForm({
 }: TrialOnboardingFormProps) {
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<OnboardingIntakeStep0FieldErrors>({});
   const [payload, setPayload] = useState<DealershipOnboardingIntakePayload>(emptyPayload);
   const [units, setUnits] = useState<DealershipOnboardingUnitDraft[]>([]);
   const [trialAccepted, setTrialAccepted] = useState(false);
+  const [platformTermsAccepted, setPlatformTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [dataProcessingAccepted, setDataProcessingAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<Partial<Record<TrialUploadFieldKey, File>>>({});
 
   const [state, formAction, pending] = useActionState<
     SubmitTrialOnboardingState | null,
     FormData
   >(submitTrialOnboardingAction, null);
   const conversionTrackedRef = useRef(false);
+  const stepErrorRef = useRef<HTMLParagraphElement | null>(null);
+  const draftHydratedRef = useRef(false);
+
+  function setUploadFile(key: TrialUploadFieldKey, file: File | null) {
+    setUploadFiles((prev) => {
+      const next = { ...prev };
+      if (file) {
+        next[key] = file;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  }
+
+  async function submitWithUploads(formData: FormData) {
+    for (const key of TRIAL_UPLOAD_FIELD_KEYS) {
+      const file = uploadFiles[key];
+      if (file && file.size > 0) {
+        formData.set(key, file);
+      }
+    }
+    return formAction(formData);
+  }
+
+  useEffect(() => {
+    const draft = loadTrialOnboardingDraft();
+    if (draft) {
+      setPayload(draft.payload);
+      setUnits(draft.units);
+      setStep(draft.step);
+      setTrialAccepted(draft.trialAccepted);
+      setPlatformTermsAccepted(draft.platformTermsAccepted);
+      setPrivacyAccepted(draft.privacyAccepted);
+      setMarketingConsent(draft.marketingConsent);
+    }
+    draftHydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydratedRef.current || state?.success) {
+      return;
+    }
+
+    saveTrialOnboardingDraft({
+      payload,
+      units,
+      step,
+      trialAccepted,
+      platformTermsAccepted,
+      privacyAccepted,
+      marketingConsent,
+    });
+  }, [
+    payload,
+    units,
+    step,
+    trialAccepted,
+    platformTermsAccepted,
+    privacyAccepted,
+    marketingConsent,
+    state?.success,
+  ]);
 
   useEffect(() => {
     if (!state?.success || conversionTrackedRef.current) {
       return;
     }
+    clearTrialOnboardingDraft();
     conversionTrackedRef.current = true;
     pushAutopainelAnalyticsEvent({
       ap_event: "trial_onboarding_submit",
@@ -260,13 +349,53 @@ export function TrialOnboardingForm({
     });
   }
 
+  function clearFieldError(field: keyof OnboardingIntakeStep0FieldErrors) {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
   function handleContinue() {
     setStepError(null);
-    const message = validateOnboardingIntakeStep(step, payload);
-    if (message) {
-      setStepError(message);
-      return;
+
+    if (step === 0) {
+      const nextPayload: DealershipOnboardingIntakePayload = {
+        ...payload,
+        general: {
+          ...payload.general,
+          slug: payload.general.slug.trim() || slugifyStoreName(payload.general.store_name),
+        },
+      };
+
+      if (nextPayload.general.slug !== payload.general.slug) {
+        setPayload(nextPayload);
+      }
+
+      const errors = validateOnboardingIntakeStep0Fields(nextPayload);
+      setFieldErrors(errors);
+
+      const message = firstOnboardingIntakeStep0Error(errors);
+      if (message) {
+        setStepError(message);
+        stepErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      setFieldErrors({});
+    } else {
+      const message = validateOnboardingIntakeStep(step, payload);
+      if (message) {
+        setStepError(message);
+        stepErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
     }
+
     setStep((current) => current + 1);
   }
 
@@ -319,19 +448,20 @@ export function TrialOnboardingForm({
 
   return (
     <form
-      action={formAction}
+      action={submitWithUploads}
+      encType="multipart/form-data"
       className="space-y-8"
       aria-busy={pending ? "true" : undefined}
     >
       <input type="hidden" name="payload_json" value={payloadJson} readOnly />
       <input type="hidden" name="trial_accepted" value={trialAccepted ? "true" : "false"} readOnly />
-      <input type="hidden" name="privacy_accepted" value={privacyAccepted ? "true" : "false"} readOnly />
       <input
         type="hidden"
-        name="data_processing_accepted"
-        value={dataProcessingAccepted ? "true" : "false"}
+        name="platform_terms_accepted"
+        value={platformTermsAccepted ? "true" : "false"}
         readOnly
       />
+      <input type="hidden" name="privacy_accepted" value={privacyAccepted ? "true" : "false"} readOnly />
       <input
         type="hidden"
         name="marketing_consent"
@@ -345,7 +475,10 @@ export function TrialOnboardingForm({
       <Stepper steps={[...WIZARD_STEPS]} currentIndex={step} variant="marketing" />
 
       {stepError || state?.error ? (
-        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <p
+          ref={stepErrorRef}
+          className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+        >
           {stepError ?? state?.error}
         </p>
       ) : null}
@@ -360,28 +493,46 @@ export function TrialOnboardingForm({
             label="Nome comercial da loja"
             hint="Como aparece na vitrine e nos documentos."
             value={payload.general.store_name}
-            onChange={(v) =>
-              setPayload((p) => ({ ...p, general: { ...p.general, store_name: v } }))
-            }
+            error={fieldErrors.store_name}
+            onChange={(v) => {
+              clearFieldError("store_name");
+              setPayload((p) => ({
+                ...p,
+                general: {
+                  ...p.general,
+                  store_name: v,
+                  slug: p.general.slug.trim() ? p.general.slug : slugifyStoreName(v),
+                },
+              }));
+            }}
           />
           <Field
             label="CNPJ"
             hint="14 dígitos — usado no contrato e faturamento."
+            optional
             value={formatCnpjMasked(payload.general.cnpj)}
-            onChange={(v) =>
-              setPayload((p) => ({ ...p, general: { ...p.general, cnpj: v } }))
-            }
+            error={fieldErrors.cnpj}
+            inputMode="numeric"
+            onChange={(v) => {
+              clearFieldError("cnpj");
+              setPayload((p) => ({
+                ...p,
+                general: { ...p.general, cnpj: digitsOnly(v).slice(0, 14) },
+              }));
+            }}
           />
           <Field
             label="Subdomínio desejado (slug)"
             hint="Ex.: minhaloja → minhaloja.autopainel.com.br (letras minúsculas, números e hífens)."
             value={payload.general.slug}
-            onChange={(v) =>
+            error={fieldErrors.slug}
+            onChange={(v) => {
+              clearFieldError("slug");
               setPayload((p) => ({
                 ...p,
                 general: { ...p.general, slug: v.toLowerCase().replace(/[^a-z0-9-]/g, "") },
-              }))
-            }
+              }));
+            }}
           />
           <label className="flex items-center gap-2 text-sm text-zinc-300">
             <input
@@ -410,37 +561,54 @@ export function TrialOnboardingForm({
           <Field
             label="E-mail de contato comercial"
             value={payload.general.contact_email}
-            onChange={(v) =>
-              setPayload((p) => ({ ...p, general: { ...p.general, contact_email: v } }))
-            }
+            error={fieldErrors.contact_email}
+            type="email"
+            autoComplete="email"
+            onChange={(v) => {
+              clearFieldError("contact_email");
+              setPayload((p) => ({ ...p, general: { ...p.general, contact_email: v } }));
+            }}
           />
           <Field
             label="WhatsApp comercial"
             hint="Com DDD — usado nos botões da vitrine."
             value={formatBrazilMobileMasked(payload.general.whatsapp)}
-            onChange={(v) =>
-              setPayload((p) => ({ ...p, general: { ...p.general, whatsapp: v } }))
-            }
+            error={fieldErrors.whatsapp}
+            inputMode="tel"
+            autoComplete="tel"
+            onChange={(v) => {
+              clearFieldError("whatsapp");
+              setPayload((p) => ({ ...p, general: { ...p.general, whatsapp: v } }));
+            }}
           />
           <Field
             label="Representante legal"
             value={payload.general.legal_representative_name}
-            onChange={(v) =>
+            error={fieldErrors.legal_representative_name}
+            autoComplete="name"
+            onChange={(v) => {
+              clearFieldError("legal_representative_name");
               setPayload((p) => ({
                 ...p,
                 general: { ...p.general, legal_representative_name: v },
-              }))
-            }
+              }));
+            }}
           />
           <Field
             label="CPF do representante legal"
             value={formatCpfMasked(payload.general.legal_representative_cpf)}
-            onChange={(v) =>
+            error={fieldErrors.legal_representative_cpf}
+            inputMode="numeric"
+            onChange={(v) => {
+              clearFieldError("legal_representative_cpf");
               setPayload((p) => ({
                 ...p,
-                general: { ...p.general, legal_representative_cpf: v },
-              }))
-            }
+                general: {
+                  ...p.general,
+                  legal_representative_cpf: digitsOnly(v).slice(0, 11),
+                },
+              }));
+            }}
           />
           <BrazilianAddressFields
             legend="Endereço de cobrança"
@@ -500,6 +668,7 @@ export function TrialOnboardingForm({
             hint="PNG ou JPG até 2 MB — cabeçalho em tema escuro."
             accept={BRAND_ACCEPT}
             inputClassName={MARKETING_FILE_INPUT}
+            onFileSelected={(file) => setUploadFile("logo_dark_file", file)}
           />
           <FileUploadField
             name="logo_light_file"
@@ -507,6 +676,7 @@ export function TrialOnboardingForm({
             hint="PNG ou JPG até 2 MB — vitrine clara, painel e impressos."
             accept={BRAND_ACCEPT}
             inputClassName={MARKETING_FILE_INPUT}
+            onFileSelected={(file) => setUploadFile("logo_light_file", file)}
           />
           <FileUploadField
             name="footer_logo_file"
@@ -514,6 +684,7 @@ export function TrialOnboardingForm({
             hint="Versão compacta para o rodapé do site."
             accept={BRAND_ACCEPT}
             inputClassName={MARKETING_FILE_INPUT}
+            onFileSelected={(file) => setUploadFile("footer_logo_file", file)}
           />
           <FileUploadField
             name="favicon_file"
@@ -521,6 +692,7 @@ export function TrialOnboardingForm({
             hint="Ícone quadrado — 32×32 ou 64×64 px."
             accept={BRAND_ACCEPT}
             inputClassName={MARKETING_FILE_INPUT}
+            onFileSelected={(file) => setUploadFile("favicon_file", file)}
           />
           <Field
             label="Fonte dos títulos"
@@ -591,6 +763,7 @@ export function TrialOnboardingForm({
             hint={`Recomendado ${ONBOARDING_HERO_BANNER_SPEC.width}×${ONBOARDING_HERO_BANNER_SPEC.height} px · JPG/PNG/WebP até 5 MB.`}
             accept={HERO_ACCEPT}
             inputClassName={MARKETING_FILE_INPUT}
+            onFileSelected={(file) => setUploadFile("hero_background_file", file)}
           />
           <Field
             label="Destaque acima do título (eyebrow)"
@@ -897,12 +1070,25 @@ export function TrialOnboardingForm({
             />
             <span>
               Li e aceito o{" "}
-              <Link href="/termo-adesao-trial" className="text-marketing-accent hover:underline">
+              <LegalDocumentLink document="trial-adhesion">
                 Termo de Adesão ao Trial
-              </Link>{" "}
+              </LegalDocumentLink>{" "}
               (versão {TRIAL_ADHESION_VERSION}), incluindo autorização para a AutoPainel tratar e{" "}
               <strong> deter</strong> os dados pessoais de clientes e leads captados na vitrine, na
               qualidade de operadora e detentora conforme LGPD.
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              className="mt-1 size-4 rounded border-white/20"
+              checked={platformTermsAccepted}
+              onChange={(event) => setPlatformTermsAccepted(event.target.checked)}
+            />
+            <span>
+              Li e aceito os{" "}
+              <LegalDocumentLink document="platform-terms">Termos de Uso</LegalDocumentLink> da
+              plataforma AutoPainel (versão {PLATFORM_TERMS_VERSION}). *
             </span>
           </label>
           <label className="flex items-start gap-3 text-sm text-zinc-300">
@@ -913,25 +1099,9 @@ export function TrialOnboardingForm({
               onChange={(event) => setPrivacyAccepted(event.target.checked)}
             />
             <span>
-              Aceito a{" "}
-              <Link href="/politica-de-privacidade" className="text-marketing-accent hover:underline">
-                Política de Privacidade
-              </Link>{" "}
-              da AutoPainel.
-            </span>
-          </label>
-          <label className="flex items-start gap-3 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              className="mt-1 size-4 rounded border-white/20"
-              checked={dataProcessingAccepted}
-              onChange={(event) => setDataProcessingAccepted(event.target.checked)}
-            />
-            <span>
-              Autorizo expressamente que a AutoPainel, na condição de operadora/detentora, processe e
-              armazene dados de consumidores e leads gerados no site da minha loja, inclusive para
-              backup, analytics, CRM e cumprimento contratual, conforme instruções da minha
-              concessionária como controladora.
+              Li e aceito a{" "}
+              <LegalDocumentLink document="privacy-policy">Política de Privacidade</LegalDocumentLink>{" "}
+              da AutoPainel (versão {PRIVACY_POLICY_VERSION}). *
             </span>
           </label>
           <label className="flex items-start gap-3 text-sm text-zinc-400">
@@ -955,6 +1125,7 @@ export function TrialOnboardingForm({
             disabled={pending}
             onClick={() => {
               setStepError(null);
+              setFieldErrors({});
               setStep(step - 1);
             }}
           >
@@ -968,7 +1139,7 @@ export function TrialOnboardingForm({
         ) : (
           <Button
             type="submit"
-            disabled={pending || !trialAccepted || !privacyAccepted || !dataProcessingAccepted}
+            disabled={pending || !trialAccepted || !platformTermsAccepted || !privacyAccepted}
             className="bg-marketing-accent text-zinc-950 hover:bg-marketing-accent/90"
           >
             {pending ? (
@@ -993,21 +1164,39 @@ function Field({
   hint,
   value,
   onChange,
+  error,
+  optional = false,
+  type = "text",
+  inputMode,
+  autoComplete,
 }: {
   label: string;
   hint?: string;
   value: string;
   onChange: (value: string) => void;
+  error?: string;
+  optional?: boolean;
+  type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
 }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {optional ? <span className="font-normal text-zinc-500"> (opcional)</span> : null}
+      </Label>
       <Input
+        type={type}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         value={value}
+        aria-invalid={error ? true : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className={MARKETING_FIELD}
+        className={cn(MARKETING_FIELD, error ? "border-red-500/50 focus-visible:ring-red-500/40" : null)}
       />
-      {hint ? <p className="text-xs text-zinc-500">{hint}</p> : null}
+      {error ? <p className="text-xs text-red-300">{error}</p> : null}
+      {!error && hint ? <p className="text-xs text-zinc-500">{hint}</p> : null}
     </div>
   );
 }

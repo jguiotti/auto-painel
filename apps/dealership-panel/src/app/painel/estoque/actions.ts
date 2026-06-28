@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { isStockLimitReachedError } from "@autopainel/shared/lib/growth-operations/is-stock-limit-error";
 import type { SocialPublicationChannel } from "@autopainel/shared/types/social-carousel";
 
 import { publishVehicleToClassifiedsAction } from "@/app/painel/estoque/classified-actions";
@@ -206,6 +207,13 @@ export async function createVehicleAction(formData: FormData) {
     .single();
 
   if (insertError || !inserted) {
+    if (isStockLimitReachedError(insertError?.message)) {
+      return {
+        error:
+          "Você atingiu o limite de veículos do seu plano. Solicite upgrade para cadastrar mais.",
+        code: "stock_limit_reached" as const,
+      };
+    }
     return {
       error:
         insertError?.message.includes("unique")
@@ -364,6 +372,13 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     .eq("dealership_id", dealershipId);
 
   if (updateError) {
+    if (isStockLimitReachedError(updateError.message)) {
+      return {
+        error:
+          "Você atingiu o limite de veículos do seu plano. Solicite upgrade para cadastrar mais.",
+        code: "stock_limit_reached" as const,
+      };
+    }
     return {
       error: updateError.message.includes("unique")
         ? "Este slug já está em uso nesta loja."
@@ -528,6 +543,13 @@ export async function unmarkVehicleAsSoldAction(vehicleId: string) {
     .eq("dealership_id", dealershipId);
 
   if (updateError) {
+    if (isStockLimitReachedError(updateError.message)) {
+      return {
+        error:
+          "Você atingiu o limite de veículos do seu plano. Solicite upgrade para cadastrar mais.",
+        code: "stock_limit_reached" as const,
+      };
+    }
     return { error: "Não foi possível desfazer a venda. Tente novamente." };
   }
 

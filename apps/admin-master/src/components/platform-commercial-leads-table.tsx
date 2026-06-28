@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Building2, ExternalLink, FileSignature, Inbox, MoreHorizontal } from "lucide-react";
+import { Building2, ExternalLink, FileSignature, Inbox, MoreHorizontal, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@autopainel/shared/components/empty-state";
 import {
   Badge,
   Button,
+  ConfirmActionDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,7 +28,10 @@ import {
   TableRow,
 } from "@autopainel/shared/ui";
 
-import { updatePlatformCommercialLeadPipelineAction } from "@/actions/platform-commercial-leads";
+import {
+  deletePlatformCommercialLeadAction,
+  updatePlatformCommercialLeadPipelineAction,
+} from "@/actions/platform-commercial-leads";
 import {
   PLATFORM_LEAD_MANUAL_CHANNELS,
   PLATFORM_LEAD_PIPELINE_LABELS,
@@ -72,6 +77,7 @@ export function PlatformCommercialLeadsTable({
   rows,
   onLeadWon,
 }: PlatformCommercialLeadsTableProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleStatusChange(leadId: string, nextStatus: string) {
@@ -193,6 +199,48 @@ export function PlatformCommercialLeadsTable({
                           </DropdownMenuItem>
                         </>
                       ) : null}
+                      <DropdownMenuSeparator />
+                      <ConfirmActionDialog
+                        title="Excluir lead comercial?"
+                        description={
+                          <>
+                            <p>
+                              O lead de <strong>{row.full_name}</strong> ({row.email}) será removido
+                              da lista. Esta ação não pode ser desfeita.
+                            </p>
+                            {dealershipId ? (
+                              <p>
+                                A loja vinculada permanece ativa; apenas o registro do lead será
+                                apagado.
+                              </p>
+                            ) : null}
+                            {intakeId ? (
+                              <p>
+                                A adesão trial vinculada permanece no painel, mas sem lead
+                                comercial associado.
+                              </p>
+                            ) : null}
+                          </>
+                        }
+                        confirmLabel="Excluir lead"
+                        confirmVariant="destructive"
+                        onConfirm={async () => {
+                          const result = await deletePlatformCommercialLeadAction(row.id);
+                          if (!result.error) {
+                            router.refresh();
+                          }
+                          return result;
+                        }}
+                        trigger={
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(event) => event.preventDefault()}
+                          >
+                            <Trash2 className="mr-2 size-4" />
+                            Excluir lead
+                          </DropdownMenuItem>
+                        }
+                      />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

@@ -45,8 +45,22 @@ export function DealershipNotificationProvider({
   const [items, setItems] = useState<NotificationCenterItem[]>([]);
   const readScope = `dealership-${dealershipId}-storefront-leads`;
 
-  const { itemsWithRead, unreadCount, markAllRead, handleItemActivate } =
+  const { itemsWithRead, unreadCount, markAllRead, markRead, dismiss, handleItemActivate } =
     useNotificationReadState(readScope, items);
+
+  const handleMarkRead = useCallback(
+    (item: NotificationCenterItem) => {
+      markRead(item.id);
+    },
+    [markRead],
+  );
+
+  const handleDismiss = useCallback(
+    (item: NotificationCenterItem) => {
+      dismiss(item.id);
+    },
+    [dismiss],
+  );
 
   const pushNotification = useCallback((item: NotificationCenterItem) => {
     setItems((current) => {
@@ -136,6 +150,8 @@ export function DealershipNotificationProvider({
         footerLink={{ href: "/painel/contatos", label: "Ver todos os contatos" }}
         unreadCount={unreadCount}
         onMarkAllRead={markAllRead}
+        onMarkRead={handleMarkRead}
+        onDismiss={handleDismiss}
         onItemActivate={handleItemActivate}
       />
     </DealershipNotificationContext.Provider>

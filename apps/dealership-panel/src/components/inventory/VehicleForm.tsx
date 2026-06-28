@@ -24,6 +24,8 @@ import {
   updateVehicleAction,
 } from "@/app/painel/estoque/actions";
 
+import { useGrowthOperations } from "@/components/growth-operations/growth-operations-provider";
+
 import { RemoveImageButton } from "@/components/inventory/RemoveImageButton";
 import {
   VehiclePromotionSection,
@@ -150,6 +152,7 @@ export function VehicleForm({
   promotionConfig,
 }: VehicleFormProps) {
   const router = useRouter();
+  const { openPlanUpgradeDialog } = useGrowthOperations();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promoteInstagram, setPromoteInstagram] = useState(true);
@@ -232,6 +235,9 @@ export function VehicleForm({
       if (mode === "create") {
         const result = await createVehicleAction(formData);
         if (result && "error" in result && result.error) {
+          if ("code" in result && result.code === "stock_limit_reached") {
+            openPlanUpgradeDialog();
+          }
           setErrorMessage(result.error);
           setIsSubmitting(false);
           return;
@@ -250,6 +256,9 @@ export function VehicleForm({
       if (mode === "edit" && vehicleId) {
         const result = await updateVehicleAction(vehicleId, formData);
         if (result && "error" in result && result.error) {
+          if ("code" in result && result.code === "stock_limit_reached") {
+            openPlanUpgradeDialog();
+          }
           setErrorMessage(result.error);
           setIsSubmitting(false);
           return;

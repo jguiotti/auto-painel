@@ -16,6 +16,8 @@ export * from "./customer-crm";
 export * from "./dealership-employee";
 export * from "./platform-sales-squad";
 export * from "./dealership-onboarding-intake";
+export * from "./growth-operations";
+export * from "./platform-internal-finance";
 
 export type BrandSlug = string;
 

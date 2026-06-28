@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 
 import { cn } from "@autopainel/shared/lib/utils";
 import {
@@ -69,6 +69,8 @@ interface NotificationCenterSheetProps {
   emptyMessage: string;
   footerLink?: { href: string; label: string };
   onItemActivate?: (item: NotificationCenterItem) => void;
+  onMarkRead?: (item: NotificationCenterItem) => void;
+  onDismiss?: (item: NotificationCenterItem) => void;
   onMarkAllRead?: () => void;
   unreadCount?: number;
 }
@@ -82,6 +84,8 @@ export function NotificationCenterSheet({
   emptyMessage,
   footerLink,
   onItemActivate,
+  onMarkRead,
+  onDismiss,
   onMarkAllRead,
   unreadCount = 0,
 }: NotificationCenterSheetProps) {
@@ -117,33 +121,75 @@ export function NotificationCenterSheet({
           ) : (
             <ul className="divide-y divide-border">
               {items.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={item.href}
+                <li key={item.id} className="group">
+                  <div
                     className={cn(
-                      "block px-6 py-4 transition-colors hover:bg-muted/60",
-                      item.read ? "opacity-70" : "bg-muted/20",
+                      "flex items-start gap-2 px-4 py-4 transition-colors sm:px-6",
+                      item.read ? "opacity-80" : "bg-muted/20",
                     )}
-                    onClick={() => {
-                      onItemActivate?.(item);
-                      onOpenChange(false);
-                    }}
                   >
-                    <div className="flex items-start gap-2">
-                      {!item.read ? (
-                        <span
-                          aria-hidden
-                          className="mt-1.5 size-2 shrink-0 rounded-full bg-destructive"
-                        />
-                      ) : (
-                        <span aria-hidden className="mt-1.5 size-2 shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground">{item.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{item.subtitle}</p>
-                      </div>
+                    {!item.read ? (
+                      <span
+                        aria-hidden
+                        className="mt-2 size-2 shrink-0 rounded-full bg-destructive"
+                      />
+                    ) : (
+                      <span aria-hidden className="mt-2 size-2 shrink-0" />
+                    )}
+                    <Link
+                      href={item.href}
+                      className="min-w-0 flex-1 rounded-md outline-none ring-offset-background transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => {
+                        onItemActivate?.(item);
+                        onOpenChange(false);
+                      }}
+                    >
+                      <p className="text-sm font-medium text-foreground">{item.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.subtitle}</p>
+                      {item.createdAt ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground/80">
+                          {new Intl.DateTimeFormat("pt-BR", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }).format(new Date(item.createdAt))}
+                        </p>
+                      ) : null}
+                    </Link>
+                    <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
+                      {!item.read && onMarkRead ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-foreground"
+                          aria-label={`Marcar «${item.title}» como lida`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onMarkRead(item);
+                          }}
+                        >
+                          <Check className="size-4" />
+                        </Button>
+                      ) : null}
+                      {onDismiss ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          aria-label={`Excluir notificação «${item.title}»`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onDismiss(item);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
                     </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -174,6 +220,8 @@ interface NotificationCenterProps {
   footerLink?: { href: string; label: string };
   className?: string;
   onItemActivate?: (item: NotificationCenterItem) => void;
+  onMarkRead?: (item: NotificationCenterItem) => void;
+  onDismiss?: (item: NotificationCenterItem) => void;
   onMarkAllRead?: () => void;
   unreadCount?: number;
 }
@@ -188,6 +236,8 @@ export function NotificationCenter({
   footerLink,
   className,
   onItemActivate,
+  onMarkRead,
+  onDismiss,
   onMarkAllRead,
   unreadCount,
 }: NotificationCenterProps) {
@@ -210,6 +260,8 @@ export function NotificationCenter({
         emptyMessage={emptyMessage}
         footerLink={footerLink}
         onItemActivate={onItemActivate}
+        onMarkRead={onMarkRead}
+        onDismiss={onDismiss}
         onMarkAllRead={onMarkAllRead}
         unreadCount={resolvedUnread}
       />

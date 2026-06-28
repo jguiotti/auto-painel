@@ -41,7 +41,7 @@ Violação grave dos Termos ou LGPD pode encerrar o trial sem indenização.
 
 ## 6. Foro
 
-Mongaguá/SP.
+Comarca de Mongaguá/SP, com renúncia a qualquer outro.
 
 ---
 

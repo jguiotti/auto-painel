@@ -12,7 +12,11 @@ import {
   type PlatformLeadPipelineStatus,
 } from "@/lib/data/platform-commercial-leads-shared";
 
-const REVALIDATE_PATHS = ["/painel/leads-comerciais", "/painel/dashboard"];
+const REVALIDATE_PATHS = [
+  "/painel/leads-comerciais",
+  "/painel/dashboard",
+  "/painel/adesoes-trial",
+];
 
 const EMAIL_RE =
   /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -193,6 +197,32 @@ export async function linkCommercialLeadToDealershipAction(
 
   if (error) {
     return { error: "Não foi possível vincular o lead à loja." };
+  }
+
+  REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+  return { success: true };
+}
+
+export async function deletePlatformCommercialLeadAction(
+  leadId: string,
+): Promise<ActionResult> {
+  await requireAdminSession();
+
+  if (!leadId) {
+    return { error: "Lead inválido." };
+  }
+
+  let supabase;
+  try {
+    supabase = createSupabaseServiceRoleClient();
+  } catch {
+    return { error: "Serviço indisponível." };
+  }
+
+  const { error } = await supabase.from("saas_prospects").delete().eq("id", leadId);
+
+  if (error) {
+    return { error: "Não foi possível excluir o lead. Tente novamente." };
   }
 
   REVALIDATE_PATHS.forEach((path) => revalidatePath(path));

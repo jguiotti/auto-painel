@@ -349,6 +349,10 @@ export interface SubmitDealershipOnboardingIntakeArgs {
   p_payload: Record<string, unknown>;
   p_trial_legal_version: string;
   p_trial_accepted_at: string;
+  p_platform_terms_version: string;
+  p_platform_terms_accepted_at: string;
+  p_privacy_policy_version: string;
+  p_privacy_policy_accepted_at: string;
   p_saas_prospect_id?: string | null;
 }
 
@@ -384,3 +388,80 @@ export interface UpdateDealershipOnboardingIntakePayloadArgs {
 export interface ApproveSalesCommissionLedgerEntriesArgs {
   p_entry_ids: string[];
 }
+
+/** `public.get_dealership_stock_limit_status` — plan stock cap vs eligible inventory count. */
+export interface GetDealershipStockLimitStatusArgs {
+  p_dealership_id?: string | null;
+}
+
+/** `public.create_dealership_support_request` — upgrade/support WhatsApp flow. */
+export interface CreateDealershipSupportRequestArgs {
+  p_request_type: "plan_upgrade" | "technical_support" | "other";
+  p_message?: string | null;
+  p_desired_plan_slug?: string | null;
+  p_metadata?: Record<string, unknown> | null;
+}
+
+/** `public.get_dealership_inventory_aging_metrics` — advanced_metrics module gate inside RPC. */
+export interface GetDealershipInventoryAgingMetricsArgs {
+  p_dealership_id?: string | null;
+  p_attention_threshold_days?: number | null;
+  p_leads_window_days?: number | null;
+}
+
+/** `public.get_platform_contract_acceptance_preview` — anon token lookup for opt-in page. */
+export interface GetPlatformContractAcceptancePreviewArgs {
+  p_token: string;
+}
+
+/** `public.submit_platform_contract_acceptance` — public opt-in triplo. */
+export interface SubmitPlatformContractAcceptanceArgs {
+  p_token: string;
+  p_accept_contract: boolean;
+  p_accept_platform_terms: boolean;
+  p_accept_privacy_policy: boolean;
+  p_client_ip?: string | null;
+  p_user_agent?: string | null;
+}
+
+/** `public.issue_platform_contract_acceptance_token` — super_admin send link. */
+export interface IssuePlatformContractAcceptanceTokenArgs {
+  p_contract_id: string;
+  p_expires_in_days?: number | null;
+}
+
+/** `public.mark_platform_contract_accepted_manually` — offline acceptance. */
+export interface MarkPlatformContractAcceptedManuallyArgs {
+  p_contract_id: string;
+  p_reference?: string | null;
+}
+
+/** `public.list_platform_admin_notifications` — super_admin inbox. */
+export interface ListPlatformAdminNotificationsArgs {
+  p_unread_only?: boolean | null;
+  p_limit?: number | null;
+  p_offset?: number | null;
+}
+
+/** `public.mark_platform_admin_notification_read` */
+export interface MarkPlatformAdminNotificationReadArgs {
+  p_notification_id: string;
+}
+
+/** `public.delete_platform_admin_notification` */
+export interface DeletePlatformAdminNotificationArgs {
+  p_notification_id: string;
+}
+
+/** `public.delete_dealership_support_request` */
+export interface DeleteDealershipSupportRequestArgs {
+  p_request_id: string;
+}
+
+/** `public.resolve_dealership_support_request` */
+export interface ResolveDealershipSupportRequestArgs {
+  p_request_id: string;
+  p_status?: string;
+}
+
+/** `public.mark_all_platform_admin_notifications_read` — no args. */

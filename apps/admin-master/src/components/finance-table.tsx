@@ -24,18 +24,26 @@ function formatDate(iso: string | null) {
   });
 }
 
-export function FinanceTable({ rows }: { rows: DealershipAdminRow[] }) {
+export function FinanceTable({
+  rows,
+  embedded = false,
+}: {
+  rows: DealershipAdminRow[];
+  embedded?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<DealershipAdminRow | null>(null);
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
-        <p className="text-sm text-muted-foreground">
-          Controle de planos e status de assinatura das concessionárias.
-        </p>
-      </div>
+      {!embedded ? (
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
+          <p className="text-sm text-muted-foreground">
+            Controle de planos e status de assinatura das concessionárias.
+          </p>
+        </div>
+      ) : null}
 
       <div className="rounded-lg border border-border bg-card shadow-sm">
         <Table>

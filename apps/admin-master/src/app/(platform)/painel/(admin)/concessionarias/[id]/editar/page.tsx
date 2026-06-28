@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { ContactQuickActions } from "@/components/contact-quick-actions";
 import { DealershipOperatorSurfaceLinks } from "@/components/dealership-operator-surface-links";
 import { DealershipForm } from "@/components/dealership-form";
 import { PricingCatalogSchemaWarning } from "@/components/pricing-catalog-schema-warning";
@@ -38,6 +39,17 @@ export default async function EditarConcessionariaPage({
   ]);
   return (
     <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{row.name}</h1>
+          <p className="text-sm text-muted-foreground">{row.slug}</p>
+        </div>
+        <ContactQuickActions
+          email={row.contact_email}
+          phone={row.whatsapp_number}
+          label={row.name}
+        />
+      </div>
       <DealershipOperatorSurfaceLinks slug={row.slug} />
       {schema.kind !== "ok" ? (
         <PricingCatalogSchemaWarning state={schema} />

@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 
 import {
+  dismissNotification,
+  loadDismissedNotificationIds,
   loadReadNotificationIds,
   markAllNotificationsRead,
   markNotificationRead,
@@ -11,14 +13,22 @@ import type { NotificationCenterItem } from "@autopainel/shared/ui";
 
 export function useNotificationReadState(scope: string, items: NotificationCenterItem[]) {
   const [readIds, setReadIds] = useState<Set<string>>(() => loadReadNotificationIds(scope));
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() =>
+    loadDismissedNotificationIds(scope),
+  );
+
+  const visibleItems = useMemo(
+    () => items.filter((item) => !dismissedIds.has(item.id)),
+    [dismissedIds, items],
+  );
 
   const itemsWithRead = useMemo(
     () =>
-      items.map((item) => ({
+      visibleItems.map((item) => ({
         ...item,
         read: item.read ?? readIds.has(item.id),
       })),
-    [items, readIds],
+    [readIds, visibleItems],
   );
 
   const unreadCount = useMemo(
@@ -34,8 +44,15 @@ export function useNotificationReadState(scope: string, items: NotificationCente
   );
 
   const markAllRead = useCallback(() => {
-    setReadIds(markAllNotificationsRead(scope, items.map((item) => item.id)));
-  }, [items, scope]);
+    setReadIds(markAllNotificationsRead(scope, visibleItems.map((item) => item.id)));
+  }, [scope, visibleItems]);
+
+  const dismiss = useCallback(
+    (id: string) => {
+      setDismissedIds(dismissNotification(scope, id));
+    },
+    [scope],
+  );
 
   const handleItemActivate = useCallback(
     (item: NotificationCenterItem) => {
@@ -49,6 +66,7 @@ export function useNotificationReadState(scope: string, items: NotificationCente
     unreadCount,
     markRead,
     markAllRead,
+    dismiss,
     handleItemActivate,
   };
 }

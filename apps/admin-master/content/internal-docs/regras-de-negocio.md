@@ -314,7 +314,7 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | **BZ-GR-003** | Preços no marketing-site refletem `pricing_plans.price_amount`; fallback estático alinhado aos mesmos valores. |
 | **BZ-GR-004** | Leads do site entram em `saas_prospects` com pipeline comercial gerido no admin. |
 | **BZ-GR-005** | Admin cadastra leads manualmente (`source=admin_manual`) — mesmo pipeline, vínculo com contrato (`saas_prospect_id`) e loja (`metadata.dealership_id` + onboarding). |
-| **BZ-GR-005** | Slugs `guiotti` e `demo` são referência interna — protegidos contra inativação e exclusão. |
+| **BZ-GR-010** | Slugs `guiotti` e `demo` são referência interna — protegidos contra inativação e exclusão. |
 | **BZ-GR-006** | Contrato comercial: rascunho editável (notas); envio congela `body_snapshot_md`; assinatura registra `signature_provider_ref`. |
 | **BZ-GR-007** | Calendário editorial marketing gerido no admin (`platform_content_calendar_items`). |
 
@@ -328,11 +328,77 @@ Detalhe técnico: `documentacao-tecnica.md`.
 | **Admin `/painel/leads-comerciais`** | Pipeline: Novo → Qualificação → Demo agendada → Demo realizada → Proposta → Negociação → Ganho / Onboarding / Perdido |
 | **Contato marketing** | WhatsApp **+55 13 99743-5851**; e-mail **contato@autopainel.com.br** |
 | **BZ-GR-008** | CRM loja: contato pode ter **vários veículos de interesse** (estoque disponível); após venda, veículo vincula ao comprador e sai da lista dos demais. |
-| **BZ-GR-009** | Contrato SaaS loja v2: boleto Sicoob; suspensão após **3 dias** de atraso; modelo em `CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` (revisão OAB). |
+| **BZ-GR-009** | Contrato SaaS loja v3: **Pix only**; NF em **3 dias corridos** após pagamento; aceite eletrônico (sem Clicksign); template v3 em `platform_contract_templates`. |
 
 ---
 
-## Épico campanha trial Essencial (jun/2026) — **em rollout**
+## Épico Growth Operations — estoque, upgrade, métricas, contratos, admin (jun/2026) — **fechado**
+
+> PRD Fase 1 squad · Copy `GROWTH_OPERATIONS_UX_COPY.md` · UX `GROWTH_OPERATIONS_UX_DESIGN.md` · Arquitetura **`GROWTH_OPERATIONS_ARCHITECTURE.md`**
+
+### Decisões PM (fechadas)
+
+| Tema | Decisão |
+| --- | --- |
+| Faixas estoque | Essencial **10** · Profissional **30** · Completo **sem teto** |
+| Contagem | Veículos `available` + `is_active` |
+| Upgrade | Solicitação + WhatsApp — **sem** self-service |
+| SLA | **1 dia útil** (upgrade e suporte) |
+| Contrato | Opt-in triplo; sem assinatura eletrônica |
+| Pagamento | **Pix only**; NF titular em **3 dias** após pagamento |
+| Trial | 3 aceites no fim do wizard (trial + termos + privacidade) |
+
+### Regras de negócio
+
+| ID | Regra |
+| --- | --- |
+| **BZ-STK-001** | `starter`/`trial` → máx. 10 veículos disponíveis ativos; `business` → 30; `enterprise` → sem teto. |
+| **BZ-STK-003** | Insert/update veículo para `available`+`active` acima do limite → bloqueio `stock_limit_reached` + fluxo upgrade. |
+| **BZ-STK-005** | Upgrade não altera plano automaticamente — registra `dealership_support_requests`. |
+| **BZ-STK-006** | SLA 1 dia útil exibido ao lojista. |
+| **BZ-WA-001** | WhatsApp oficial **+55 13 99743-5851** (env configurável). |
+| **BZ-WA-003** | Enviar upgrade/suporte: persistir solicitação **e** abrir `wa.me`. |
+| **BZ-MET-001** | Métricas aging só com módulo `advanced_metrics`. |
+| **BZ-MET-002** | Dias no estoque via `vehicles.available_since`. |
+| **BZ-CTR-002** | Status contrato: `sent_for_acceptance` → `accepted` (legado `sent_for_signature`/`signed` migrados). |
+| **BZ-CTR-003** | Opt-in triplo: contrato SaaS + termos plataforma + privacidade — audit em `platform_legal_acceptances`. |
+| **BZ-CTR-004** | Trial: último passo exige 3 aceites antes do submit. |
+| **BZ-CTR-005** | Pós-conversão: e-mail com link token `/aceite-contrato/{token}`. |
+| **BZ-CTR-006** | Cláusulas Pix-only e NF 3 dias no template v3. |
+| **BZ-ADM-002** | Notificações: trial, upgrade, suporte, contrato, billing D-7/D-3/D-0/atraso. |
+| **BZ-ADM-003** | Super admin pode **marcar lida** e **excluir** notificação em `/painel/notificacoes`. |
+| **BZ-ADM-004** | Super admin pode **excluir** lead comercial (`deletePlatformCommercialLeadAction`). |
+| **BZ-ADM-005** | Ficha loja/prospect: atalhos e-mail + WhatsApp (`ContactQuickActions`). |
+| **BZ-ADM-006** | Solicitação upgrade/suporte: **Concluir** ou **Excluir** em `/painel/solicitacoes-upgrade`. |
+| **BZ-ADM-007** | Financeiro interno plataforma: receitas/despesas manuais + dashboard MRR/inadimplência (`/painel/financeiro`). |
+| **BZ-LEG-001** | Foro da plataforma: **Comarca de Mongaguá/SP** (termos, trial, contrato SaaS v3). |
+| **BZ-NOT-001** | Painel loja: notificações com dismiss local; painel admin: persistência em `platform_admin_notifications`. |
+| **BZ-NAV-INT-001** | Menu Integrações só com `olx_sync`, `webmotors_sync` ou `social_media_kit`. |
+
+### Ondas de entrega
+
+| Onda | Escopo | Status |
+| --- | --- | --- |
+| **A** | Limite estoque + modal upgrade + FAB + fila admin | ✅ |
+| **B** | Contratos v3 + trial opt-in triplo + `/aceite-contrato/[token]` | ✅ |
+| **C** | Notificações admin + régua billing (cron diário GitHub Actions) | ✅ |
+| **D** | Métricas aging (`InventoryAgingSection`) | ✅ |
+
+### Cenários de aceite (resumo)
+
+| # | Cenário |
+| --- | --- |
+| CA-GO-01 | Loja Essencial com 10 veículos ativos → 11º bloqueado com modal upgrade. |
+| CA-GO-02 | FAB suporte abre WhatsApp e grava `dealership_support_requests`. |
+| CA-GO-03 | Admin envia contrato → lojista aceita em `/aceite-contrato/{token}` (opt-in triplo). |
+| CA-GO-04 | Cron billing gera alertas D-7/D-3/D-0/atraso no sino admin. |
+| CA-GO-05 | Super admin exclui lead, notificação ou solicitação upgrade concluída. |
+
+**Pendente operacional (não bloqueia código):** QA manual E2E aceite contrato + limite estoque; revisão OAB contrato v3.
+
+---
+
+## Épico campanha trial Essencial (jun/2026) — **fechado (base)**
 
 ### Feature Description
 
@@ -361,13 +427,17 @@ Campanha agressiva de aquisição: **30 dias grátis** no plano **Essencial** (`
 | ID | Regra |
 | --- | --- |
 | **BZ-TR-001** | Trial = 30 dias no tier **Essencial**; após prazo exige contrato pago ou suspensão. |
-| **BZ-TR-002** | Formulário `/adesao-trial` é **aberto** (anon); exige aceite Termo Trial + LGPD detentora de leads. |
+| **BZ-TR-002** | Formulário `/adesao-trial` é **aberto** (anon); exige **3 aceites** no submit: Termo Trial + Termos de Uso plataforma + Política de Privacidade. |
+| **BZ-TR-002a** | Cláusula LGPD detentora de leads permanece no Termo Trial e na vitrine (controladora loja / operadora AutoPainel). |
 | **BZ-TR-003** | Intake gera lead B2B (`source=trial_onboarding`, pipeline `onboarding`) e registro em `dealership_onboarding_intakes`. |
 | **BZ-TR-004** | Admin converte intake em loja via prefill — operador revisa antes de publicar. |
 | **BZ-TR-005** | Meta exibe «Em breve» no comparativo; **não** prometer disponibilidade no trial. |
 | **BZ-TR-006** | Loja controladora / AutoPainel operadora **e detentora** de dados de clientes e leads — cláusula obrigatória no termo trial e vitrine. |
 | **BZ-TR-007** | Campanha limitada a **20 vagas imediatas** com **setup R$ 497 isento** excepcionalmente; contagem = intakes `submitted` \| `linked` \| `converted`. |
 | **BZ-TR-008** | Após esgotar vagas imediatas, formulário permanece aberto como **fila de espera** (`payload.campaign.trial_waitlist`, lead `metadata.trial_waitlist`); contato quando houver nova vaga. |
+| **BZ-TR-009** | Upload logo/banner: arquivos persistem entre passos do wizard (`trial-onboarding-draft-storage` + state React) e enviam no submit final (`multipart/form-data`, limite 15 MB). |
+| **BZ-TR-010** | Admin **Revisar** adesão: modal com preview de logos/banner antes de converter em loja. |
+| **BZ-TR-011** | Foro trial: **Comarca de Mongaguá/SP**. |
 
 ### Cenários de aceite
 
@@ -426,4 +496,4 @@ Fonte: `packages/shared/docs/TRIAL_CAMPAIGN_ARCHITECTURE.md`
 | Module gating | trial/starter = simulador + QR + métricas via `pricing_plan_modules` |
 | Conversão | `createDealershipAction` + `mark_dealership_onboarding_intake_converted` |
 
-*Última atualização: junho/2026 — épico trial **em rollout** (Fase 4 Arquiteto concluída)*
+*Última atualização: junho/2026 — épicos Growth Operations + campanha trial **fechados em código**; go-live comercial depende de 1ª loja paga + revisão OAB.*

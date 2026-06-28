@@ -44,6 +44,16 @@ export function isAnyClassifiedsModuleEnabled(
   return getEnabledClassifiedsProviders(resolvedKeys).length > 0;
 }
 
+/** Sidebar/mobile «Integrações» — requires at least one integration module on the plan. */
+export function shouldShowIntegrationsNav(
+  resolvedKeys: string[] | null | undefined,
+): boolean {
+  return (
+    isAnyClassifiedsModuleEnabled(resolvedKeys) ||
+    isDealershipFeatureEnabled(resolvedKeys, "social_media_kit")
+  );
+}
+
 /** Canonical SaaS module key for sale receipt gating. */
 export const SALE_RECEIPT_MODULE_KEY = "recibo_compra" as const;
 

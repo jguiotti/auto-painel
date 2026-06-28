@@ -31,6 +31,7 @@
     "verify:epics-closure": "node scripts/verify-epics-closure.mjs",
     "platform-sales:cron:monthly": "NODE_PATH=./packages/shared/node_modules node scripts/platform-sales-cron.mjs monthly",
     "platform-sales:cron:payout": "NODE_PATH=./packages/shared/node_modules node scripts/platform-sales-cron.mjs payout",
+    "admin:billing-notifications:scan": "NODE_PATH=./packages/shared/node_modules node scripts/scan-billing-due-admin-notifications.mjs",
     "supabase:reset:dev": "supabase db reset && npm run seed:local-access",
     "provision:super-admin": "NODE_PATH=./packages/shared/node_modules node scripts/provision-platform-super-admin.mjs",
     "sync:dealership-from-remote": "NODE_PATH=./packages/shared/node_modules node scripts/sync-dealership-from-remote.mjs",

@@ -4,6 +4,12 @@ const RPC_ERROR_MESSAGES: Record<DealershipOnboardingIntakeRpcErrorCode, string>
   payload_required: "Dados do formulário incompletos. Volte e preencha os campos obrigatórios.",
   trial_legal_version_required: "Versão do termo de trial inválida. Recarregue a página e tente novamente.",
   trial_acceptance_required: "Aceite o Termo de Adesão ao Trial para continuar.",
+  platform_terms_version_required:
+    "Versão dos Termos de Uso inválida. Recarregue a página e tente novamente.",
+  platform_terms_acceptance_required: "Aceite os Termos de Uso da plataforma AutoPainel.",
+  privacy_policy_version_required:
+    "Versão da Política de Privacidade inválida. Recarregue a página e tente novamente.",
+  privacy_policy_acceptance_required: "Aceite a Política de Privacidade da AutoPainel.",
   store_name_required: "Informe o nome da loja.",
   contact_email_invalid: "Informe um e-mail de contato válido.",
   saas_prospect_not_found: "Lead comercial não encontrado. Verifique o link ou envie sem vínculo.",

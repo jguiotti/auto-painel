@@ -1,8 +1,7 @@
 import Link from "next/link";
 
 import {
-  isAnyClassifiedsModuleEnabled,
-  isDealershipFeatureEnabled,
+  shouldShowIntegrationsNav,
 } from "@autopainel/shared/lib/dealership-features";
 import {
   resolveDealershipStorefrontPublicUrl,
@@ -15,6 +14,8 @@ import {
 
 import { signOutAction } from "@/app/painel/actions";
 
+import type { DealershipStockLimitStatus } from "@autopainel/shared/types";
+
 import { DealershipBrandImage } from "@/components/branding/dealership-brand-image";
 import { DealershipSidebarNav } from "@/components/dashboard/dealership-sidebar-nav";
 import { DashboardMobileNavMount } from "@/components/dashboard/dashboard-mobile-nav-mount";
@@ -23,6 +24,7 @@ import {
   DealershipNotificationProvider,
   DealershipNotificationTrigger,
 } from "@/components/dashboard/dealership-notification-provider";
+import { GrowthOperationsProvider } from "@/components/growth-operations/growth-operations-provider";
 
 interface DashboardShellProps {
   dealershipName: string;
@@ -34,6 +36,8 @@ interface DashboardShellProps {
   /** `profiles.role` for the signed-in user (owner | manager | seller | super_admin). */
   viewerRole: string;
   contactsAttentionCount?: number;
+  stockLimitStatus?: DealershipStockLimitStatus | null;
+  showGrowthSupport?: boolean;
   children: React.ReactNode;
 }
 
@@ -56,12 +60,12 @@ export function DashboardShell({
   activeFeatureKeys,
   viewerRole,
   contactsAttentionCount = 0,
+  stockLimitStatus = null,
+  showGrowthSupport = false,
   children,
 }: DashboardShellProps) {
   const storefrontUrl = resolveStorefrontUrl(dealershipSlug);
-  const showIntegrations =
-    isAnyClassifiedsModuleEnabled(activeFeatureKeys) ||
-    isDealershipFeatureEnabled(activeFeatureKeys, "social_media_kit");
+  const showIntegrations = shouldShowIntegrationsNav(activeFeatureKeys);
   const alertOnVitrineLeads =
     viewerRole === "owner" ||
     viewerRole === "manager" ||
@@ -221,7 +225,14 @@ export function DashboardShell({
 
           <main className="min-w-0 flex-1">
             <PageContainer size="xl" className="py-8 sm:py-10 print:p-0">
-              {children}
+              <GrowthOperationsProvider
+                storeName={dealershipName}
+                storeSlug={dealershipSlug}
+                stockLimitStatus={stockLimitStatus}
+                showSupportFab={showGrowthSupport}
+              >
+                {children}
+              </GrowthOperationsProvider>
             </PageContainer>
           </main>
         </div>

@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -15,11 +16,20 @@ import {
   mapDealershipStatusNotification,
 } from "@autopainel/shared/lib/notifications/platform-billing-notification-items";
 import {
+  mapPlatformAdminNotificationRow,
+  type PlatformAdminNotificationDbRow,
+} from "@autopainel/shared/lib/growth-operations/map-platform-admin-notification";
+import {
   NotificationBellTrigger,
   NotificationCenterSheet,
   type NotificationCenterItem,
 } from "@autopainel/shared/ui";
 
+import {
+  deletePlatformAdminNotificationAction,
+  markAllPlatformAdminNotificationsReadAction,
+  markPlatformAdminNotificationReadAction,
+} from "@/actions/platform-admin-notifications";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface AdminNotificationContextValue {
@@ -33,6 +43,10 @@ const AdminNotificationContext = createContext<AdminNotificationContextValue | n
 
 const READ_SCOPE = "admin-platform-ops";
 const REFRESH_INTERVAL_MS = 90_000;
+
+function isPlatformInboxNotification(id: string): boolean {
+  return id.startsWith("platform-admin-");
+}
 
 function sortNotifications(items: NotificationCenterItem[]): NotificationCenterItem[] {
   return [...items].sort((left, right) => {
@@ -96,15 +110,75 @@ async function fetchPlatformNotifications(
           .map((row) => mapDealershipStatusNotification(row))
           .filter((item): item is NotificationCenterItem => item !== null);
 
-  return mergeNotificationItems([], [...billingItems, ...statusItems]);
+  const { data: inboxRows } = await supabase.rpc("list_platform_admin_notifications", {
+    p_unread_only: false,
+    p_limit: 30,
+    p_offset: 0,
+  });
+
+  const inboxItems =
+    (inboxRows as PlatformAdminNotificationDbRow[] | null)?.map((row) =>
+      mapPlatformAdminNotificationRow(row),
+    ) ?? [];
+
+  return mergeNotificationItems(inboxItems, [...billingItems, ...statusItems]);
 }
 
 export function AdminNotificationProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<NotificationCenterItem[]>([]);
 
-  const { itemsWithRead, unreadCount, markAllRead, handleItemActivate } =
+  const { itemsWithRead, unreadCount, markAllRead, markRead, dismiss, handleItemActivate } =
     useNotificationReadState(READ_SCOPE, items);
+
+  const handleMarkRead = useCallback(
+    (item: NotificationCenterItem) => {
+      markRead(item.id);
+      setItems((current) =>
+        current.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)),
+      );
+
+      if (isPlatformInboxNotification(item.id)) {
+        void markPlatformAdminNotificationReadAction(item.id);
+      }
+    },
+    [markRead],
+  );
+
+  const handleMarkAllRead = useCallback(() => {
+    markAllRead();
+    setItems((current) => current.map((entry) => ({ ...entry, read: true })));
+    void markAllPlatformAdminNotificationsReadAction();
+  }, [markAllRead]);
+
+  const handleDismiss = useCallback(
+    (item: NotificationCenterItem) => {
+      if (isPlatformInboxNotification(item.id)) {
+        void deletePlatformAdminNotificationAction(item.id).then((result) => {
+          if (!result.error) {
+            setItems((current) => current.filter((entry) => entry.id !== item.id));
+          }
+        });
+        return;
+      }
+
+      dismiss(item.id);
+    },
+    [dismiss],
+  );
+
+  const handleItemOpen = useCallback(
+    (item: NotificationCenterItem) => {
+      handleItemActivate(item);
+      if (isPlatformInboxNotification(item.id)) {
+        setItems((current) =>
+          current.map((entry) => (entry.id === item.id ? { ...entry, read: true } : entry)),
+        );
+        void markPlatformAdminNotificationReadAction(item.id);
+      }
+    },
+    [handleItemActivate],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -150,10 +224,12 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         title="Operação AutoPainel"
         description="Mensalidades, vencimentos e alertas operacionais da plataforma."
         emptyMessage="Nenhum alerta operacional no momento."
-        footerLink={{ href: "/painel/financeiro", label: "Ir para financeiro" }}
+        footerLink={{ href: "/painel/notificacoes", label: "Ver todas as notificações" }}
         unreadCount={unreadCount}
-        onMarkAllRead={markAllRead}
-        onItemActivate={handleItemActivate}
+        onMarkAllRead={handleMarkAllRead}
+        onMarkRead={handleMarkRead}
+        onDismiss={handleDismiss}
+        onItemActivate={handleItemOpen}
       />
     </AdminNotificationContext.Provider>
   );

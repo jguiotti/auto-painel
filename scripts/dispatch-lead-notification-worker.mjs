@@ -6,17 +6,29 @@
  *   node scripts/dispatch-lead-notification-worker.mjs
  *
  * Env (root .env.local or shell):
- *   NEXT_PUBLIC_SUPABASE_URL
+ *   SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
  */
 import { loadRootEnvLocal } from "./lib/load-root-env.mjs";
 
 loadRootEnvLocal();
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const supabaseUrl = (
+  process.env.SUPABASE_URL ??
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  ""
+).trim();
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  console.error(
+    "Missing Supabase URL or SUPABASE_SERVICE_ROLE_KEY.",
+  );
+  console.error(
+    "CI: configure GitHub Actions secrets SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY",
+  );
+  console.error(
+    "Local: root .env.local (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)",
+  );
   process.exit(1);
 }
 

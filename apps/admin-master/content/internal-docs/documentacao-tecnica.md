@@ -462,7 +462,7 @@ Secrets Edge: `RESEND_API_KEY`, opcional `LEAD_NOTIFICATION_FROM_EMAIL`.
 | RPCs | `generate_monthly_commission_ledger`, `generate_payout_batch`, `mark_payout_batch_paid`, `provision_attribution_from_signed_contract` |
 | Cron | `.github/workflows/platform-sales-cron.yml` (dia 1 + dia 10) |
 | Scripts | `npm run platform-sales:cron:monthly`, `platform-sales:cron:payout`, `smoke:demo-showcase` |
-| Lead won | Sheet em `/painel/leads-comerciais` (`platform-commercial-lead-attribution-sheet.tsx`) |
+| Lead won | Sheet em `/painel/leads-comerciais` (`platform-commercial-lead-attribution-sheet.tsx`) — Select Radix (evita `<select>` nativo cortado no Sheet), pré-preenche loja por metadata/nome |
 | Contrato assinado | Rep + loja no formulário → vínculo automático (`platform-contract-detail-actions.tsx`) |
 
 ---
@@ -589,6 +589,55 @@ Smoke + E2E produção OK. Regressão E2E local completa opcional com `dev:all` 
 | Sitemap | `/adesao-trial`, `/termo-adesao-trial` em `apps/marketing-site/src/app/sitemap.ts` |
 | Smoke | Enviar `/adesao-trial` com logo; confirmar intake + lead em admin; confirmar e-mail TRIAL-01 ou TRIAL-02 na caixa do representante |
 
+### Épico Growth Operations — estoque, upgrade, contratos opt-in, admin (jun/2026) — **fechado**
+
+| Item | Detalhe |
+| --- | --- |
+| Status | ✅ Código + migrações + UI entregues (jun/2026) |
+| Arquitetura Fase 4 | `packages/shared/docs/GROWTH_OPERATIONS_ARCHITECTURE.md` |
+| UX Fase 3 | `packages/shared/docs/GROWTH_OPERATIONS_UX_DESIGN.md` |
+| Copy Fase 2 | `packages/shared/docs/GROWTH_OPERATIONS_UX_COPY.md` |
+| Tipos | `packages/shared/src/types/growth-operations.ts`, `platform-internal-finance.ts`, `supabase-rpc.ts` |
+| Migrações | `20260624150000_growth_operations_stock_limits_notifications.sql`, `20260624150100_growth_operations_contract_optin_rpcs.sql`, `20260625120000_platform_admin_notification_delete.sql`, `20260625130000_dealership_support_request_delete.sql`, `20260625140000_platform_internal_finance_entries.sql`, `20260625150000_legal_foro_mongagua.sql` |
+| Limite estoque | `max_active_vehicles` 10/30/null; trigger `stock_limit_reached`; `dealership-panel` modal + FAB |
+| Suporte WhatsApp | `dealership_support_requests` + `create_dealership_support_request`; admin `/painel/solicitacoes-upgrade` |
+| Contrato v3 | Template Pix-only; RPCs opt-in token; `/aceite-contrato/[token]` (marketing); statuses `sent_for_acceptance` / `accepted` |
+| Admin inbox | `platform_admin_notifications`; sino + `/painel/notificacoes`; `mark_*`, `delete_platform_admin_notification` |
+| Cron billing | RPC `scan_billing_due_admin_notifications`; GitHub Actions `admin-billing-notifications-cron.yml` (diário 12:00 UTC); local `npm run admin:billing-notifications:scan` |
+| Centro de notificações | `NotificationCenterSheet` — marcar lida/excluir (admin); dismiss local (loja) |
+| Integrações menu | `shouldShowIntegrationsNav()` — E2E `dealership-panel-integrations-ux.spec.ts` |
+| Métricas aging | `InventoryAgingSection` no dashboard loja (módulo `advanced_metrics`) |
+| Adesões trial (admin) | `/painel/adesoes-trial` — **Revisar** (modal assets), WhatsApp/e-mail via `ContactQuickActions`; wizard marketing com upload persistente + opt-in triplo |
+| Leads comerciais (admin) | `/painel/leads-comerciais` — pipeline, criar manual, atribuir representante (Select Radix), **Excluir lead** |
+| Financeiro interno (admin) | `/painel/financeiro` — MRR, inadimplência, receitas/despesas (`platform_revenue_entries`, `platform_expense_entries`) |
+| Foro legal (plataforma) | Comarca de **Mongaguá/SP** — componentes `apps/marketing-site/src/components/legal/*`, docs shared, templates DB |
+| Legal marketing (refactor) | `terms-of-use-content.tsx`, `privacy-policy-content.tsx`, `trial-adhesion-term-content.tsx` — DRY nas páginas `/termos-de-uso`, `/politica-de-privacidade`, `/termo-adesao-trial` |
+| CI lead e-mail | `.github/workflows/lead-notification-dispatch.yml` — secrets `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; script `dispatch-lead-notification-worker.mjs` |
+| CI workers integração | `.github/workflows/integration-workers-cron.yml` — secrets `INTEGRATION_WORKERS_CRON_SECRET` (ver `npm run github:secrets:workers:manual`) |
+
+**Deploy remoto (operador):**
+
+```bash
+npm run supabase:deploy   # aplica migrações pendentes (incl. foro Mongaguá)
+git push origin main      # workflows CI + cron billing
+```
+
+**Pendente operacional (não bloqueia merge):** QA manual E2E limite estoque + aceite contrato; revisão OAB contrato v3; 1ª loja cliente paga.
+
+---
+
+## Fechamento de desenvolvimento — junho/2026
+
+| Épico / entrega | Estado |
+| --- | --- |
+| Growth Operations (ondas A–D) | ✅ Fechado |
+| Campanha trial Essencial | ✅ Fechado (base) |
+| Admin: leads, notificações, upgrade, financeiro | ✅ Fechado |
+| Legal: foro Mongaguá + opt-in triplo trial | ✅ Fechado |
+| CI: lead notification + billing cron + workers | ✅ Fechado (secrets GitHub configurados) |
+
+Ver também: `packages/shared/docs/EPICS_CLOSURE_JUN2026.md`, `PLATFORM_BACKLOG_REMAINING.md`.
+
 ---
 
 ## Documentação complementar
@@ -610,4 +659,4 @@ Smoke + E2E produção OK. Regressão E2E local completa opcional com `dev:all` 
 
 Edite `apps/admin-master/content/internal-docs/documentacao-tecnica.md` via PR. O Admin exibe o arquivo do git automaticamente (somente leitura).
 
-*Última atualização: junho/2026*
+*Última atualização: 10 junho/2026 — Growth Operations + trial fechados; deploy remoto + push main pendentes operador.*

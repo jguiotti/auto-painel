@@ -9,9 +9,9 @@ export function HomeTrustStrip({ items }: HomeTrustStripProps) {
       className="border-y border-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_35%,transparent)] bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_12%,var(--storefront-bg,var(--dealer-bg)))]"
     >
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-[color-mix(in_srgb,var(--secondary-color,var(--dealer-accent))_25%,transparent)] sm:grid-cols-4">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
-            key={item.label}
+            key={`${index}-${item.value}-${item.label}`}
             className="bg-[var(--storefront-bg,var(--dealer-bg))] px-4 py-6 text-center sm:px-6"
           >
             <p

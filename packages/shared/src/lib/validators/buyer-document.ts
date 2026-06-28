@@ -18,7 +18,7 @@ function computeCpfCheckDigit(digits: string, factorStart: number): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-function isValidCpf(raw: string): boolean {
+export function isValidCpf(raw: string): boolean {
   const digits = stripNonDigits(raw);
   if (digits.length !== CPF_LENGTH || allSameDigits(digits)) {
     return false;
@@ -39,7 +39,7 @@ function computeCnpjCheckDigit(digits: string, weights: number[]): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-function isValidCnpj(raw: string): boolean {
+export function isValidCnpj(raw: string): boolean {
   const digits = stripNonDigits(raw);
   if (digits.length !== CNPJ_LENGTH || allSameDigits(digits)) {
     return false;

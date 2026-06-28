@@ -63,6 +63,11 @@
       "import": "./src/lib/dealership/map-onboarding-intake-to-form.ts",
       "default": "./src/lib/dealership/map-onboarding-intake-to-form.ts"
     },
+    "./lib/dealership/list-onboarding-intake-assets": {
+      "types": "./src/lib/dealership/list-onboarding-intake-assets.ts",
+      "import": "./src/lib/dealership/list-onboarding-intake-assets.ts",
+      "default": "./src/lib/dealership/list-onboarding-intake-assets.ts"
+    },
     "./lib/dealership/onboarding-intake-errors": {
       "types": "./src/lib/dealership/onboarding-intake-errors.ts",
       "import": "./src/lib/dealership/onboarding-intake-errors.ts",
@@ -137,6 +142,36 @@
       "types": "./src/lib/notifications/platform-billing-notification-items.ts",
       "import": "./src/lib/notifications/platform-billing-notification-items.ts",
       "default": "./src/lib/notifications/platform-billing-notification-items.ts"
+    },
+    "./lib/growth-operations/is-stock-limit-error": {
+      "types": "./src/lib/growth-operations/is-stock-limit-error.ts",
+      "import": "./src/lib/growth-operations/is-stock-limit-error.ts",
+      "default": "./src/lib/growth-operations/is-stock-limit-error.ts"
+    },
+    "./lib/growth-operations/map-aging-metrics": {
+      "types": "./src/lib/growth-operations/map-aging-metrics.ts",
+      "import": "./src/lib/growth-operations/map-aging-metrics.ts",
+      "default": "./src/lib/growth-operations/map-aging-metrics.ts"
+    },
+    "./lib/growth-operations/map-contract-acceptance-preview": {
+      "types": "./src/lib/growth-operations/map-contract-acceptance-preview.ts",
+      "import": "./src/lib/growth-operations/map-contract-acceptance-preview.ts",
+      "default": "./src/lib/growth-operations/map-contract-acceptance-preview.ts"
+    },
+    "./lib/growth-operations/map-platform-admin-notification": {
+      "types": "./src/lib/growth-operations/map-platform-admin-notification.ts",
+      "import": "./src/lib/growth-operations/map-platform-admin-notification.ts",
+      "default": "./src/lib/growth-operations/map-platform-admin-notification.ts"
+    },
+    "./lib/growth-operations/map-stock-limit-status": {
+      "types": "./src/lib/growth-operations/map-stock-limit-status.ts",
+      "import": "./src/lib/growth-operations/map-stock-limit-status.ts",
+      "default": "./src/lib/growth-operations/map-stock-limit-status.ts"
+    },
+    "./lib/growth-operations/platform-support-whatsapp": {
+      "types": "./src/lib/growth-operations/platform-support-whatsapp.ts",
+      "import": "./src/lib/growth-operations/platform-support-whatsapp.ts",
+      "default": "./src/lib/growth-operations/platform-support-whatsapp.ts"
     },
     "./hooks/use-notification-read-state": {
       "types": "./src/hooks/use-notification-read-state.ts",

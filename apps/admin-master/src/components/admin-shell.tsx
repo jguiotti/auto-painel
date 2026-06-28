@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   BookOpen,
   BriefcaseBusiness,
   Building2,
@@ -12,6 +13,7 @@ import {
   Layers,
   LayoutDashboard,
   Menu,
+  MessageCircle,
   LogOut,
   Package,
   Search,
@@ -84,6 +86,12 @@ function pageTitleFromPath(pathname: string): string {
   if (pathname.startsWith("/painel/adesoes-trial")) {
     return "Adesões trial";
   }
+  if (pathname.startsWith("/painel/solicitacoes-upgrade")) {
+    return "Solicitações upgrade";
+  }
+  if (pathname.startsWith("/painel/notificacoes")) {
+    return "Notificações";
+  }
   if (pathname.startsWith("/painel/contratos")) {
     return "Contratos";
   }
@@ -114,6 +122,8 @@ export function AdminShell({
     { href: "/painel/concessionarias", label: "Concessionárias", icon: Building2 },
     { href: "/painel/leads-comerciais", label: "Leads comerciais", icon: Handshake },
     { href: "/painel/adesoes-trial", label: "Adesões trial", icon: ClipboardList },
+    { href: "/painel/solicitacoes-upgrade", label: "Solicitações upgrade", icon: MessageCircle },
+    { href: "/painel/notificacoes", label: "Notificações", icon: Bell },
     { href: "/painel/contratos", label: "Contratos", icon: FileSignature },
     { href: "/painel/calendario-conteudo", label: "Calendário", icon: CalendarDays },
     { href: "/painel/planos", label: "Planos", icon: Layers },

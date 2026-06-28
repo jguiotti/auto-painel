@@ -226,7 +226,7 @@ CONTRATADA e CONTRATANTE, conjuntamente, **Partes**, e isoladamente, **Parte**.
 
 ## CLÁUSULA 14ª — FORO
 
-14.1. Fica eleito o **foro da Comarca de Santos/SP**, com renúncia a qualquer outro, por mais privilegiado que seja, salvo competência absoluta do consumidor quando aplicável.
+14.1. Fica eleito o **foro da Comarca de Mongaguá/SP**, com renúncia a qualquer outro, por mais privilegiado que seja, salvo competência absoluta do consumidor quando aplicável.
 
 ---
 

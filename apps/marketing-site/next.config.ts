@@ -7,6 +7,11 @@ require("../../scripts/inject-monorepo-env.cjs");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@autopainel/shared"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   async redirects() {
     return [
       {

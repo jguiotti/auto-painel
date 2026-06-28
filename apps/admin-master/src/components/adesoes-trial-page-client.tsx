@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Archive, Inbox, Link2 } from "lucide-react";
+import { Archive, Eye, Inbox, Link2 } from "lucide-react";
 
 import { EmptyState } from "@autopainel/shared/components/empty-state";
 import { OnboardingIntakeStatusBadge } from "@autopainel/shared/components/onboarding-intake-status-badge";
+import { formatBrazilMobileMasked } from "@autopainel/shared/lib/br/format-input-masks";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,6 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -40,6 +43,8 @@ import {
   archiveOnboardingIntakeAction,
   linkOnboardingIntakeToProspectAction,
 } from "@/actions/dealership-onboarding-intakes";
+import { ContactQuickActions } from "@/components/contact-quick-actions";
+import { OnboardingIntakeReviewDialog } from "@/components/onboarding-intake-review-dialog";
 import type { DealershipOnboardingIntakeListRow } from "@/lib/data/dealership-onboarding-intakes";
 import type { PlatformCommercialLeadRow } from "@/lib/data/platform-commercial-leads-shared";
 
@@ -48,14 +53,30 @@ interface AdesoesTrialPageClientProps {
   commercialLeads: PlatformCommercialLeadRow[];
 }
 
+function buildQuickWhatsAppMessage(row: DealershipOnboardingIntakeListRow): string {
+  return [
+    `Olá! Recebemos sua adesão trial AutoPainel — *${row.store_name}* (${row.slug}).`,
+    "",
+    "Estamos revisando os dados do formulário. Se precisarmos de ajuste em logo, banner ou textos, avisamos por aqui.",
+    "",
+    `Protocolo: ${row.id}`,
+  ].join("\n");
+}
+
 export function AdesoesTrialPageClient({
   rows,
   commercialLeads,
 }: AdesoesTrialPageClientProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [linkIntakeId, setLinkIntakeId] = useState<string | null>(null);
   const [selectedProspectId, setSelectedProspectId] = useState("");
   const [archiveIntakeId, setArchiveIntakeId] = useState<string | null>(null);
+  const [reviewIntakeId, setReviewIntakeId] = useState<string | null>(null);
+
+  const reviewSummary = reviewIntakeId
+    ? rows.find((row) => row.id === reviewIntakeId) ?? null
+    : null;
 
   function handleArchive(intakeId: string) {
     startTransition(async () => {
@@ -66,6 +87,7 @@ export function AdesoesTrialPageClient({
       }
       toast.success("Adesão arquivada.");
       setArchiveIntakeId(null);
+      router.refresh();
     });
   }
 
@@ -85,6 +107,7 @@ export function AdesoesTrialPageClient({
       toast.success("Adesão vinculada ao lead comercial.");
       setLinkIntakeId(null);
       setSelectedProspectId("");
+      router.refresh();
     });
   }
 
@@ -109,8 +132,9 @@ export function AdesoesTrialPageClient({
           <TableHeader>
             <TableRow>
               <TableHead>Loja</TableHead>
-              <TableHead>E-mail</TableHead>
+              <TableHead>Contato</TableHead>
               <TableHead>Subdomínio</TableHead>
+              <TableHead>Arquivos</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Recebido</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -119,9 +143,41 @@ export function AdesoesTrialPageClient({
           <TableBody>
             {rows.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.store_name}</TableCell>
-                <TableCell>{row.contact_email}</TableCell>
+                <TableCell>
+                  <p className="font-medium">{row.store_name}</p>
+                  {row.legal_representative_name ? (
+                    <p className="text-xs text-muted-foreground">{row.legal_representative_name}</p>
+                  ) : null}
+                </TableCell>
+                <TableCell>
+                  <p className="text-sm">{row.contact_email}</p>
+                  {row.whatsapp ? (
+                    <p className="text-xs text-muted-foreground">
+                      {formatBrazilMobileMasked(row.whatsapp)}
+                    </p>
+                  ) : null}
+                  <div className="mt-2">
+                    <ContactQuickActions
+                      email={row.contact_email}
+                      phone={row.whatsapp}
+                      label={row.store_name}
+                      whatsappMessage={buildQuickWhatsAppMessage(row)}
+                    />
+                  </div>
+                </TableCell>
                 <TableCell className="font-mono text-xs">{row.slug}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={row.assets_uploaded > 0 ? "secondary" : "outline"}
+                    className={
+                      row.assets_uploaded === 0
+                        ? "border-amber-700/40 bg-amber-100 font-medium text-amber-950"
+                        : undefined
+                    }
+                  >
+                    {row.assets_uploaded}/{row.assets_expected}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   <OnboardingIntakeStatusBadge status={row.status} />
                 </TableCell>
@@ -130,6 +186,15 @@ export function AdesoesTrialPageClient({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReviewIntakeId(row.id)}
+                    >
+                      <Eye className="mr-1 size-3.5" />
+                      Revisar
+                    </Button>
                     {row.converted_dealership_id ? (
                       <Button variant="outline" size="sm" asChild>
                         <Link
@@ -142,7 +207,7 @@ export function AdesoesTrialPageClient({
                       <>
                         <Button size="sm" asChild>
                           <Link href={`/painel/concessionarias/nova?intake=${row.id}`}>
-                            Converter em loja
+                            Converter
                           </Link>
                         </Button>
                         {!row.saas_prospect_id ? (
@@ -181,6 +246,27 @@ export function AdesoesTrialPageClient({
           </TableBody>
         </Table>
       </div>
+
+      <OnboardingIntakeReviewDialog
+        intakeId={reviewIntakeId}
+        summary={
+          reviewSummary
+            ? {
+                store_name: reviewSummary.store_name,
+                slug: reviewSummary.slug,
+                contact_email: reviewSummary.contact_email,
+                whatsapp: reviewSummary.whatsapp,
+                status: reviewSummary.status,
+              }
+            : null
+        }
+        open={reviewIntakeId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReviewIntakeId(null);
+          }
+        }}
+      />
 
       <Dialog open={linkIntakeId !== null} onOpenChange={(open) => !open && setLinkIntakeId(null)}>
         <DialogContent>

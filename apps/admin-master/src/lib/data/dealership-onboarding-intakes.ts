@@ -2,6 +2,7 @@ import type {
   DealershipOnboardingIntakePayload,
   DealershipOnboardingIntakeRow,
 } from "@autopainel/shared/types";
+import { countOnboardingIntakeAssets } from "@autopainel/shared/lib/dealership/list-onboarding-intake-assets";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -10,7 +11,11 @@ export interface DealershipOnboardingIntakeListRow {
   status: string;
   store_name: string;
   contact_email: string;
+  whatsapp: string;
+  legal_representative_name: string;
   slug: string;
+  assets_uploaded: number;
+  assets_expected: number;
   saas_prospect_id: string | null;
   converted_dealership_id: string | null;
   created_at: string;
@@ -32,6 +37,7 @@ export async function fetchDealershipOnboardingIntakes(): Promise<
     .select(
       "id, status, payload, saas_prospect_id, converted_dealership_id, created_at",
     )
+    .neq("status", "archived")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -41,12 +47,17 @@ export async function fetchDealershipOnboardingIntakes(): Promise<
 
   return data.map((row) => {
     const payload = readPayload(row);
+    const assets = payload ? countOnboardingIntakeAssets(payload) : { uploaded: 0, expected: 5 };
     return {
       id: row.id,
       status: row.status,
       store_name: payload?.general?.store_name ?? "—",
       contact_email: payload?.general?.contact_email ?? "—",
+      whatsapp: payload?.general?.whatsapp ?? "",
+      legal_representative_name: payload?.general?.legal_representative_name ?? "",
       slug: payload?.general?.slug ?? "—",
+      assets_uploaded: assets.uploaded,
+      assets_expected: assets.expected,
       saas_prospect_id: row.saas_prospect_id,
       converted_dealership_id: row.converted_dealership_id,
       created_at: row.created_at,

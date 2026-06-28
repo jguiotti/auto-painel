@@ -4,6 +4,8 @@ import {
   collectDealershipLogoCandidateUrls,
   resolveDealershipFaviconUrl,
 } from "@autopainel/shared/lib/theme/branding";
+import { mapStockLimitStatusFromRpc } from "@autopainel/shared/lib/growth-operations/map-stock-limit-status";
+import type { DealershipStockLimitStatus } from "@autopainel/shared/types";
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
@@ -30,6 +32,10 @@ async function readDealershipVisualContext() {
     { p_dealership_id: dealershipId },
   );
 
+  const { data: stockLimitRaw } = await supabase.rpc("get_dealership_stock_limit_status");
+  const stockLimitStatus: DealershipStockLimitStatus | null =
+    mapStockLimitStatusFromRpc(stockLimitRaw);
+
   const dealershipName = dealership?.name ?? "Painel";
   const dealershipSlug = dealership?.slug ?? "";
   const columnLogoUrl = dealership?.logo_url ?? null;
@@ -54,6 +60,7 @@ async function readDealershipVisualContext() {
     activeFeatureKeys,
     contactsAttentionCount:
       typeof contactsAttentionCount === "number" ? contactsAttentionCount : 0,
+    stockLimitStatus,
   };
 }
 
@@ -85,7 +92,13 @@ export default async function PainelLayout({
     dealershipLogoCandidateUrls,
     activeFeatureKeys,
     contactsAttentionCount,
+    stockLimitStatus,
   } = await readDealershipVisualContext();
+
+  const showGrowthSupport =
+    profile.role === "owner" ||
+    profile.role === "manager" ||
+    profile.role === "super_admin";
 
   return (
     <DashboardShell
@@ -97,6 +110,8 @@ export default async function PainelLayout({
       activeFeatureKeys={activeFeatureKeys}
       viewerRole={profile.role}
       contactsAttentionCount={contactsAttentionCount}
+      stockLimitStatus={stockLimitStatus}
+      showGrowthSupport={showGrowthSupport}
     >
       {children}
     </DashboardShell>

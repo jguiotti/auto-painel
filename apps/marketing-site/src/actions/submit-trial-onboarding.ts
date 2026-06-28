@@ -10,7 +10,7 @@ import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase
 import { createSupabaseAnonClient } from "@autopainel/shared/lib/supabase";
 import type { DealershipOnboardingIntakePayload } from "@autopainel/shared/types";
 
-import { PRIVACY_POLICY_VERSION } from "@/lib/legal/constants";
+import { PRIVACY_POLICY_VERSION, PLATFORM_TERMS_VERSION } from "@/lib/legal/constants";
 import { TRIAL_ADHESION_VERSION } from "@/lib/legal/trial-constants";
 import { fetchTrialCampaignAvailability } from "@/lib/fetch-trial-campaign-availability";
 import { sendTrialOnboardingEmail } from "@/lib/email/send-trial-onboarding-email";
@@ -109,22 +109,19 @@ export async function submitTrialOnboardingAction(
 ): Promise<SubmitTrialOnboardingState> {
   const payloadRaw = String(formData.get("payload_json") ?? "");
   const trialAccepted = formData.get("trial_accepted") === "true";
+  const platformTermsAccepted = formData.get("platform_terms_accepted") === "true";
   const privacyAccepted = formData.get("privacy_accepted") === "true";
-  const dataProcessingAccepted = formData.get("data_processing_accepted") === "true";
   const marketingConsent = formData.get("marketing_consent") === "true";
   const saasProspectIdRaw = String(formData.get("saas_prospect_id") ?? "").trim();
 
   if (!trialAccepted) {
     return { error: "Aceite o Termo de Adesão ao Trial para continuar." };
   }
+  if (!platformTermsAccepted) {
+    return { error: "Aceite os Termos de Uso da plataforma AutoPainel." };
+  }
   if (!privacyAccepted) {
     return { error: "Aceite a Política de Privacidade da AutoPainel." };
-  }
-  if (!dataProcessingAccepted) {
-    return {
-      error:
-        "É necessário autorizar o tratamento e a detenção dos dados de clientes e leads pela AutoPainel.",
-    };
   }
 
   const parsed = parsePayload(payloadRaw);
@@ -164,6 +161,10 @@ export async function submitTrialOnboardingAction(
       p_payload: payload,
       p_trial_legal_version: TRIAL_ADHESION_VERSION,
       p_trial_accepted_at: nowIso,
+      p_platform_terms_version: PLATFORM_TERMS_VERSION,
+      p_platform_terms_accepted_at: nowIso,
+      p_privacy_policy_version: PRIVACY_POLICY_VERSION,
+      p_privacy_policy_accepted_at: nowIso,
       p_saas_prospect_id: saasProspectId,
     },
   );
@@ -249,14 +250,34 @@ export async function submitTrialOnboardingAction(
     }
   }
 
+  let supabaseService;
   try {
-    const supabaseService = createSupabaseServiceRoleClient();
+    supabaseService = createSupabaseServiceRoleClient();
+  } catch {
+    return {
+      error:
+        "Adesão registrada, mas o servidor não conseguiu salvar logos e imagens. Nossa equipe entrará em contato.",
+      intakeId: id,
+    };
+  }
 
-    await supabaseService.rpc("update_dealership_onboarding_intake_payload", {
+  const { error: payloadUpdateError } = await supabaseService.rpc(
+    "update_dealership_onboarding_intake_payload",
+    {
       p_intake_id: id,
       p_payload: payload as unknown as Record<string, unknown>,
-    });
+    },
+  );
 
+  if (payloadUpdateError) {
+    return {
+      error:
+        "Adesão registrada, mas não foi possível anexar os arquivos enviados. Peça ao lojista reenviar as imagens ou envie manualmente na conversão.",
+      intakeId: id,
+    };
+  }
+
+  try {
     if (!saasProspectId) {
       const { data: prospectRow } = await supabaseService
         .from("saas_prospects")

@@ -1,6 +1,6 @@
 # Backlog — o que falta (jun/2026)
 
-> **Atualizado:** 2026-06-21 · Épicos 3/4 fechados (base). Ver **`EPICS_CLOSURE_JUN2026.md`**.
+> **Atualizado:** 2026-06-25 · Growth Operations + trial **fechados em código**. Ver **`EPICS_CLOSURE_JUN2026.md`**.
 
 ---
 
@@ -35,7 +35,11 @@
 | Crescimento P0–P4 (exc. guerrilla) | ✅ |
 | Workers OLX / Webmotors | ✅ |
 | Platform Sales Squad v1.1 | ✅ |
-| Contrato SaaS v2 (modelo + template DB) | ✅ doc + migração `20260621150000` |
+| Contrato SaaS v3 (Pix + opt-in + template DB) | ✅ |
+| **Growth Operations** (stock, upgrade, admin inbox, financeiro) | ✅ |
+| **Campanha trial Essencial** (wizard, upload, opt-in triplo) | ✅ |
+| Legal foro Mongaguá/SP | ✅ |
+| CI cron billing + lead notification fix | ✅ |
 
 ---
 
@@ -43,9 +47,12 @@
 
 | Item | Responsável |
 | --- | --- |
-| **1ª loja cliente** fora demos + boleto | Comercial / ops |
+| **`git push origin main`** — workflows CI atualizados no repo | Dev |
+| **`npm run supabase:deploy`** — migração `20260625150000` (foro) se ainda não aplicada | DevOps |
+| **1ª loja cliente** fora demos + Pix pago | Comercial / ops |
 | **DNS www** → apex na Cloudflare (`www.autopainel.com.br`) | DevOps |
-| **Revisão OAB** contrato v2 antes de assinar clientes | Jurídico |
+| **Revisão OAB** contrato v3 antes de assinar clientes | Jurídico |
+| **QA manual** aceite contrato + limite estoque + upload trial | QA |
 | **Guerrilla marketing P4** | Produto |
 
 ---
@@ -54,6 +61,7 @@
 
 | Área | O que falta | Prioridade |
 | --- | --- | --- |
+| E2E Growth Operations | Stock limit + aceite contrato automatizado | P2 |
 | INT auto-publish portais | Fluxo publish automático completo | P2 |
 | E-mail Auth Fase 2 | Templates whitelabel painel | P2 |
 | E2E admin-master local | Timeout :3001 intermitente | P3 |
@@ -66,6 +74,7 @@
 ```bash
 npm run verify:epics-closure          # smoke produção
 npm run verify:epics-closure -- --e2e # + E2E login demo prod
+npm run admin:billing-notifications:scan  # cron billing (local)
 ```
 
 ---
@@ -77,3 +86,4 @@ npm run verify:epics-closure -- --e2e # + E2E login demo prod
 | `EPICS_CLOSURE_JUN2026.md` | Status formal épicos |
 | `CONTRATO_SAAS_ASSINATURA_PLATAFORMA.md` | Modelo contrato loja |
 | `documentacao-tecnica.md` | Rastreabilidade |
+| `regras-de-negocio.md` | BZ Growth Operations + trial |

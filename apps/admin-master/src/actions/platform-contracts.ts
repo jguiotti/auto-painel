@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdminSession } from "@/lib/auth/require-admin";
+import { sendContractAcceptanceEmail } from "@/lib/email/send-contract-acceptance-email";
 
 const REVALIDATE_PATHS = ["/painel/contratos"];
 
@@ -190,36 +191,85 @@ export async function updatePlatformContractDraftAction(
   return { success: true };
 }
 
-export async function sendPlatformContractForSignatureAction(
+export async function sendPlatformContractForAcceptanceAction(
   contractId: string,
-): Promise<ActionResult> {
+): Promise<ActionResult & { emailSent?: boolean; emailError?: string }> {
   await requireAdminSession();
 
   const supabase = await createSupabaseServerClient();
   const { data: existing, error: loadError } = await supabase
     .from("platform_contracts")
-    .select("status")
+    .select("status, counterparty_name, counterparty_email, plan_name")
     .eq("id", contractId)
     .single();
 
   if (loadError || !existing) {
     return { error: "Contrato não encontrado." };
   }
-  if (existing.status !== "draft") {
-    return { error: "Somente rascunhos podem ser enviados para assinatura." };
+  if (existing.status !== "draft" && existing.status !== "sent_for_acceptance") {
+    return { error: "Somente rascunhos ou contratos pendentes podem receber novo link." };
   }
 
-  const { error } = await supabase
-    .from("platform_contracts")
-    .update({
-      status: "sent_for_signature",
-      sent_for_signature_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", contractId);
+  const { data: tokenPayload, error: tokenError } = await supabase.rpc(
+    "issue_platform_contract_acceptance_token",
+    {
+      p_contract_id: contractId,
+      p_expires_in_days: 7,
+    },
+  );
+
+  if (tokenError || !tokenPayload) {
+    return { error: "Não foi possível gerar o link de aceite." };
+  }
+
+  const tokenRow = tokenPayload as Record<string, unknown>;
+  const rawToken = String(tokenRow.token ?? "");
+  if (rawToken.length < 16) {
+    return { error: "Token de aceite inválido." };
+  }
+
+  const emailResult = await sendContractAcceptanceEmail({
+    to: String(existing.counterparty_email),
+    recipientName: String(existing.counterparty_name),
+    storeName: String(existing.plan_name ?? existing.counterparty_name),
+    acceptanceToken: rawToken,
+  });
+
+  REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+  revalidatePath(`/painel/contratos/${contractId}`);
+
+  if (!emailResult.ok) {
+    return {
+      success: true,
+      emailSent: false,
+      emailError: emailResult.error ?? "Falha ao enviar e-mail.",
+    };
+  }
+
+  return { success: true, emailSent: true };
+}
+
+/** @deprecated Use sendPlatformContractForAcceptanceAction */
+export async function sendPlatformContractForSignatureAction(
+  contractId: string,
+): Promise<ActionResult> {
+  return sendPlatformContractForAcceptanceAction(contractId);
+}
+
+export async function markPlatformContractAcceptedManuallyAction(
+  contractId: string,
+  reference: string,
+): Promise<ActionResult> {
+  await requireAdminSession();
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("mark_platform_contract_accepted_manually", {
+    p_contract_id: contractId,
+    p_reference: reference.trim() || null,
+  });
 
   if (error) {
-    return { error: "Não foi possível marcar o contrato como enviado." };
+    return { error: "Não foi possível registrar o aceite manual." };
   }
 
   REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
@@ -251,8 +301,8 @@ export async function markPlatformContractSignedAction(
   if (loadError || !existing) {
     return { error: "Contrato não encontrado." };
   }
-  if (existing.status !== "sent_for_signature") {
-    return { error: "Somente contratos enviados podem ser marcados como assinados." };
+  if (existing.status !== "sent_for_signature" && existing.status !== "sent_for_acceptance") {
+    return { error: "Somente contratos enviados podem ser marcados como aceitos." };
   }
 
   const { error } = await supabase

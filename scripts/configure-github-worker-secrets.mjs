@@ -87,6 +87,11 @@ const secrets = [
   ["INTEGRATION_WORKERS_CRON_SECRET", workerCronSecret],
 ];
 
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+if (serviceRoleKey) {
+  secrets.push(["SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey]);
+}
+
 if (manualMode) {
   console.log("\nModo manual — cole no GitHub (Settings → Secrets → Actions):\n");
   console.log(
@@ -95,6 +100,12 @@ if (manualMode) {
   for (const [name, value] of secrets) {
     console.log(`  ${name}`);
     console.log(`  ${value}\n`);
+  }
+  if (!serviceRoleKey) {
+    console.log(
+      "  SUPABASE_SERVICE_ROLE_KEY (opcional aqui, mas obrigatório para lead-notification-dispatch)",
+    );
+    console.log("  <service_role key do Dashboard → API>\n");
   }
   console.log(
     "Opcional: grave INTEGRATION_WORKERS_CRON_SECRET no .env.local da raiz para reutilizar.",

@@ -1,17 +1,25 @@
 export const PLATFORM_CONTRACT_STATUSES = [
   "draft",
+  "sent_for_acceptance",
+  "accepted",
+  "declined",
+  "expired",
+  "cancelled",
   "sent_for_signature",
   "signed",
-  "cancelled",
 ] as const;
 
 export type PlatformContractStatus = (typeof PLATFORM_CONTRACT_STATUSES)[number];
 
-export const PLATFORM_CONTRACT_STATUS_LABELS: Record<PlatformContractStatus, string> = {
-  draft: "Rascunho (revisão)",
-  sent_for_signature: "Enviado para assinatura",
-  signed: "Assinado",
+export const PLATFORM_CONTRACT_STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  sent_for_acceptance: "Aguardando aceite",
+  accepted: "Aceite confirmado",
+  declined: "Aceite recusado",
+  expired: "Link expirado",
   cancelled: "Cancelado",
+  sent_for_signature: "Aguardando aceite",
+  signed: "Aceite confirmado",
 };
 
 export interface PlatformContractRow {

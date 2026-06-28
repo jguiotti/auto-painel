@@ -52,6 +52,24 @@ Escopo **plataforma** (não tenant loja). Tabelas: **`platform_sales_reps`**, **
 
 Tabela **`public.dealership_onboarding_intakes`**: payload JSONB do formulário `/adesao-trial`; status `submitted` | `linked` | `converted` | `archived`. RLS super admin. RPCs: **`submit_dealership_onboarding_intake`**, **`update_dealership_onboarding_intake_payload`**, **`link_dealership_onboarding_intake_to_prospect`**, **`mark_dealership_onboarding_intake_converted`**, **`archive_dealership_onboarding_intake`**, **`get_dealership_onboarding_intake_id_for_prospect`**. Tipos: **`dealership-onboarding-intake.ts`**, args em **`supabase-rpc.ts`**. Migrações: **`20260622120000_*`**, **`20260622140000_*`**. Doc: **`TRIAL_CAMPAIGN_ARCHITECTURE.md`**.
 
+### Growth operations (estoque, suporte, contratos opt-in, admin inbox)
+
+Épico jun/2026 — limite de estoque por plano, upgrade WhatsApp, métricas aging, contratos opt-in, notificações admin. Tipos: **`growth-operations.ts`**. Doc: **`GROWTH_OPERATIONS_ARCHITECTURE.md`**.
+
+| Artefato | Detalhe |
+| --- | --- |
+| Limite estoque | `pricing_plans.max_active_vehicles`; trigger `stock_limit_reached` |
+| RPC estoque | `get_dealership_stock_limit_status` → `GetDealershipStockLimitStatusArgs` |
+| Suporte / upgrade | `dealership_support_requests`; `create_dealership_support_request` |
+| Aging | `get_dealership_inventory_aging_metrics` (gate `advanced_metrics`); `vehicles.available_since` |
+| Contrato opt-in | `platform_contract_acceptance_tokens`, `platform_legal_acceptances`; RPCs `get_platform_contract_acceptance_preview`, `submit_platform_contract_acceptance`, `issue_platform_contract_acceptance_token`, `mark_platform_contract_accepted_manually` |
+| Admin inbox | `platform_admin_notifications`; `list_*`, `mark_*`, `scan_billing_due_admin_notifications` (service_role) |
+| Trial opt-in triplo | `submit_dealership_onboarding_intake` — args estendidos (platform terms + privacy) — migração **`20260624150100_*`** |
+| Template contrato v3 | Pix-only, NF 3d, faixas 10/30 — mesma migração |
+| Menu Integrações | `shouldShowIntegrationsNav()` em **`dealership-features.ts`** |
+
+Migrações: **`20260624150000_growth_operations_stock_limits_notifications.sql`**, **`20260624150100_growth_operations_contract_optin_rpcs.sql`**.
+
 ## Generated types (optional)
 
 You may complement with `supabase gen types` and merge with hand-written types; consume shared types from **`@autopainel/shared/types`** in all apps.

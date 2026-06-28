@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 
 import {
   getEnabledClassifiedsProviders,
-  isAnyClassifiedsModuleEnabled,
   isDealershipFeatureEnabled,
+  shouldShowIntegrationsNav,
   type ClassifiedsProvider,
 } from "@autopainel/shared/lib/dealership-features";
 
@@ -66,7 +66,7 @@ export default async function IntegracoesPage() {
     "social_media_kit",
   );
 
-  if (!isAnyClassifiedsModuleEnabled(activeFeatures) && !isSocialMediaKitEnabled) {
+  if (!shouldShowIntegrationsNav(activeFeatures)) {
     redirect("/painel");
   }
 

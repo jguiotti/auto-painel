@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { InventoryAgingSection } from "@/components/growth-operations/inventory-aging-section";
 import { formatBrl } from "@/lib/format/format-brl";
 import { formatDatePt } from "@/lib/format/format-date-pt";
 import {
@@ -471,6 +472,8 @@ export default async function DashboardHomePage({
               </CardContent>
             </Card>
           </div>
+
+          <InventoryAgingSection />
         </section>
       ) : (
         <p className="rounded-lg border border-dashed border-border bg-card px-4 py-3 text-sm text-muted-foreground">
