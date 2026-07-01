@@ -98,7 +98,19 @@ export async function POST(request: NextRequest) {
 
   const metaDevStub = isMetaOAuthDevStubEnabled() || isIntegrationsMockModeEnabled();
 
-  if (!startParams && !metaDevStub) {
+  const oauthStartParams =
+    startParams ??
+    (metaDevStub
+      ? {
+          metaAppId: "autopainel-meta-dev-stub-client",
+          graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "21.0",
+          redirectUri:
+            process.env.META_OAUTH_REDIRECT_URI?.trim() ||
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")}/functions/v1/meta-oauth-callback`,
+        }
+      : null);
+
+  if (!oauthStartParams) {
     return NextResponse.json(
       {
         error: isMetaPlatformConnectMode()
@@ -107,16 +119,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 503 },
     );
-  }
-
-  if (!startParams && metaDevStub) {
-    startParams = {
-      metaAppId: "autopainel-meta-dev-stub-client",
-      graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "21.0",
-      redirectUri:
-        process.env.META_OAUTH_REDIRECT_URI?.trim() ||
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")}/functions/v1/meta-oauth-callback`,
-    };
   }
 
   const state = createOAuthState();
@@ -161,9 +163,9 @@ export async function POST(request: NextRequest) {
   const scopeParam = encodeURIComponent(resolveMetaScopes());
   const authorizationUrl = metaDevStub
     ? new URL(buildMetaOAuthDevAuthorizePath(state), request.nextUrl.origin).toString()
-    : `https://www.facebook.com/v${startParams.graphVersion}${META_OAUTH_DIALOG_PATH}` +
-      `?client_id=${encodeURIComponent(startParams.metaAppId)}` +
-      `&redirect_uri=${encodeURIComponent(startParams.redirectUri)}` +
+    : `https://www.facebook.com/v${oauthStartParams.graphVersion}${META_OAUTH_DIALOG_PATH}` +
+      `?client_id=${encodeURIComponent(oauthStartParams.metaAppId)}` +
+      `&redirect_uri=${encodeURIComponent(oauthStartParams.redirectUri)}` +
       `&state=${encodeURIComponent(state)}` +
       `&scope=${scopeParam}` +
       "&response_type=code";

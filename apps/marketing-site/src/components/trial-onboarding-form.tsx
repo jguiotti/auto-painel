@@ -219,6 +219,8 @@ export function TrialOnboardingForm({
   useEffect(() => {
     const draft = loadTrialOnboardingDraft();
     if (draft) {
+      // Restore session draft after mount (client-only storage; avoids SSR hydration mismatch).
+      /* eslint-disable react-hooks/set-state-in-effect -- sessionStorage draft restore */
       setPayload(draft.payload);
       setUnits(draft.units);
       setStep(draft.step);
@@ -226,6 +228,7 @@ export function TrialOnboardingForm({
       setPlatformTermsAccepted(draft.platformTermsAccepted);
       setPrivacyAccepted(draft.privacyAccepted);
       setMarketingConsent(draft.marketingConsent);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
     draftHydratedRef.current = true;
   }, []);
