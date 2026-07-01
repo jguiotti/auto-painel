@@ -93,6 +93,16 @@
       "import": "./src/lib/classifieds-oauth-dev-stub.ts",
       "default": "./src/lib/classifieds-oauth-dev-stub.ts"
     },
+    "./lib/meta-oauth-dev-stub": {
+      "types": "./src/lib/meta-oauth-dev-stub.ts",
+      "import": "./src/lib/meta-oauth-dev-stub.ts",
+      "default": "./src/lib/meta-oauth-dev-stub.ts"
+    },
+    "./lib/integrations-mock-mode": {
+      "types": "./src/lib/integrations-mock-mode.ts",
+      "import": "./src/lib/integrations-mock-mode.ts",
+      "default": "./src/lib/integrations-mock-mode.ts"
+    },
     "./lib/classifieds-oauth-redirect": {
       "types": "./src/lib/classifieds-oauth-redirect.ts",
       "import": "./src/lib/classifieds-oauth-redirect.ts",

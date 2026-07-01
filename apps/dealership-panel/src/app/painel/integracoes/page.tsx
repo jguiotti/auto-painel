@@ -11,6 +11,7 @@ import {
 import { CarouselAppearanceCard } from "@/components/integrations/carousel-appearance-card";
 import { ClassifiedsIntegrationCards } from "@/components/integrations/classifieds-integration-cards";
 import { IntegrationOnboardingBanner } from "@/components/integrations/integration-onboarding-banner";
+import { IntegrationsMockBanner } from "@/components/integrations/integrations-mock-banner";
 import { MetaDeveloperAppForm } from "@/components/integrations/meta-developer-app-form";
 import { SocialMetaIntegrationCard } from "@/components/integrations/social-meta-integration-card";
 import { getClassifiedsProviderOAuthReady } from "@/lib/classifieds/get-classifieds-provider-availability";
@@ -21,6 +22,8 @@ import {
   hasMetaPlatformAppConfigured,
   isMetaPlatformConnectMode,
 } from "@/lib/integrations/meta-platform-connect";
+import { isIntegrationsMockModeEnabled } from "@autopainel/shared/lib/integrations-mock-mode";
+import { collectDealershipLogoCandidateUrls } from "@autopainel/shared/lib/theme/branding";
 
 const CLASSIFIEDS_SECTION_LABEL: Record<ClassifiedsProvider, string> = {
   olx: "OLX",
@@ -53,7 +56,7 @@ export default async function IntegracoesPage() {
         )
         .eq("dealership_id", dealershipId)
         .maybeSingle(),
-      supabase.from("dealerships").select("logo_url").eq("id", dealershipId).maybeSingle(),
+      supabase.from("dealerships").select("logo_url, theme_config").eq("id", dealershipId).maybeSingle(),
       getDealershipSocialCarouselSettings(dealershipId),
     ]);
 
@@ -91,8 +94,9 @@ export default async function IntegracoesPage() {
 
   const metaAppRow = await getDealershipMetaOauthAppPublic(dealershipId);
   const metaPlatformConnect = isMetaPlatformConnectMode();
+  const integrationsMockMode = isIntegrationsMockModeEnabled();
   const hasMetaAppForOAuth = metaPlatformConnect
-    ? hasMetaPlatformAppConfigured()
+    ? hasMetaPlatformAppConfigured() || integrationsMockMode
     : !!(
         metaAppRow?.meta_app_id?.trim() ||
         process.env.META_APP_CLIENT_ID?.trim()
@@ -157,6 +161,8 @@ export default async function IntegracoesPage() {
 
       <IntegrationOnboardingBanner visible={showOnboarding} />
 
+      <IntegrationsMockBanner />
+
       {isSocialMediaKitEnabled ? (
         <section id="redes-sociais" className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -180,6 +186,7 @@ export default async function IntegracoesPage() {
               isEnabled={isSocialMediaKitEnabled}
               connection={normalizedMetaConnection}
               canStartOAuth={hasMetaAppForOAuth}
+              mockMode={integrationsMockMode}
             />
           </div>
         </section>
@@ -190,7 +197,12 @@ export default async function IntegracoesPage() {
           <CarouselAppearanceCard
             initialTemplate={carouselSettings.artifactTemplate}
             initialWatermarkEnabled={carouselSettings.watermarkEnabled}
-            hasLogo={Boolean(dealershipRes.data?.logo_url)}
+            hasLogo={
+              collectDealershipLogoCandidateUrls(
+                dealershipRes.data?.theme_config,
+                dealershipRes.data?.logo_url,
+              ).length > 0
+            }
           />
         </section>
       ) : null}

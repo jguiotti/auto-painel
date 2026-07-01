@@ -23,17 +23,17 @@ const TEMPLATE_OPTIONS: Array<{
   {
     id: "classic",
     title: "Clássico",
-    description: "Limpo e elegante",
+    description: "Elegante · dourado · vitrine premium",
   },
   {
     id: "performance",
     title: "Performance",
-    description: "Destaque esportivo",
+    description: "Impacto · vermelho · tipografia bold",
   },
   {
     id: "tech",
     title: "Tech",
-    description: "Moderno e tecnológico",
+    description: "Moderno · azul · painéis em vidro",
   },
 ];
 
@@ -104,11 +104,11 @@ export function CarouselAppearanceCard({
             disabled={!hasLogo}
           />
           <span>
-            <span className="font-medium">Exibir logo da loja nas fotos</span>
+            <span className="font-medium">Marca d&apos;água extra nas fotos</span>
             <span className="mt-1 block text-xs text-muted-foreground">
               {hasLogo
-                ? "A logo da sua loja aparece discretamente em cada slide."
-                : "Cadastre a logo da loja em Configurações para ativar a marca d'água."}
+                ? "A logo já aparece no canto de cada slide; ative para uma marca d'água central suave."
+                : "Cadastre a logo da loja em Configurações para exibir a marca nos slides."}
             </span>
           </span>
         </label>

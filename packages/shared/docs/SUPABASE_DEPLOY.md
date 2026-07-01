@@ -40,6 +40,8 @@ SUPABASE_URL=https://wcgevmvystdhqpzwuyig.supabase.co
 SUPABASE_ANON_KEY=<anon-key-remota>
 # Opcional — migrações fora de ordem / repair
 # SUPABASE_DB_PUSH_INCLUDE_ALL=true
+# Opcional — voltar ao bundle via Docker (padrão antigo; pode travar no macOS)
+# SUPABASE_FUNCTIONS_USE_API=false
 ```
 
 Depois: `npm run sync:env` (só copia vars Supabase dos apps; deploy lê a raiz).
@@ -116,6 +118,8 @@ Exemplo já aplicado (2026-06-10): `20260527013053` marcada como `reverted` — 
 | `supabase:ping` → `fetch failed` | URL local sem Docker; use `npm run supabase:ping:remote` com `SUPABASE_ANON_KEY` remota |
 | Senha/token no log do deploy | Scripts redigem `--password` e `--token`; ver `packages/shared/docs/SECURITY_SECRETS.md` |
 | `supabase:ping:remote` → 401 | Definir `SUPABASE_ANON_KEY` remota em `.env.local` (não a anon do Docker) |
+| `functions deploy` trava sem output (macOS) | O script usa `--use-api` (bundle no servidor, sem Docker). Se precisar do modo antigo: `SUPABASE_FUNCTIONS_USE_API=false` |
+| CI: `Remote migration versions not found in local` | Migração aplicada no remoto a partir da máquina local mas **não commitada** no `main` — commitar o `.sql` em `supabase/migrations/` e fazer push |
 
 ## Segredos e histórico git
 

@@ -104,7 +104,11 @@ export function VehicleSocialSharePanel({
         setMessage(result.error);
         return;
       }
-      setMessage("Publicação iniciada. Acompanhe o status abaixo.");
+      setMessage(
+        "mock" in result && result.mock
+          ? "Publicação simulada concluída — Facebook e Instagram (modo gravação)."
+          : "Publicação iniciada. Acompanhe o status abaixo.",
+      );
     });
   }
 

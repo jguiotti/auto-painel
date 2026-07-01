@@ -1,4 +1,9 @@
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  buildMetaOAuthDevAuthorizePath,
+  isMetaOAuthDevStubEnabled,
+} from "@autopainel/shared/lib/meta-oauth-dev-stub";
+import { isIntegrationsMockModeEnabled } from "@autopainel/shared/lib/integrations-mock-mode";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createOAuthState } from "@/lib/classifieds/oauth-pkce";
@@ -91,7 +96,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!startParams) {
+  const metaDevStub = isMetaOAuthDevStubEnabled() || isIntegrationsMockModeEnabled();
+
+  if (!startParams && !metaDevStub) {
     return NextResponse.json(
       {
         error: isMetaPlatformConnectMode()
@@ -100,6 +107,16 @@ export async function POST(request: NextRequest) {
       },
       { status: 503 },
     );
+  }
+
+  if (!startParams && metaDevStub) {
+    startParams = {
+      metaAppId: "autopainel-meta-dev-stub-client",
+      graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "21.0",
+      redirectUri:
+        process.env.META_OAUTH_REDIRECT_URI?.trim() ||
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")}/functions/v1/meta-oauth-callback`,
+    };
   }
 
   const state = createOAuthState();
@@ -142,13 +159,14 @@ export async function POST(request: NextRequest) {
   }
 
   const scopeParam = encodeURIComponent(resolveMetaScopes());
-  const authorizationUrl =
-    `https://www.facebook.com/v${startParams.graphVersion}${META_OAUTH_DIALOG_PATH}` +
-    `?client_id=${encodeURIComponent(startParams.metaAppId)}` +
-    `&redirect_uri=${encodeURIComponent(startParams.redirectUri)}` +
-    `&state=${encodeURIComponent(state)}` +
-    `&scope=${scopeParam}` +
-    "&response_type=code";
+  const authorizationUrl = metaDevStub
+    ? new URL(buildMetaOAuthDevAuthorizePath(state), request.nextUrl.origin).toString()
+    : `https://www.facebook.com/v${startParams.graphVersion}${META_OAUTH_DIALOG_PATH}` +
+      `?client_id=${encodeURIComponent(startParams.metaAppId)}` +
+      `&redirect_uri=${encodeURIComponent(startParams.redirectUri)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&scope=${scopeParam}` +
+      "&response_type=code";
 
   return NextResponse.json({
     authorizationUrl,

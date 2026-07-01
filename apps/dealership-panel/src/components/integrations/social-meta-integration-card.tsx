@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@autopainel/shared/ui";
 
+import { connectMetaMockAction } from "@/app/painel/integracoes/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import { MetaPagePickerDialog } from "./meta-page-picker-dialog";
@@ -46,6 +47,7 @@ interface SocialMetaIntegrationCardProps {
   isEnabled: boolean;
   connection: MetaConnectionRow | null;
   canStartOAuth?: boolean;
+  mockMode?: boolean;
 }
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
@@ -105,6 +107,7 @@ export function SocialMetaIntegrationCard({
   isEnabled,
   connection,
   canStartOAuth = true,
+  mockMode = false,
 }: SocialMetaIntegrationCardProps) {
   const router = useRouter();
   const status = connection?.status ?? "disconnected";
@@ -232,6 +235,27 @@ export function SocialMetaIntegrationCard({
     setInlineFeedback(null);
     setPendingOAuth(true);
     oauthMessageReceivedRef.current = false;
+
+    if (mockMode) {
+      try {
+        const result = await connectMetaMockAction();
+        setPendingOAuth(false);
+        if ("error" in result && result.error) {
+          setInlineFeedback(result.error);
+          return;
+        }
+        setInlineFeedback("Conta conectada (simulação para gravação).");
+        router.refresh();
+      } catch (error) {
+        setPendingOAuth(false);
+        setInlineFeedback(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível simular a conexão Meta.",
+        );
+      }
+      return;
+    }
 
     if (status === "connecting") {
       await cleanupStaleMetaOAuthAttempt();
@@ -403,11 +427,13 @@ export function SocialMetaIntegrationCard({
             <p className="text-xs text-destructive">{connection.last_error}</p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              O login abre em uma janela segura — você não precisa configurar nada técnico.
+              {mockMode
+                ? "Modo gravação: um clique simula login Facebook + Instagram Business."
+                : "O login abre em uma janela segura — você não precisa configurar nada técnico."}
             </p>
           )}
 
-          {!canStartOAuth ? (
+          {!canStartOAuth && !mockMode ? (
             <p className="text-xs text-amber-700 dark:text-amber-400">
               A conexão Meta da plataforma ainda não está configurada no servidor.
             </p>
@@ -420,7 +446,7 @@ export function SocialMetaIntegrationCard({
                 !isEnabled ||
                 isBusy ||
                 status === "connected" ||
-                !canStartOAuth
+                (!canStartOAuth && !mockMode)
               }
               onClick={() => {
                 if (status === "page_selection_required") {

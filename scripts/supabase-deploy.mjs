@@ -8,6 +8,7 @@
  *   SUPABASE_ACCESS_TOKEN (required for Edge Functions deploy)
  *   SUPABASE_DB_PUSH_INCLUDE_ALL=true (optional; repair/out-of-order migrations)
  *   SUPABASE_DEPLOY_SKIP_FUNCTIONS=true (optional; migrations only)
+ *   SUPABASE_FUNCTIONS_USE_API=false (optional; disable server-side bundling)
  *
  * Usage:
  *   npm run supabase:deploy
@@ -109,6 +110,10 @@ if (!accessToken) {
 
 run("supabase", ["login", "--token", accessToken]);
 
+const useFunctionsApi =
+  process.env.SUPABASE_FUNCTIONS_USE_API !== "false" &&
+  process.env.SUPABASE_FUNCTIONS_USE_API !== "0";
+
 for (const fn of manifest.edge_functions ?? []) {
   const args = [
     "functions",
@@ -117,6 +122,9 @@ for (const fn of manifest.edge_functions ?? []) {
     "--project-ref",
     projectRef,
   ];
+  if (useFunctionsApi) {
+    args.push("--use-api");
+  }
   if (fn.verify_jwt === false) {
     args.push("--no-verify-jwt");
   }

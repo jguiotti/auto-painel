@@ -1,6 +1,10 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.104.0";
 
 import { decryptSecretValue } from "./classifieds-crypto.ts";
+import {
+  buildMockPublishResultPayload,
+  isIntegrationsMockModeEnabled,
+} from "./integrations-mock-mode.ts";
 
 export interface SocialPublicationJobRow {
   id: string;
@@ -375,6 +379,19 @@ export async function processSocialPublicationJob(
   admin: SupabaseClient,
   job: SocialPublicationJobRow,
 ): Promise<void> {
+  if (isIntegrationsMockModeEnabled()) {
+    await admin
+      .from("social_publication_jobs")
+      .update({ status: "uploading_meta", updated_at: new Date().toISOString() })
+      .eq("id", job.id);
+
+    await markJobPublished(admin, job, {
+      ...buildMockPublishResultPayload(job.channels),
+      rendered_slide_count: Math.max(1, (await resolveCarouselImageUrls(job)).length || 3),
+    });
+    return;
+  }
+
   const cryptoSecret = requireEnvVar("META_TOKENS_CRYPTO_SECRET");
   const graphVersion = Deno.env.get("META_GRAPH_API_VERSION")?.trim() || "21.0";
 

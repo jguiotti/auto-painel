@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import { isIntegrationsMockModeEnabled } from "@autopainel/shared/lib/integrations-mock-mode";
 import { createSupabaseServiceRoleClient } from "@autopainel/shared/lib/supabase/service-role";
 import type { SocialCarouselArtifactTemplate } from "@autopainel/shared/types/social-carousel";
 
 import { encryptTextWithSecret } from "@/lib/crypto/aes-gcm-text-secret";
 import { requireDashboardSession } from "@/lib/dashboard/require-dashboard-session";
 import { finalizeMetaPageSelectionForDealership } from "@/lib/integrations/finalize-meta-page-selection";
+import { upsertMockMetaConnection } from "@/lib/integrations/upsert-mock-meta-connection";
 
 function resolveMetaTokensCryptoSecret(): string {
   const s = process.env.META_TOKENS_CRYPTO_SECRET?.trim();
@@ -169,5 +171,40 @@ export async function dismissIntegrationsOnboardingAction() {
     return { error: "Não foi possível dispensar o aviso." };
   }
   revalidatePath("/painel/integracoes");
+  return { success: true as const };
+}
+
+export async function connectMetaMockAction() {
+  if (!isIntegrationsMockModeEnabled()) {
+    return { error: "Modo mock não está ativo no servidor." };
+  }
+
+  const { supabase, dealershipId } = await requireDashboardSession("/painel/integracoes");
+
+  const featuresRes = await supabase.rpc("effective_feature_keys_for_active_dealership", {
+    p_dealership_id: dealershipId,
+  });
+  const activeFeatures = Array.isArray(featuresRes.data)
+    ? featuresRes.data.filter((entry): entry is string => typeof entry === "string")
+    : [];
+
+  if (!activeFeatures.includes("social_media_kit")) {
+    return { error: "Módulo de redes sociais não está ativo no plano da loja." };
+  }
+
+  try {
+    await upsertMockMetaConnection(dealershipId);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Não foi possível simular a conexão Meta.",
+    };
+  }
+
+  revalidatePath("/painel/integracoes");
+  revalidatePath("/painel/estoque");
+
   return { success: true as const };
 }

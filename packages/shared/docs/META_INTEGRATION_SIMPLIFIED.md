@@ -249,6 +249,38 @@ Migração `20260615200000_seed_meta_review_demo_dealership.sql` — slug **`dem
 
 **Nota DNS:** Registro.br **não suporta wildcard** — cada slug precisa de 2 CNAME explícitos **ou** DNS na Cloudflare com `*.autopainel.com.br` / `*.loja.autopainel.com.br`. Vercel: `npm run dealership:hosts:provision -- demo`. Ver `DEALERSHIP_HOSTS_PROVISIONING.md`.
 
+### 8.7 Simular Meta sem Facebook (modo gravação)
+
+Use **`INTEGRATIONS_MOCK_MODE=true`** para demo/screencast interno **sem popup Facebook**, **sem Sharp/upload** e **sem worker real**:
+
+| Variável | Onde | Efeito |
+| --- | --- | --- |
+| `INTEGRATIONS_MOCK_MODE` | `.env.local` + Supabase Edge | Ativa mock completo |
+| `META_TOKENS_CRYPTO_SECRET` | Edge + painel (`SUPABASE_SERVICE_ROLE_KEY` no painel) | Credenciais fictícias na conexão mock |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel/local `dealership-panel` | Conexão mock 1-clique |
+
+**Fluxo de gravação (recomendado):**
+
+1. `/painel/integracoes` → banner amarelo «Modo gravação»
+2. **Conectar com Facebook** → conecta instantaneamente (*Demo Motors — Oficial* · `@demo_motors_sp`)
+3. `/painel/estoque` → veículo com foto → **Ver preview** → **Compartilhar agora**
+4. Status **Publicado** imediato (simulado)
+
+```bash
+# .env.local
+INTEGRATIONS_MOCK_MODE=true
+SUPABASE_SERVICE_ROLE_KEY=<service role>
+META_TOKENS_CRYPTO_SECRET=<secret>
+
+npm run integration:secrets:configure
+npm run supabase:deploy
+npm run dev:dealership-panel
+```
+
+**Alternativa parcial:** `META_OAUTH_DEV_STUB=true` — popup simulado estilo Facebook, ainda depende do callback Edge.
+
+**Limitações:** não válido para App Review Meta (exigem Facebook real). Desactivar antes de clientes reais.
+
 ---
 
 ## 9. Checklist de go-live (DevOps)

@@ -4,6 +4,11 @@ import {
   decryptSecretValue,
   encryptSecretValue,
 } from "../_shared/classifieds-crypto.ts";
+import {
+  isMetaOAuthDevStubEnabled,
+  META_OAUTH_DEV_STUB_PAGE,
+  parseMetaOAuthDevStubCode,
+} from "../_shared/meta-oauth-dev-stub.ts";
 
 interface MetaOAuthSessionRow {
   id: string;
@@ -376,6 +381,79 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const stubParsed =
+      isMetaOAuthDevStubEnabled() ? parseMetaOAuthDevStubCode(code) : null;
+
+    if (stubParsed) {
+      if (stubParsed.state !== oauthSession.state) {
+        throw new Error("State OAuth inválido no stub de desenvolvimento.");
+      }
+
+      const userTokenEncrypted = await encryptSecretValue(
+        `dev_stub_meta_user_${crypto.randomUUID()}`,
+        tokenCryptoSecret,
+      );
+      const pageTokenEncrypted = await encryptSecretValue(
+        `dev_stub_meta_page_${crypto.randomUUID()}`,
+        tokenCryptoSecret,
+      );
+      const tokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: connectionRow, error: connectionError } = await admin
+        .from("dealership_meta_connections")
+        .upsert(
+          {
+            dealership_id: oauthSession.dealership_id,
+            status: "connected",
+            page_id: META_OAUTH_DEV_STUB_PAGE.pageId,
+            page_name: META_OAUTH_DEV_STUB_PAGE.pageName,
+            instagram_business_account_id:
+              META_OAUTH_DEV_STUB_PAGE.instagramBusinessAccountId,
+            instagram_username: META_OAUTH_DEV_STUB_PAGE.instagramUsername,
+            pending_page_candidates: null,
+            token_expires_at: tokenExpiresAt,
+            connected_at: new Date().toISOString(),
+            last_error: null,
+          },
+          { onConflict: "dealership_id" },
+        )
+        .select("id")
+        .single();
+
+      if (connectionError || !connectionRow) {
+        throw new Error(connectionError?.message ?? "Erro ao guardar conexão demo.");
+      }
+
+      const { error: credentialsError } = await admin
+        .from("dealership_meta_credentials")
+        .upsert(
+          {
+            connection_id: connectionRow.id,
+            dealership_id: oauthSession.dealership_id,
+            user_access_token_encrypted: userTokenEncrypted,
+            page_access_token_encrypted: pageTokenEncrypted,
+            expires_at: tokenExpiresAt,
+          },
+          { onConflict: "connection_id" },
+        );
+
+      if (credentialsError) {
+        throw new Error(credentialsError.message);
+      }
+
+      await admin.from("dealership_meta_oauth_sessions").update({
+        status: "consumed",
+        consumed_at: new Date().toISOString(),
+        error_reason: null,
+      }).eq("id", oauthSession.id);
+
+      return await reply({
+        targetOrigin,
+        success: true,
+        status: 200,
+      });
+    }
+
     const appConfig = await resolveMetaAppRuntimeConfig(
       admin,
       oauthSession.dealership_id,

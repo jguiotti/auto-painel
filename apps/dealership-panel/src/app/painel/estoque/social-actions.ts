@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
+import {
+  buildMockCarouselPreviewUrls,
+  buildMockPublishResultPayload,
+  isIntegrationsMockModeEnabled,
+} from "@autopainel/shared/lib/integrations-mock-mode";
+import { resolveDealershipLogoForDarkBackground } from "@autopainel/shared/lib/theme/branding";
 import type {
   SocialPublicationChannel,
   SocialPublicationTriggerSource,
@@ -51,9 +57,15 @@ async function buildPayloadSnapshot(
     logo_url: string | null;
     phone: string | null;
     layout_id: number | null;
+    theme_config: unknown;
   },
   watermarkEnabled: boolean,
 ) {
+  const resolvedLogoUrl = resolveDealershipLogoForDarkBackground(
+    dealership.theme_config,
+    dealership.logo_url,
+  );
+
   return {
     vehicle: {
       id: vehicle.id,
@@ -69,9 +81,10 @@ async function buildPayloadSnapshot(
     dealership: {
       name: dealership.name,
       slug: dealership.slug,
-      logo_url: dealership.logo_url,
+      logo_url: resolvedLogoUrl,
       phone: dealership.phone,
       layout_id: dealership.layout_id,
+      theme_config: dealership.theme_config,
     },
     branding_mask: watermarkEnabled,
   };
@@ -82,7 +95,7 @@ export async function enqueueVehicleSocialShareAction(
   channels: SocialPublicationChannel[],
   triggerSource: SocialPublicationTriggerSource = "manual_share",
 ) {
-  const { supabase, dealershipId } = await requireDashboardSession(
+  const { supabase, dealershipId, user } = await requireDashboardSession(
     `/painel/estoque/${vehicleId}`,
   );
 
@@ -109,7 +122,7 @@ export async function enqueueVehicleSocialShareAction(
         .maybeSingle(),
       supabase
         .from("dealerships")
-        .select("layout_id, name, slug, logo_url, phone")
+        .select("layout_id, name, slug, logo_url, whatsapp_number, theme_config")
         .eq("id", dealershipId)
         .maybeSingle(),
     ]);
@@ -160,11 +173,37 @@ export async function enqueueVehicleSocialShareAction(
       name: dealership.name,
       slug: dealership.slug,
       logo_url: dealership.logo_url ?? null,
-      phone: dealership.phone ?? null,
+      phone: dealership.whatsapp_number?.trim() || null,
       layout_id: dealership.layout_id,
+      theme_config: dealership.theme_config ?? null,
     },
     carouselSettings.watermarkEnabled,
   );
+
+  if (isIntegrationsMockModeEnabled()) {
+    const { error: insertError } = await supabase.from("social_publication_jobs").insert({
+      dealership_id: dealershipId,
+      vehicle_id: vehicleId,
+      channels,
+      artifact_template: carouselSettings.artifactTemplate,
+      payload_snapshot: payloadSnapshot,
+      status: "published",
+      trigger_source: triggerSource,
+      published_at: new Date().toISOString(),
+      result_payload: buildMockPublishResultPayload(channels),
+      error_detail: null,
+      created_by: user.id,
+    });
+
+    if (insertError) {
+      return { error: insertError.message };
+    }
+
+    revalidatePath(`/painel/estoque/${vehicleId}`);
+    revalidatePath("/painel/estoque");
+
+    return { success: true as const, mock: true as const };
+  }
 
   const { error: insertError } = await supabase.from("social_publication_jobs").insert({
     dealership_id: dealershipId,
@@ -174,6 +213,7 @@ export async function enqueueVehicleSocialShareAction(
     payload_snapshot: payloadSnapshot,
     status: "queued",
     trigger_source: triggerSource,
+    created_by: user.id,
   });
 
   if (insertError) {
@@ -212,7 +252,7 @@ export async function previewVehicleCarouselAction(vehicleId: string) {
         .maybeSingle(),
       supabase
         .from("dealerships")
-        .select("name, slug, logo_url, phone, layout_id")
+        .select("name, slug, logo_url, whatsapp_number, layout_id, theme_config")
         .eq("id", dealershipId)
         .maybeSingle(),
     ]);
@@ -241,11 +281,39 @@ export async function previewVehicleCarouselAction(vehicleId: string) {
       name: dealership.name,
       slug: dealership.slug,
       logo_url: dealership.logo_url ?? null,
-      phone: dealership.phone ?? null,
+      phone: dealership.whatsapp_number?.trim() || null,
       layout_id: dealership.layout_id,
+      theme_config: dealership.theme_config ?? null,
     },
     carouselSettings.watermarkEnabled,
   );
+
+  if (isIntegrationsMockModeEnabled()) {
+    const vehicleTitle = `${vehicle.brand} ${vehicle.model}`.trim();
+    const priceLabel =
+      vehicle.sale_price ?? vehicle.price
+        ? new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+            maximumFractionDigits: 0,
+          }).format(Number(vehicle.sale_price ?? vehicle.price))
+        : "";
+
+    const imageUrls = buildMockCarouselPreviewUrls({
+      vehicleTitle,
+      storeName: dealership.name,
+      priceLabel,
+      vehicleImageUrls: images,
+      template: carouselSettings.artifactTemplate,
+    });
+
+    return {
+      success: true as const,
+      imageUrls,
+      slideCount: imageUrls.length,
+      mock: true as const,
+    };
+  }
 
   try {
     const result = await renderSocialCarouselSlides({
