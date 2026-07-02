@@ -28,6 +28,66 @@ function resolveStorefrontUrl(slug: string): string {
   return resolveDealershipStorefrontPublicUrl(slug);
 }
 
+function parseSocialPublicationJob(row: {
+  id: string;
+  status: string;
+  channels: string[] | null;
+  error_detail: string | null;
+  published_at: string | null;
+  created_at: string;
+  step_payload: unknown;
+  result_payload: unknown;
+}) {
+  const stepPayload =
+    row.step_payload && typeof row.step_payload === "object"
+      ? (row.step_payload as Record<string, unknown>)
+      : null;
+  const resultPayload =
+    row.result_payload && typeof row.result_payload === "object"
+      ? (row.result_payload as Record<string, unknown>)
+      : null;
+
+  const rawSlideUrls = stepPayload?.rendered_image_urls;
+  const slideUrls = Array.isArray(rawSlideUrls)
+    ? rawSlideUrls.filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
+    : [];
+
+  const slideCount =
+    typeof stepPayload?.slide_count === "number"
+      ? stepPayload.slide_count
+      : typeof resultPayload?.rendered_slide_count === "number"
+        ? resultPayload.rendered_slide_count
+        : slideUrls.length || null;
+
+  const facebookResult = resultPayload?.facebook_page;
+  const instagramResult = resultPayload?.instagram_feed;
+  const facebookPostId =
+    facebookResult &&
+    typeof facebookResult === "object" &&
+    typeof (facebookResult as { postId?: unknown }).postId === "string"
+      ? (facebookResult as { postId: string }).postId
+      : null;
+  const instagramPostId =
+    instagramResult &&
+    typeof instagramResult === "object" &&
+    typeof (instagramResult as { postId?: unknown }).postId === "string"
+      ? (instagramResult as { postId: string }).postId
+      : null;
+
+  return {
+    id: row.id,
+    status: row.status,
+    channels: (row.channels as string[]) ?? [],
+    errorDetail: row.error_detail,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    slideUrls,
+    slideCount,
+    facebookPostId,
+    instagramPostId,
+  };
+}
+
 export default async function VehicleViewPage({ params }: VehicleViewPageProps) {
   const { vehicleId } = await params;
   const { supabase, dealershipId } = await requireDashboardSession(`/painel/estoque/${vehicleId}`);
@@ -82,7 +142,9 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
       .eq("dealership_id", dealershipId),
     supabase
       .from("social_publication_jobs")
-      .select("id, status, channels, error_detail, published_at, created_at")
+      .select(
+        "id, status, channels, error_detail, published_at, created_at, step_payload, result_payload",
+      )
       .eq("vehicle_id", vehicleId)
       .eq("dealership_id", dealershipId)
       .order("created_at", { ascending: false })
@@ -209,14 +271,7 @@ export default async function VehicleViewPage({ params }: VehicleViewPageProps) 
       ) ?? [];
 
   const socialRecentJobs =
-    socialJobsResult.data?.map((row) => ({
-      id: row.id,
-      status: row.status,
-      channels: (row.channels as string[]) ?? [],
-      errorDetail: row.error_detail,
-      publishedAt: row.published_at,
-      createdAt: row.created_at,
-    })) ?? [];
+    socialJobsResult.data?.map((row) => parseSocialPublicationJob(row)) ?? [];
 
   return (
     <div className="flex flex-col gap-6">

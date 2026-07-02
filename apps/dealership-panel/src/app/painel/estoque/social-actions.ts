@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { isDealershipFeatureEnabled } from "@autopainel/shared/lib/dealership-features";
@@ -205,6 +206,34 @@ export async function enqueueVehicleSocialShareAction(
     return { success: true as const, mock: true as const };
   }
 
+  const jobId = randomUUID();
+  let stepPayload: Record<string, unknown>;
+  let renderedSlideUrls: string[] = [];
+
+  try {
+    const rendered = await renderSocialCarouselSlides({
+      jobId,
+      dealershipId,
+      artifactTemplate: carouselSettings.artifactTemplate,
+      payloadSnapshot,
+      previewOnly: false,
+      watermarkEnabled: carouselSettings.watermarkEnabled,
+    });
+    renderedSlideUrls = rendered.imageUrls;
+    stepPayload = {
+      rendered_image_urls: rendered.imageUrls,
+      slide_count: rendered.slideCount,
+      includes_cta_slide: rendered.includesCtaSlide,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Não foi possível gerar o carrossel para publicação.",
+    };
+  }
+
   const { data: enqueueResult, error: enqueueError } = await supabase.rpc(
     "enqueue_social_publication_job",
     {
@@ -213,6 +242,8 @@ export async function enqueueVehicleSocialShareAction(
       p_artifact_template: carouselSettings.artifactTemplate,
       p_payload_snapshot: payloadSnapshot,
       p_trigger_source: triggerSource,
+      p_job_id: jobId,
+      p_step_payload: stepPayload,
     },
   );
 
@@ -252,7 +283,12 @@ export async function enqueueVehicleSocialShareAction(
   revalidatePath(`/painel/estoque/${vehicleId}`);
   revalidatePath("/painel/estoque");
 
-  return { success: true as const };
+  return {
+    success: true as const,
+    jobId: enqueuePayload.job_id ?? jobId,
+    slideUrls: renderedSlideUrls,
+    slideCount: renderedSlideUrls.length,
+  };
 }
 
 export async function previewVehicleCarouselAction(vehicleId: string) {

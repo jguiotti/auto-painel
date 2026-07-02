@@ -13,6 +13,7 @@ export interface SocialPublicationJobRow {
   channels: string[];
   artifact_template: string;
   payload_snapshot: Record<string, unknown>;
+  step_payload: Record<string, unknown> | null;
   status: string;
   attempt_count: number;
   result_payload: Record<string, unknown> | null;
@@ -87,7 +88,7 @@ export async function claimSocialPublicationJobs(
       .eq("id", row.id)
       .eq("status", row.status)
       .select(
-        "id, dealership_id, vehicle_id, channels, artifact_template, payload_snapshot, status, attempt_count, result_payload",
+        "id, dealership_id, vehicle_id, channels, artifact_template, payload_snapshot, step_payload, status, attempt_count, result_payload",
       )
       .maybeSingle();
 
@@ -114,13 +115,48 @@ function buildCaption(payload: Record<string, unknown>): string {
   return [storeName, `${brand} ${model}`.trim(), priceText].filter(Boolean).join(" — ");
 }
 
+function readRenderedImageUrls(job: SocialPublicationJobRow): string[] | null {
+  const stepPayload = job.step_payload;
+  if (!stepPayload || typeof stepPayload !== "object") {
+    return null;
+  }
+  const raw = stepPayload.rendered_image_urls;
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  const urls = raw.filter(
+    (entry): entry is string => typeof entry === "string" && entry.length > 0,
+  );
+  return urls.length > 0 ? urls : null;
+}
+
+function isLocalhostRenderUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 async function resolveCarouselImageUrls(
   job: SocialPublicationJobRow,
 ): Promise<string[]> {
+  const preRendered = readRenderedImageUrls(job);
+  if (preRendered) {
+    return preRendered;
+  }
+
   const renderUrl = Deno.env.get("SOCIAL_CAROUSEL_RENDER_URL")?.trim();
   if (!renderUrl) {
     throw new Error(
-      "SOCIAL_CAROUSEL_RENDER_URL não configurada na Edge. Execute npm run integration:secrets:configure.",
+      "Slides do carrossel não foram pré-renderizados e SOCIAL_CAROUSEL_RENDER_URL não está configurada na Edge.",
+    );
+  }
+
+  if (isLocalhostRenderUrl(renderUrl)) {
+    throw new Error(
+      "SOCIAL_CAROUSEL_RENDER_URL aponta para localhost na Edge. Execute npm run integration:secrets:configure com DEALERSHIP_PANEL_PUBLIC_URL de produção.",
     );
   }
 

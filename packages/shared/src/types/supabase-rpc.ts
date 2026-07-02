@@ -78,6 +78,8 @@ export interface EnqueueSocialPublicationJobArgs {
   p_artifact_template: "classic" | "performance" | "tech";
   p_payload_snapshot: Record<string, unknown>;
   p_trigger_source?: "manual_share" | "vehicle_save";
+  p_job_id?: string;
+  p_step_payload?: Record<string, unknown> | null;
 }
 
 export interface EnqueueSocialPublicationJobResult {

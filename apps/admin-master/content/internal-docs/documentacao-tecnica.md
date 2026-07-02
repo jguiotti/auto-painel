@@ -647,8 +647,9 @@ Ver também: `packages/shared/docs/EPICS_CLOSURE_JUN2026.md`, `PLATFORM_BACKLOG_
 | --- | --- |
 | Problema | Worker republicava posts em retry (FB/IG) e publicava só 1 foto |
 | Migração | `20260701173000_social_publication_enqueue_dedup.sql` — RPC `enqueue_social_publication_job` (1 job por veículo; bloqueia republish após `published`) |
-| Worker | `supabase/functions/_shared/social-publish-process-job.ts` — idempotência por canal (`result_payload.postId`), status `failed_partial`, carrossel Facebook (`attached_media`), render obrigatório via `SOCIAL_CAROUSEL_RENDER_*` |
-| Painel | `apps/dealership-panel/src/app/painel/estoque/social-actions.ts` — enqueue via RPC |
+| Worker | `supabase/functions/_shared/social-publish-process-job.ts` — idempotência por canal (`result_payload.postId`), status `failed_partial`, carrossel Facebook (`attached_media`), usa `step_payload.rendered_image_urls` gerado no painel (fallback remoto só se URL Edge for pública) |
+| Painel | `social-actions.ts` renderiza carrossel no Next antes do enqueue; UI unificada preview+publicar em `vehicle-social-share-panel.tsx` |
+| Migração extra | `20260702103000_social_publication_pre_rendered_slides.sql` — `p_job_id` + `p_step_payload` no RPC |
 | Jobs presos | Operador: marcar `failed` jobs `queued`/`failed_partial` antigos do veículo afetado no SQL Editor antes do redeploy |
 
 ---

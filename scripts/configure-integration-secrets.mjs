@@ -64,6 +64,15 @@ function resolveSecret(name, { generateIfMissing = false } = {}) {
   return "";
 }
 
+function isLocalhostUrl(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 const carouselRenderSecret = resolveSecret("SOCIAL_CAROUSEL_RENDER_SECRET", {
   generateIfMissing: true,
 });
@@ -71,11 +80,13 @@ const panelPublicUrl =
   process.env.DEALERSHIP_PANEL_PUBLIC_URL?.trim() ||
   process.env.NEXT_PUBLIC_DEALERSHIP_PANEL_URL?.trim() ||
   "";
+const configuredRenderUrl = process.env.SOCIAL_CAROUSEL_RENDER_URL?.trim() || "";
 const carouselRenderUrl =
-  process.env.SOCIAL_CAROUSEL_RENDER_URL?.trim() ||
-  (panelPublicUrl
-    ? `${panelPublicUrl.replace(/\/$/, "")}/api/internal/social-carousel-render`
-    : "");
+  configuredRenderUrl && !isLocalhostUrl(configuredRenderUrl)
+    ? configuredRenderUrl
+    : panelPublicUrl
+      ? `${panelPublicUrl.replace(/\/$/, "")}/api/internal/social-carousel-render`
+      : "";
 
 const supabasePublicUrl =
   process.env.SUPABASE_URL?.trim() || process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
@@ -174,10 +185,13 @@ for (const [name] of vercelVars) {
   console.log(`  - ${name}`);
 }
 
-if (!carouselRenderUrl) {
+if (configuredRenderUrl && isLocalhostUrl(configuredRenderUrl)) {
   console.warn(
-    "\nWarning: SOCIAL_CAROUSEL_RENDER_URL not set — worker will fallback to raw image.",
+    "\n⚠️  SOCIAL_CAROUSEL_RENDER_URL no .env.local aponta para localhost — ignorado na Edge.",
   );
+  if (panelPublicUrl) {
+    console.warn(`    Usando URL de produção derivada: ${carouselRenderUrl}`);
+  }
 }
 
 console.log("\nDone. See packages/shared/docs/INTEGRATIONS_DEPLOY.md");
