@@ -7,7 +7,7 @@ Renderização de slides 1080×1080 para publicação Meta **não roda na Edge F
 1. `social-publish-worker` (Edge) reclama job em `social_publication_jobs`
 2. Worker chama **Route Handler Next** no `dealership-panel`
 3. Route Handler usa **Sharp** + **service role** para gerar JPEG e subir ao bucket `social-carousel-artifacts`
-4. Worker publica no Facebook (1ª slide) e Instagram (carrossel ≥ 2 slides) via Graph API
+4. Worker publica no **Facebook (carrossel multi-foto)** e **Instagram (carrossel ≥ 2 slides)** via Graph API
 
 ## Endpoints
 

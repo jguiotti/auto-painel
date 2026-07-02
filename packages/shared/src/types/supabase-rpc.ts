@@ -71,6 +71,22 @@ export interface EnqueueClassifiedsSyncJobsResult {
   message?: string;
 }
 
+/** `public.enqueue_social_publication_job` — deduplicated Meta publish queue. */
+export interface EnqueueSocialPublicationJobArgs {
+  p_vehicle_id: string;
+  p_channels: string[];
+  p_artifact_template: "classic" | "performance" | "tech";
+  p_payload_snapshot: Record<string, unknown>;
+  p_trigger_source?: "manual_share" | "vehicle_save";
+}
+
+export interface EnqueueSocialPublicationJobResult {
+  created: boolean;
+  job_id?: string;
+  already_published?: boolean;
+  pending_job?: boolean;
+}
+
 /** `public.create_public_storefront_lead` — vitrine lead with LGPD consent. */
 export interface CreatePublicStorefrontLeadArgs {
   p_dealership_id: string;

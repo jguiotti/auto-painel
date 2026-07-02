@@ -211,6 +211,7 @@ Tipos TypeScript: `packages/shared/src/types/supabase-rpc.ts`.
 | `effective_feature_keys_for_active_dealership` | Módulos efetivos da loja logada |
 | `list_dealership_meta_page_candidates` | Páginas FB disponíveis no connect Meta |
 | `upsert_dealership_social_carousel_settings` | Config carrossel redes sociais |
+| `enqueue_social_publication_job` | Fila Meta deduplicada (1 publicação por veículo) |
 
 ### Server Actions / rotas
 
@@ -640,6 +641,18 @@ Ver também: `packages/shared/docs/EPICS_CLOSURE_JUN2026.md`, `PLATFORM_BACKLOG_
 
 ---
 
+## Histórico vivo — publicação Meta (jul/2026)
+
+| Item | Detalhe |
+| --- | --- |
+| Problema | Worker republicava posts em retry (FB/IG) e publicava só 1 foto |
+| Migração | `20260701173000_social_publication_enqueue_dedup.sql` — RPC `enqueue_social_publication_job` (1 job por veículo; bloqueia republish após `published`) |
+| Worker | `supabase/functions/_shared/social-publish-process-job.ts` — idempotência por canal (`result_payload.postId`), status `failed_partial`, carrossel Facebook (`attached_media`), render obrigatório via `SOCIAL_CAROUSEL_RENDER_*` |
+| Painel | `apps/dealership-panel/src/app/painel/estoque/social-actions.ts` — enqueue via RPC |
+| Jobs presos | Operador: marcar `failed` jobs `queued`/`failed_partial` antigos do veículo afetado no SQL Editor antes do redeploy |
+
+---
+
 ## Documentação complementar
 
 | Arquivo | Conteúdo |
@@ -659,4 +672,4 @@ Ver também: `packages/shared/docs/EPICS_CLOSURE_JUN2026.md`, `PLATFORM_BACKLOG_
 
 Edite `apps/admin-master/content/internal-docs/documentacao-tecnica.md` via PR. O Admin exibe o arquivo do git automaticamente (somente leitura).
 
-*Última atualização: 10 junho/2026 — Growth Operations + trial fechados; deploy remoto + push main pendentes operador.*
+*Última atualização: 1 julho/2026 — fix republicação Meta + carrossel FB/IG.*

@@ -15,9 +15,11 @@ export interface SocialPublicationJobRow {
   payload_snapshot: Record<string, unknown>;
   status: string;
   attempt_count: number;
+  result_payload: Record<string, unknown> | null;
 }
 
 const MAX_ATTEMPTS = 5;
+const ACTIVE_JOB_STATUSES = ["queued", "failed_partial"] as const;
 
 function requireEnvVar(name: string): string {
   const value = Deno.env.get(name)?.trim();
@@ -41,14 +43,30 @@ function computeNextRetry(attemptCount: number): string {
   return new Date(Date.now() + delaySeconds * 1000).toISOString();
 }
 
+function readChannelPostId(
+  results: Record<string, unknown> | null | undefined,
+  channel: string,
+): string | undefined {
+  const entry = results?.[channel];
+  if (!entry || typeof entry !== "object") {
+    return undefined;
+  }
+  const postId = (entry as { postId?: unknown }).postId;
+  return typeof postId === "string" && postId.length > 0 ? postId : undefined;
+}
+
+function readWatermarkEnabled(payload: Record<string, unknown>): boolean {
+  return payload.branding_mask !== false;
+}
+
 export async function claimSocialPublicationJobs(
   admin: SupabaseClient,
   limit: number,
 ): Promise<SocialPublicationJobRow[]> {
   const { data: candidates, error } = await admin
     .from("social_publication_jobs")
-    .select("id")
-    .eq("status", "queued")
+    .select("id, status")
+    .in("status", [...ACTIVE_JOB_STATUSES])
     .or(`next_retry_at.is.null,next_retry_at.lte.${new Date().toISOString()}`)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -67,9 +85,9 @@ export async function claimSocialPublicationJobs(
         updated_at: new Date().toISOString(),
       })
       .eq("id", row.id)
-      .eq("status", "queued")
+      .eq("status", row.status)
       .select(
-        "id, dealership_id, vehicle_id, channels, artifact_template, payload_snapshot, status, attempt_count",
+        "id, dealership_id, vehicle_id, channels, artifact_template, payload_snapshot, status, attempt_count, result_payload",
       )
       .maybeSingle();
 
@@ -96,56 +114,86 @@ function buildCaption(payload: Record<string, unknown>): string {
   return [storeName, `${brand} ${model}`.trim(), priceText].filter(Boolean).join(" — ");
 }
 
-function firstImageUrl(payload: Record<string, unknown>): string | null {
-  const vehicle = payload.vehicle as Record<string, unknown> | undefined;
-  const images = vehicle?.images;
-  if (!Array.isArray(images)) {
-    return null;
-  }
-  const first = images.find((entry) => typeof entry === "string" && entry.length > 0);
-  return typeof first === "string" ? first : null;
-}
-
 async function resolveCarouselImageUrls(
   job: SocialPublicationJobRow,
 ): Promise<string[]> {
   const renderUrl = Deno.env.get("SOCIAL_CAROUSEL_RENDER_URL")?.trim();
-  if (renderUrl) {
-    const renderSecret = Deno.env.get("SOCIAL_CAROUSEL_RENDER_SECRET")?.trim();
-    try {
-      const response = await fetch(renderUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(renderSecret ? { "x-social-carousel-render-secret": renderSecret } : {}),
-        },
-        body: JSON.stringify({
-          jobId: job.id,
-          dealershipId: job.dealership_id,
-          vehicleId: job.vehicle_id,
-          artifactTemplate: job.artifact_template,
-          payloadSnapshot: job.payload_snapshot,
-        }),
-      });
-
-      if (response.ok) {
-        const payload = (await response.json()) as { imageUrls?: unknown };
-        if (Array.isArray(payload.imageUrls)) {
-          const urls = payload.imageUrls.filter(
-            (entry): entry is string => typeof entry === "string" && entry.length > 0,
-          );
-          if (urls.length > 0) {
-            return urls;
-          }
-        }
-      }
-    } catch {
-      // Fall back to raw vehicle image when render service is unavailable.
-    }
+  if (!renderUrl) {
+    throw new Error(
+      "SOCIAL_CAROUSEL_RENDER_URL não configurada na Edge. Execute npm run integration:secrets:configure.",
+    );
   }
 
-  const fallback = firstImageUrl(job.payload_snapshot);
-  return fallback ? [fallback] : [];
+  const renderSecret = Deno.env.get("SOCIAL_CAROUSEL_RENDER_SECRET")?.trim();
+  if (!renderSecret) {
+    throw new Error(
+      "SOCIAL_CAROUSEL_RENDER_SECRET ausente na Edge. Execute npm run integration:secrets:configure.",
+    );
+  }
+
+  const response = await fetch(renderUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-social-carousel-render-secret": renderSecret,
+    },
+    body: JSON.stringify({
+      jobId: job.id,
+      dealershipId: job.dealership_id,
+      vehicleId: job.vehicle_id,
+      artifactTemplate: job.artifact_template,
+      payloadSnapshot: job.payload_snapshot,
+      watermarkEnabled: readWatermarkEnabled(job.payload_snapshot),
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(
+      `Render do carrossel falhou (${response.status}): ${text.slice(0, 400)}`,
+    );
+  }
+
+  const payload = (await response.json()) as { imageUrls?: unknown; error?: unknown };
+  if (!Array.isArray(payload.imageUrls)) {
+    throw new Error("Render do carrossel não retornou imageUrls.");
+  }
+
+  const urls = payload.imageUrls.filter(
+    (entry): entry is string => typeof entry === "string" && entry.length > 0,
+  );
+  if (urls.length === 0) {
+    throw new Error("Render do carrossel retornou lista vazia de imagens.");
+  }
+
+  return urls;
+}
+
+async function uploadFacebookUnpublishedPhoto(params: {
+  pageId: string;
+  pageAccessToken: string;
+  imageUrl: string;
+  graphVersion: string;
+}): Promise<string> {
+  const url =
+    `https://graph.facebook.com/v${params.graphVersion}/${params.pageId}/photos?` +
+    new URLSearchParams({
+      url: params.imageUrl,
+      published: "false",
+      access_token: params.pageAccessToken,
+    }).toString();
+
+  const response = await fetch(url, { method: "POST" });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Meta photo upload failed (${response.status}): ${text.slice(0, 500)}`);
+  }
+
+  const payload = (await response.json()) as { id?: string };
+  if (!payload.id) {
+    throw new Error("Meta photo upload returned no id.");
+  }
+  return payload.id;
 }
 
 async function publishToFacebookPage(params: {
@@ -154,9 +202,14 @@ async function publishToFacebookPage(params: {
   imageUrl: string;
   caption: string;
   graphVersion: string;
-}): Promise<{ mode: "live" | "dry_run"; postId?: string }> {
+}): Promise<{ mode: "live" | "dry_run"; postId?: string; format: string; slideCount: number }> {
   if (isDryRunEnabled()) {
-    return { mode: "dry_run", postId: `dry_run_fb_${crypto.randomUUID()}` };
+    return {
+      mode: "dry_run",
+      postId: `dry_run_fb_${crypto.randomUUID()}`,
+      format: "single_image",
+      slideCount: 1,
+    };
   }
 
   const url =
@@ -177,6 +230,73 @@ async function publishToFacebookPage(params: {
   return {
     mode: "live",
     postId: payload.id ?? payload.post_id,
+    format: "single_image",
+    slideCount: 1,
+  };
+}
+
+async function publishToFacebookCarousel(params: {
+  pageId: string;
+  pageAccessToken: string;
+  imageUrls: string[];
+  caption: string;
+  graphVersion: string;
+}): Promise<{ mode: "live" | "dry_run"; postId?: string; format: string; slideCount: number }> {
+  if (params.imageUrls.length === 1) {
+    const single = await publishToFacebookPage({
+      pageId: params.pageId,
+      pageAccessToken: params.pageAccessToken,
+      imageUrl: params.imageUrls[0],
+      caption: params.caption,
+      graphVersion: params.graphVersion,
+    });
+    return single;
+  }
+
+  if (isDryRunEnabled()) {
+    return {
+      mode: "dry_run",
+      postId: `dry_run_fb_${crypto.randomUUID()}`,
+      format: "carousel",
+      slideCount: params.imageUrls.length,
+    };
+  }
+
+  const mediaFbids: string[] = [];
+  for (const imageUrl of params.imageUrls) {
+    const mediaFbid = await uploadFacebookUnpublishedPhoto({
+      pageId: params.pageId,
+      pageAccessToken: params.pageAccessToken,
+      imageUrl,
+      graphVersion: params.graphVersion,
+    });
+    mediaFbids.push(mediaFbid);
+  }
+
+  const body = new URLSearchParams({
+    message: params.caption,
+    access_token: params.pageAccessToken,
+  });
+  mediaFbids.forEach((mediaFbid, index) => {
+    body.set(`attached_media[${index}]`, JSON.stringify({ media_fbid: mediaFbid }));
+  });
+
+  const response = await fetch(
+    `https://graph.facebook.com/v${params.graphVersion}/${params.pageId}/feed`,
+    { method: "POST", body },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Meta carousel publish failed (${response.status}): ${text.slice(0, 500)}`);
+  }
+
+  const payload = (await response.json()) as { id?: string };
+  return {
+    mode: "live",
+    postId: payload.id,
+    format: "carousel",
+    slideCount: params.imageUrls.length,
   };
 }
 
@@ -221,9 +341,14 @@ async function publishToInstagramSingleImage(params: {
   imageUrl: string;
   caption: string;
   graphVersion: string;
-}): Promise<{ mode: "live" | "dry_run"; postId?: string }> {
+}): Promise<{ mode: "live" | "dry_run"; postId?: string; format: string; slideCount: number }> {
   if (isDryRunEnabled()) {
-    return { mode: "dry_run", postId: `dry_run_ig_${crypto.randomUUID()}` };
+    return {
+      mode: "dry_run",
+      postId: `dry_run_ig_${crypto.randomUUID()}`,
+      format: "single_image",
+      slideCount: 1,
+    };
   }
 
   const containerId = await createInstagramMediaContainer({
@@ -255,6 +380,8 @@ async function publishToInstagramSingleImage(params: {
   return {
     mode: "live",
     postId: publishPayload.id,
+    format: "single_image",
+    slideCount: 1,
   };
 }
 
@@ -264,12 +391,13 @@ async function publishToInstagramCarousel(params: {
   imageUrls: string[];
   caption: string;
   graphVersion: string;
-}): Promise<{ mode: "live" | "dry_run"; postId?: string; slideCount: number }> {
+}): Promise<{ mode: "live" | "dry_run"; postId?: string; slideCount: number; format: string }> {
   if (isDryRunEnabled()) {
     return {
       mode: "dry_run",
       postId: `dry_run_ig_${crypto.randomUUID()}`,
       slideCount: params.imageUrls.length,
+      format: "carousel",
     };
   }
 
@@ -333,7 +461,32 @@ async function publishToInstagramCarousel(params: {
     mode: "live",
     postId: publishPayload.id,
     slideCount: params.imageUrls.length,
+    format: "carousel",
   };
+}
+
+async function persistJobProgress(
+  admin: SupabaseClient,
+  jobId: string,
+  result: Record<string, unknown>,
+  status: "uploading_meta" | "failed_partial" | "published",
+) {
+  await admin
+    .from("social_publication_jobs")
+    .update({
+      status,
+      result_payload: result,
+      updated_at: new Date().toISOString(),
+      ...(status === "published"
+        ? {
+            published_at: new Date().toISOString(),
+            error_detail: null,
+            error_channel: null,
+            next_retry_at: null,
+          }
+        : {}),
+    })
+    .eq("id", jobId);
 }
 
 async function markJobPublished(
@@ -341,16 +494,7 @@ async function markJobPublished(
   job: SocialPublicationJobRow,
   result: Record<string, unknown>,
 ) {
-  await admin
-    .from("social_publication_jobs")
-    .update({
-      status: "published",
-      result_payload: result,
-      error_detail: null,
-      published_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", job.id);
+  await persistJobProgress(admin, job.id, result, "published");
 }
 
 async function markJobFailed(
@@ -358,21 +502,38 @@ async function markJobFailed(
   job: SocialPublicationJobRow,
   errorMessage: string,
   channel?: string,
+  partialResults?: Record<string, unknown>,
 ) {
   const nextAttempt = job.attempt_count + 1;
   const isTerminal = nextAttempt >= MAX_ATTEMPTS;
+  const hasPartialSuccess =
+    partialResults != null &&
+    (readChannelPostId(partialResults, "facebook_page") != null ||
+      readChannelPostId(partialResults, "instagram_feed") != null ||
+      partialResults.facebook_page != null ||
+      partialResults.instagram_feed != null);
 
   await admin
     .from("social_publication_jobs")
     .update({
-      status: isTerminal ? "failed" : "queued",
+      status: isTerminal ? "failed" : hasPartialSuccess ? "failed_partial" : "queued",
       attempt_count: nextAttempt,
       error_channel: channel ?? null,
       error_detail: errorMessage.slice(0, 2000),
+      result_payload: partialResults ?? job.result_payload,
       next_retry_at: isTerminal ? null : computeNextRetry(nextAttempt),
       updated_at: new Date().toISOString(),
     })
     .eq("id", job.id);
+}
+
+function mergeExistingResults(
+  job: SocialPublicationJobRow,
+): Record<string, unknown> {
+  if (job.result_payload && typeof job.result_payload === "object") {
+    return { ...job.result_payload };
+  }
+  return {};
 }
 
 export async function processSocialPublicationJob(
@@ -387,7 +548,7 @@ export async function processSocialPublicationJob(
 
     await markJobPublished(admin, job, {
       ...buildMockPublishResultPayload(job.channels),
-      rendered_slide_count: Math.max(1, (await resolveCarouselImageUrls(job)).length || 3),
+      rendered_slide_count: 3,
     });
     return;
   }
@@ -429,23 +590,42 @@ export async function processSocialPublicationJob(
   }
 
   const caption = buildCaption(job.payload_snapshot);
-  const results: Record<string, unknown> = {
-    rendered_slide_count: carouselImageUrls.length,
-  };
+  const results = mergeExistingResults(job);
+  results.rendered_slide_count = carouselImageUrls.length;
 
   if (job.channels.includes("facebook_page")) {
-    const fbResult = await publishToFacebookPage({
-      pageId: connection.page_id,
-      pageAccessToken,
-      imageUrl: carouselImageUrls[0],
-      caption,
-      graphVersion,
-    });
-    results.facebook_page = fbResult;
+    const existingPostId = readChannelPostId(results, "facebook_page");
+    if (existingPostId) {
+      results.facebook_page = {
+        ...(results.facebook_page as Record<string, unknown> | undefined),
+        postId: existingPostId,
+        skipped: true,
+        reason: "already_published",
+      };
+    } else {
+      await persistJobProgress(admin, job.id, results, "uploading_meta");
+      const fbResult = await publishToFacebookCarousel({
+        pageId: connection.page_id,
+        pageAccessToken,
+        imageUrls: carouselImageUrls,
+        caption,
+        graphVersion,
+      });
+      results.facebook_page = fbResult;
+      await persistJobProgress(admin, job.id, results, "uploading_meta");
+    }
   }
 
   if (job.channels.includes("instagram_feed")) {
-    if (!connection.instagram_business_account_id) {
+    const existingPostId = readChannelPostId(results, "instagram_feed");
+    if (existingPostId) {
+      results.instagram_feed = {
+        ...(results.instagram_feed as Record<string, unknown> | undefined),
+        postId: existingPostId,
+        skipped: true,
+        reason: "already_published",
+      };
+    } else if (!connection.instagram_business_account_id) {
       results.instagram_feed = {
         mode: "skipped",
         reason: "instagram_business_account_missing",
@@ -461,9 +641,10 @@ export async function processSocialPublicationJob(
       results.instagram_feed = {
         ...igResult,
         slideCount: carouselImageUrls.length,
-        format: "single_image",
       };
+      await persistJobProgress(admin, job.id, results, "uploading_meta");
     } else {
+      await persistJobProgress(admin, job.id, results, "uploading_meta");
       const igResult = await publishToInstagramCarousel({
         igUserId: connection.instagram_business_account_id,
         pageAccessToken,
@@ -472,6 +653,7 @@ export async function processSocialPublicationJob(
         graphVersion,
       });
       results.instagram_feed = igResult;
+      await persistJobProgress(admin, job.id, results, "uploading_meta");
     }
   }
 
@@ -482,12 +664,22 @@ export async function processSocialPublicationJobSafe(
   admin: SupabaseClient,
   job: SocialPublicationJobRow,
 ): Promise<{ jobId: string; ok: boolean; error?: string }> {
+  let partialResults: Record<string, unknown> | undefined;
   try {
     await processSocialPublicationJob(admin, job);
     return { jobId: job.id, ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido no worker Meta.";
-    await markJobFailed(admin, job, message);
+    partialResults = mergeExistingResults(job);
+    const { data: latestJob } = await admin
+      .from("social_publication_jobs")
+      .select("result_payload")
+      .eq("id", job.id)
+      .maybeSingle();
+    if (latestJob?.result_payload && typeof latestJob.result_payload === "object") {
+      partialResults = latestJob.result_payload as Record<string, unknown>;
+    }
+    await markJobFailed(admin, job, message, undefined, partialResults);
     return { jobId: job.id, ok: false, error: message };
   }
 }

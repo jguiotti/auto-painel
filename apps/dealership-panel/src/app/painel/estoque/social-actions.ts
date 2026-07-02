@@ -205,19 +205,46 @@ export async function enqueueVehicleSocialShareAction(
     return { success: true as const, mock: true as const };
   }
 
-  const { error: insertError } = await supabase.from("social_publication_jobs").insert({
-    dealership_id: dealershipId,
-    vehicle_id: vehicleId,
-    channels,
-    artifact_template: carouselSettings.artifactTemplate,
-    payload_snapshot: payloadSnapshot,
-    status: "queued",
-    trigger_source: triggerSource,
-    created_by: user.id,
-  });
+  const { data: enqueueResult, error: enqueueError } = await supabase.rpc(
+    "enqueue_social_publication_job",
+    {
+      p_vehicle_id: vehicleId,
+      p_channels: channels,
+      p_artifact_template: carouselSettings.artifactTemplate,
+      p_payload_snapshot: payloadSnapshot,
+      p_trigger_source: triggerSource,
+    },
+  );
 
-  if (insertError) {
-    return { error: insertError.message };
+  if (enqueueError) {
+    return { error: enqueueError.message };
+  }
+
+  const enqueuePayload = enqueueResult as {
+    created?: boolean;
+    already_published?: boolean;
+    pending_job?: boolean;
+    job_id?: string;
+  } | null;
+
+  if (enqueuePayload?.already_published) {
+    return {
+      error: "Este veículo já foi publicado nas redes sociais.",
+    };
+  }
+
+  if (enqueuePayload?.pending_job) {
+    revalidatePath(`/painel/estoque/${vehicleId}`);
+    revalidatePath("/painel/estoque");
+    return {
+      success: true as const,
+      queued: true as const,
+      message: "Publicação já está na fila.",
+    };
+  }
+
+  if (!enqueuePayload?.created) {
+    return { error: "Não foi possível enfileirar a publicação." };
   }
 
   await dispatchSocialPublishWorker(1);
